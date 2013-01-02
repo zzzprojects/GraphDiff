@@ -11,10 +11,6 @@ namespace RefactorThis.DetachedUpdate.Tests
     /// <summary>
     /// Tests
     /// </summary>
-    /// 
-
-    // THESE TESTS ARE BY NO MEANS COMPREHENSIVE, I WILL ADD MORE WHEN I HAVE TIME.
-
     [TestClass]
     public class Tests
     {
@@ -764,11 +760,7 @@ namespace RefactorThis.DetachedUpdate.Tests
 
         #endregion
 
-        #region Associated Collection
-
-        #endregion
-
-        // TODO Tests are not complete so code is not considered 100% working. Please report any bugs to GraphDiff on github.
+        // TODO Incomplete. Please report any bugs to GraphDiff on github.
         // Will add more tests when I have time.
 
     }
