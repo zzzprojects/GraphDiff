@@ -13,6 +13,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using RefactorThis.EFExtensions.Internal;
+using System.Data.Entity.Infrastructure;
 
 namespace RefactorThis.EFExtensions
 {
@@ -48,13 +49,13 @@ namespace RefactorThis.EFExtensions
                 // Get our entity with all includes needed
                 T existing = context.FindEntityMatching(entity, includeExpressions.ToArray());
 
-                // Foreach branch perform recursive update
-                foreach (var member in tree.Members)
-                    RecursiveGraphUpdate(context, existing, entity, member);
-
                 // Force update of parent entity
                 context.Entry(existing).CurrentValues.SetValues(entity);
                 context.Entry(existing).State = EntityState.Modified;
+
+                // Foreach branch perform recursive update
+                foreach (var member in tree.Members)
+                    RecursiveGraphUpdate(context, existing, entity, member);
             }
             finally
             {
@@ -136,25 +137,53 @@ namespace RefactorThis.EFExtensions
             {
                 var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
                 var newvalue = member.Accessor.GetValue(updatingEntity, null);
-                if (dbvalue == null && newvalue == null)
+                if (dbvalue == null && newvalue == null) // No value
                     return;
-                else if (dbvalue != null && newvalue != null)
+
+                // If we own the collection then we need to update the entities otherwise simple relationship update
+                if (!member.IsOwned)
                 {
-                    context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
-                    context.Entry(dbvalue).State = EntityState.Modified;
-                    if (member.IsOwned)
+                    if (dbvalue != null && newvalue != null)
                     {
-                        foreach (var childMember in member.Members)
-                            RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
+                        var keyFields = context.GetKeysFor(newvalue.GetType());
+                        var newKey = CreateHash(keyFields, newvalue);
+                        var updateKey = CreateHash(keyFields, dbvalue);
+                        if (newKey == updateKey)
+                            return; // do nothing if the same key
                     }
-                }
-                else
-                {
-                    // Attach and add relationship
-                    if (!member.IsOwned)
+
+                    if (context.Entry(newvalue).State == EntityState.Detached)
                         context.Set(newvalue.GetType()).Attach(newvalue);
 
                     member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+                    context.Entry(newvalue).Reload();
+                    // TODO would like to do this: context.Entry(newvalue).State = EntityState.Unchanged;
+                    // However it seems even though we are in an unchanged state EF will still update the database if the original values are different.
+                }
+                else
+                {
+                    if (dbvalue != null && newvalue != null)
+                    {
+                        // Check if the same key, if so then update values on the entity
+                        var keyFields = context.GetKeysFor(newvalue.GetType());
+                        var newKey = CreateHash(keyFields, newvalue);
+                        var updateKey = CreateHash(keyFields, dbvalue);
+
+                        // perform update if the same
+                        if (updateKey == newKey)
+                        {
+                            context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
+                            context.Entry(dbvalue).State = EntityState.Modified;
+                        }
+                        else
+                            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+                    }
+                    else
+                        member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+
+                    // TODO
+                    foreach (var childMember in member.Members)
+                        RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
                 }
             }
         }

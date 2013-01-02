@@ -9,8 +9,12 @@ using System.Data.Entity;
 namespace RefactorThis.DetachedUpdate.Tests
 {
     /// <summary>
-    /// Tests for OneToOne mappings
+    /// Tests
     /// </summary>
+    /// 
+
+    // THESE TESTS ARE BY NO MEANS COMPREHENSIVE, I WILL ADD MORE WHEN I HAVE TIME.
+
     [TestClass]
     public class Tests
     {
@@ -68,32 +72,34 @@ namespace RefactorThis.DetachedUpdate.Tests
                     }
                 });
 
-                context.Projects.Add(new Models.Project
+                var project1 = context.Projects.Add(new Models.Project
                 {
                     Name = "Major Project 1",
                     Deadline = DateTime.Now,
                     Stakeholders = new List<Models.Company> { company2 }
                 });
 
-                context.Projects.Add(new Models.Project
+                var project2 = context.Projects.Add(new Models.Project
                 {
                     Name = "Major Project 2",
                     Deadline = DateTime.Now,
                     Stakeholders = new List<Models.Company> { company1 }
                 });
 
-                context.Managers.Add(new Models.Manager
+                var manager1 = context.Managers.Add(new Models.Manager
                 {
                     PartKey = "manager1",
                     PartKey2 = 1,
                     FirstName = "Trent"
                 });
-                context.Managers.Add(new Models.Manager
+                var manager2 = context.Managers.Add(new Models.Manager
                 {
                     PartKey = "manager2",
                     PartKey2 = 2,
                     FirstName = "Timothy"
                 });
+
+                project2.LeadCoordinator = manager2;
                 context.SaveChanges();
             }
         }
@@ -137,10 +143,381 @@ namespace RefactorThis.DetachedUpdate.Tests
 
         #endregion
 
-        #region One To Many - Owned
+        #region Associated Entity
 
         [TestMethod]
-        public void ParentOwnedChildCollectionUpdate()
+        public void AssociatedEntityWherePreviousValueWasNull()
+        {
+            Models.Project project;
+            Models.Manager coord;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 1);
+
+                coord = context.Managers
+                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = coord;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 1)
+                    .LeadCoordinator.PartKey == coord.PartKey);
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedEntityWhereNewValueIsNull()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = null;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator == null);
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedEntityWherePreviousValueIsNewValue()
+        {
+            Models.Project project;
+            Models.Manager coord;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+                coord = context.Managers
+                    .Single(p => p.PartKey == "manager2" && p.PartKey2 == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = coord;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.PartKey == coord.PartKey);
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedEntityWherePreviousValueIsNotNewValue()
+        {
+            Models.Project project;
+            Models.Manager coord;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+                coord = context.Managers
+                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = coord;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.PartKey == coord.PartKey);
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedEntityValuesShouldNotBeUpdated()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator.FirstName = "Larry";
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.FirstName != "Larry");
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedEntityValuesForNewValueShouldNotBeUpdated()
+        {
+            Models.Project project;
+            Models.Manager coord;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+                coord = context.Managers
+                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = coord;
+            coord.FirstName = "Larry";
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .AssociatedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.FirstName == "Trent");
+            }
+        }
+
+        #endregion
+
+        #region Owned Entity
+
+        [TestMethod]
+        public void OwnedEntityUpdateValues()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator.FirstName = "Tada";
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .OwnedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.FirstName == "Tada");
+            }
+        }
+
+        [TestMethod]
+        public void OwnedEntityNewEntity()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = new Models.Manager { FirstName = "Br", PartKey = "TER", PartKey2 = 2 };
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .OwnedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.PartKey == "TER");
+            }
+        }
+
+        [TestMethod]
+        public void OwnedEntityRemoveEntity()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator = null;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, map => map
+                    .OwnedEntity(p => p.LeadCoordinator));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator == null);
+            }
+        }
+
+        #endregion
+
+        #region Associated Collection
+
+        [TestMethod]
+        public void AssociatedCollectionAdd()
+        {
+            // don't know what to do about this yet..
+            Models.Project project1;
+            Models.Company company2;
+            using (var context = new TestDbContext())
+            {
+                project1 = context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2);
+
+                company2 = context.Companies.Single(p => p.Id == 2);
+            } // Simulate detach
+
+            project1.Stakeholders.Add(company2);
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project1, map => map
+                    .AssociatedCollection(p => p.Stakeholders));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2)
+                    .Stakeholders.Count == 2);
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedCollectionRemove()
+        {
+            Models.Project project1;
+            using (var context = new TestDbContext())
+            {
+                project1 = context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2);
+            } // Simulate detach
+
+            var company = project1.Stakeholders.First();
+            project1.Stakeholders.Remove(company);
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project1, map => map
+                    .AssociatedCollection(p => p.Stakeholders));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2)
+                    .Stakeholders.Count == 0);
+
+                // Ensure does not delete non owned entity
+                Assert.IsTrue(context.Companies.Any(p => p.Id == company.Id));
+            }
+        }
+
+        [TestMethod]
+        public void AssociatedCollectionsEntitiesValuesShouldNotBeUpdated()
+        {
+            Models.Project project1;
+            using (var context = new TestDbContext())
+            {
+                project1 = context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2);
+            } // Simulate detach
+
+            var company = project1.Stakeholders.First();
+            company.Name = "TEST OVERWRITE NAME";
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project1, map => map
+                    .AssociatedCollection(p => p.Stakeholders));
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.Stakeholders)
+                    .Single(p => p.Id == 2)
+                    .Stakeholders.First().Name != "TEST OVERWRITE NAME");
+            }
+        }
+
+        #endregion
+
+        #region Owned Collection
+
+        [TestMethod]
+        public void OwnedCollectionUpdate()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -174,7 +551,7 @@ namespace RefactorThis.DetachedUpdate.Tests
         }
 
         [TestMethod]
-        public void ParentOwnedChildCollectionAdd()
+        public void OwnedCollectionAdd()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -215,7 +592,7 @@ namespace RefactorThis.DetachedUpdate.Tests
         }
 
         [TestMethod]
-        public void ParentOwnedChildCollectionAddMultiple()
+        public void OwnedCollectionAddMultiple()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -276,7 +653,7 @@ namespace RefactorThis.DetachedUpdate.Tests
         }
 
         [TestMethod]
-        public void ParentOwnedChildCollectionRemove()
+        public void OwnedCollectionRemove()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -304,7 +681,7 @@ namespace RefactorThis.DetachedUpdate.Tests
         }
 
         [TestMethod]
-        public void ParentOwnedChildCollectionAddRemoveUpdate()
+        public void OwnedCollectionAddRemoveUpdate()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -355,207 +732,8 @@ namespace RefactorThis.DetachedUpdate.Tests
             }
         }
 
-        #endregion
-
-        #region Many To Many Collection - Association only
-
         [TestMethod]
-        public void ParentAssociatedChildCollectionAdd()
-        {
-            // don't know what to do about this yet..
-            Models.Project project1;
-            Models.Company company2;
-            using (var context = new TestDbContext())
-            {
-                project1 = context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2);
-
-                company2 = context.Companies.Single(p => p.Id == 2);
-            } // Simulate detach
-
-            project1.Stakeholders.Add(company2);
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project1, map => map
-                    .AssociatedCollection(p => p.Stakeholders));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2)
-                    .Stakeholders.Count == 2);
-            }
-        }
-
-        [TestMethod]
-        public void ParentAssociatedChildCollectionRemove()
-        {
-            Models.Project project1;
-            using (var context = new TestDbContext())
-            {
-                project1 = context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2);
-            } // Simulate detach
-
-            var company = project1.Stakeholders.First();
-            project1.Stakeholders.Remove(company);
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project1, map => map
-                    .AssociatedCollection(p => p.Stakeholders));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2)
-                    .Stakeholders.Count == 0);
-
-                // Ensure does not delete non owned entity
-                Assert.IsTrue(context.Companies.Any(p => p.Id == company.Id));
-            }
-        }
-
-        [TestMethod]
-        public void ParentAssociatedChildCollectionUpdateShouldNotBeUpdated()
-        {
-            Models.Project project1;
-            using (var context = new TestDbContext())
-            {
-                project1 = context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2);
-            } // Simulate detach
-
-            var company = project1.Stakeholders.First();
-            company.Name = "TEST OVERWRITE NAME";
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project1, map => map
-                    .AssociatedCollection(p => p.Stakeholders));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.Stakeholders)
-                    .Single(p => p.Id == 2)
-                    .Stakeholders.First().Name != "TEST OVERWRITE NAME");
-            }
-        }
-
-        #endregion
-
-        #region Many To Many Entity - Association only
-
-        [TestMethod]
-        public void ManyToManyEntityAssociation()
-        {
-            Models.Project project;
-            Models.Manager coord;
-            using (var context = new TestDbContext())
-            {
-                project = context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .Single(p => p.Id == 2);
-
-                coord = context.Managers
-                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
-
-            } // Simulate detach
-
-            project.LeadCoordinator = coord;
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project, map => map
-                    .AssociatedEntity(p => p.LeadCoordinator));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .Single(p => p.Id == 2)
-                    .LeadCoordinator.PartKey == coord.PartKey);
-            }
-        }
-
-        #endregion
-
-        #region One to One - Owned only
-
-        [TestMethod]
-        public void OneToOneAssociated()
-        {
-            Models.Project project;
-            Models.Manager coord;
-            using (var context = new TestDbContext())
-            {
-                project = context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .Single(p => p.Id == 2);
-
-                coord = context.Managers
-                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
-
-            } // Simulate detach
-
-            project.LeadCoordinator = coord;
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project, map => map
-                    .AssociatedEntity(p => p.LeadCoordinator));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .Single(p => p.Id == 2)
-                    .LeadCoordinator.PartKey == coord.PartKey);
-            }
-        }
-
-        [TestMethod]
-        public void UpdateEntityWithCollection()
-        {
-            Models.Project project;
-            Models.Manager coord;
-            using (var context = new TestDbContext())
-            {
-                project = context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .First();
-
-                coord = context.Managers
-                    .Single(p => p.PartKey == "manager1" && p.PartKey2 == 1);
-
-            } // Simulate detach
-
-            project.LeadCoordinator = coord;
-
-            using (var context = new TestDbContext())
-            {
-                // Setup mapping
-                context.UpdateGraph(project, map => map
-                    .AssociatedEntity(p => p.LeadCoordinator));
-
-                context.SaveChanges();
-                Assert.IsTrue(context.Projects
-                    .Include(p => p.LeadCoordinator)
-                    .First()
-                    .LeadCoordinator.PartKey == coord.PartKey);
-            }
-        }
-        #endregion
-
-        [TestMethod]
-        public void OneToManyToManyOwned()
+        public void OwnedCollectionWithOwnedCollection()
         {
             Models.Company company1;
             using (var context = new TestDbContext())
@@ -584,7 +762,14 @@ namespace RefactorThis.DetachedUpdate.Tests
             }
         }
 
-        // TODO cover more scenarios
+        #endregion
+
+        #region Associated Collection
+
+        #endregion
+
+        // TODO Tests are not complete so code is not considered 100% working. Please report any bugs to GraphDiff on github.
+        // Will add more tests when I have time.
 
     }
 }
