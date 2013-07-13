@@ -10,7 +10,6 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class Company
     {
-        [Key]
         public int Id { get; set; }
         public string Name { get; set; }
         public virtual ICollection<CompanyContact> Contacts { get; set; }
@@ -18,7 +17,6 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class CompanyContact
     {
-        [Key]
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
@@ -27,7 +25,6 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class ContactInfo
     {
-        [Key]
         public int Id { get; set; }
         public string Description { get; set; }
         public string PhoneNumber { get; set; }
@@ -36,7 +33,6 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class Project
     {
-        [Key]
         public int Id { get; set; }
         public string Name { get; set; }
         public DateTime Deadline { get; set; }
@@ -46,7 +42,7 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class Manager
     {
-        // to allow for testing of multi keys
+        // to allow for testing of multi keys and data annotations
         [Key]
         [Column(Order=1)]
         public string PartKey { get; set; }
@@ -60,9 +56,17 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
 
     public class Employee
     {
-        [Key]
+        // This key will be configured in fluent api
         public string Key { get; set; }
+        public virtual Manager Manager { get; set; } // cyclic navigation
         public string FirstName { get; set; }
+        public Locker Locker { get; set; }
     }
 
+    public class Locker
+    {
+        public int Id { get; set; }
+        public string Combination { get; set; }
+        public string Location { get; set; }
+    }
 }

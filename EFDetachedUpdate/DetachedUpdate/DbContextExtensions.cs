@@ -101,6 +101,7 @@ namespace RefactorThis.EFExtensions
                         if (member.IsOwned)
                         {
                             context.Entry(dbItem).CurrentValues.SetValues(updateItem); // match means we are updating
+                            AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
 
                             foreach (var childMember in member.Members)
                                 RecursiveGraphUpdate(context, dbHash[key], updateItem, childMember);
@@ -130,6 +131,7 @@ namespace RefactorThis.EFExtensions
 
                     // Otherwise we will add to object
                     dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
+                    AttachCyclicNavigationProperty(context, dataStoreEntity, newItem);
                 }
             }
             else // not collection
@@ -185,6 +187,8 @@ namespace RefactorThis.EFExtensions
                     else
                         member.Accessor.SetValue(dataStoreEntity, newvalue, null);
 
+                    AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
+
                     // TODO
                     foreach (var childMember in member.Members)
                         RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
@@ -207,6 +211,34 @@ namespace RefactorThis.EFExtensions
                 code += "|" + property.GetValue(entity, null).GetHashCode();
 
             return code;
+        }
+
+
+        // attaches the navigation property of a child back to its parent (if exists)
+        public static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
+        {
+            if (parent == null || child == null)
+                return;
+
+            var parentType = ObjectContext.GetObjectType(parent.GetType());
+            var childType = ObjectContext.GetObjectType(child.GetType());
+            var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
+            MethodInfo m = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { });
+            MethodInfo generic = m.MakeGenericMethod(childType);
+            object set = generic.Invoke(objectContext, null);
+
+            PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
+            System.Data.Metadata.Edm.EntitySet entitySet = (System.Data.Metadata.Edm.EntitySet)entitySetPI.GetValue(set, null);
+
+            foreach (var prop in entitySet.ElementType.NavigationProperties)
+            {
+                if (prop.TypeUsage.EdmType.Name == parentType.Name)
+                {
+                    var propInfo = childType.GetProperty(prop.Name);
+                    propInfo.SetValue(child, parent, null);
+                    break;
+                }
+            }
         }
 
         #endregion
@@ -252,6 +284,7 @@ namespace RefactorThis.EFExtensions
             foreach (string name in entitySet.ElementType.KeyMembers.Select(k => k.Name))
                 yield return entityType.GetProperty(name);
         }
+
         #endregion
 
     }

@@ -15,7 +15,7 @@ namespace RefactorThis.DetachedUpdate.Tests
     [TestClass]
     public class Tests
     {
-        #region Class contstruction & initialization
+        #region Class construction & initialization
 
         private TransactionScope _transactionScope;
 
@@ -99,6 +99,23 @@ namespace RefactorThis.DetachedUpdate.Tests
                     PartKey2 = 2,
                     FirstName = "Timothy"
                 });
+
+                var locker1 = new Models.Locker
+                {
+                    Combination = "Asdfasdf",
+                    Location = "Middle Earth"
+                };
+
+                var employee = new Models.Employee
+                {
+                    Manager = manager1,
+                    Key = "Asdf",
+                    FirstName = "Test employee",
+                    Locker = locker1
+                };
+
+                context.Lockers.Add(locker1);
+                context.Employees.Add(employee);
 
                 project2.LeadCoordinator = manager2;
                 context.SaveChanges();
@@ -805,6 +822,30 @@ namespace RefactorThis.DetachedUpdate.Tests
 
         #endregion
 
+        #region 2 way relation
+
+        [TestMethod]
+        public void EnsureWeCanUseCyclicRelationsOnOwnedCollections()
+        {
+            Models.Manager manager;
+            using (var context = new TestDbContext())
+            {
+                manager = context.Managers.Include(p => p.Employees).First();
+            } // Simulate disconnect
+
+            var newEmployee = new Models.Employee { Key = "assdf", FirstName = "Test Employee", Manager = manager };
+            manager.Employees.Add(newEmployee);
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(manager, m1 => m1.OwnedCollection(o => o.Employees));
+                context.SaveChanges();
+                Assert.IsTrue(context.Employees.Include(p => p.Manager).Single(p => p.Key == "assdf").Manager.FirstName == manager.FirstName);
+            }
+        }
+
+        #endregion
+        
         // TODO Incomplete. Please report any bugs to GraphDiff on github.
         // Will add more tests when I have time.
 
