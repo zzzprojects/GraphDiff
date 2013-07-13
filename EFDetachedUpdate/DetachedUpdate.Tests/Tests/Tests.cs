@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.EFExtensions;
 using System.Data.Entity;
+using System.Transactions;
 
 namespace RefactorThis.DetachedUpdate.Tests
 {
@@ -14,13 +15,17 @@ namespace RefactorThis.DetachedUpdate.Tests
     [TestClass]
     public class Tests
     {
+        #region Class contstruction & initialization
+
+        private TransactionScope _transactionScope;
+
         public Tests()
         {
             Database.SetInitializer<TestDbContext>(new DropCreateDatabaseAlways<TestDbContext>());
         }
 
-        [TestInitialize()]
-        public void MyTestInitialize()
+        [ClassInitialize]
+        public static void SetupTheDatabase(TestContext testContext)
         {
             using (var context = new TestDbContext())
             {
@@ -100,21 +105,24 @@ namespace RefactorThis.DetachedUpdate.Tests
             }
         }
 
-        [TestCleanup()]
-        public void MyTestCleanup()
+        #endregion
+
+        #region Test Initialize and Cleanup
+
+        [TestInitialize]
+        public virtual void CreateTransactionOnTestInitialize()
         {
-            using (var context = new TestDbContext())
-            {
-                context.Database.ExecuteSqlCommand("DELETE FROM Companies");
-                context.Database.ExecuteSqlCommand("DBCC CHECKIDENT (Companies, reseed, 1)");
-                context.Database.ExecuteSqlCommand("DELETE FROM Projects");
-                context.Database.ExecuteSqlCommand("DBCC CHECKIDENT (Projects, reseed, 1)");
-                context.Database.ExecuteSqlCommand("DELETE FROM Managers");
-                Assert.IsTrue(context.Companies.Count() == 0);
-                Assert.IsTrue(context.Projects.Count() == 0);
-                Assert.IsTrue(context.Managers.Count() == 0);
-            }
+            _transactionScope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { Timeout = new TimeSpan(0, 10, 0) });
         }
+
+        [TestCleanup]
+        public virtual void DisposeTransactionOnTestCleanup()
+        {
+            Transaction.Current.Rollback();
+            _transactionScope.Dispose();
+        }
+
+        #endregion
 
         #region Base record update
 
@@ -524,7 +532,7 @@ namespace RefactorThis.DetachedUpdate.Tests
             } // Simulate detach
 
             company1.Name = "Company #1"; // Change from Company 1 to Company #1
-            company1.Contacts.First().FirstName = "Bobby"; // change from bob to bobby
+            company1.Contacts.First().FirstName = "Bobby"; // change to bobby
 
             using (var context = new TestDbContext())
             {
@@ -542,7 +550,7 @@ namespace RefactorThis.DetachedUpdate.Tests
                     .Include(p => p.Contacts)
                     .Single(p => p.Id == 2)
                     .Contacts.First()
-                    .LastName == "Brown");
+                    .LastName == "Jones");
             }
         }
 

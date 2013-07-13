@@ -14,6 +14,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using RefactorThis.EFExtensions.Internal;
 using System.Data.Entity.Infrastructure;
+using System.Data.Objects;
 
 namespace RefactorThis.EFExtensions
 {
@@ -118,7 +119,7 @@ namespace RefactorThis.EFExtensions
                 {
                     // Own the collection so remove it completely.
                     if (member.IsOwned)
-                        context.Set(dbItem.GetType()).Remove(dbItem);
+                        context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
 
                     dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
                 }
@@ -127,7 +128,7 @@ namespace RefactorThis.EFExtensions
                 foreach (object newItem in additions)
                 {
                     if (!member.IsOwned)
-                        context.Set(newItem.GetType()).Attach(newItem);
+                        context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
 
                     // Otherwise we will add to object
                     dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
@@ -143,9 +144,15 @@ namespace RefactorThis.EFExtensions
                 // If we own the collection then we need to update the entities otherwise simple relationship update
                 if (!member.IsOwned)
                 {
+                    if (newvalue == null)
+                    {
+                        member.Accessor.SetValue(dataStoreEntity, null, null);
+                        return;
+                    }
+
                     if (dbvalue != null && newvalue != null)
                     {
-                        var keyFields = context.GetKeysFor(newvalue.GetType());
+                        var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
                         var newKey = CreateHash(keyFields, newvalue);
                         var updateKey = CreateHash(keyFields, dbvalue);
                         if (newKey == updateKey)
@@ -153,7 +160,7 @@ namespace RefactorThis.EFExtensions
                     }
 
                     if (context.Entry(newvalue).State == EntityState.Detached)
-                        context.Set(newvalue.GetType()).Attach(newvalue);
+                        context.Set(ObjectContext.GetObjectType(newvalue.GetType())).Attach(newvalue);
 
                     member.Accessor.SetValue(dataStoreEntity, newvalue, null);
                     context.Entry(newvalue).Reload();
@@ -165,7 +172,7 @@ namespace RefactorThis.EFExtensions
                     if (dbvalue != null && newvalue != null)
                     {
                         // Check if the same key, if so then update values on the entity
-                        var keyFields = context.GetKeysFor(newvalue.GetType());
+                        var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
                         var newKey = CreateHash(keyFields, newvalue);
                         var updateKey = CreateHash(keyFields, dbvalue);
 

@@ -13,7 +13,7 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
         [Key]
         public int Id { get; set; }
         public string Name { get; set; }
-        public List<CompanyContact> Contacts { get; set; }
+        public virtual ICollection<CompanyContact> Contacts { get; set; }
     }
 
     public class CompanyContact
@@ -22,7 +22,7 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public List<ContactInfo> Infos { get; set; }
+        public virtual ICollection<ContactInfo> Infos { get; set; }
     }
 
     public class ContactInfo
@@ -41,7 +41,7 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
         public string Name { get; set; }
         public DateTime Deadline { get; set; }
         public Manager LeadCoordinator { get; set; }
-        public List<Company> Stakeholders { get; set; }
+        public virtual ICollection<Company> Stakeholders { get; set; }
     }
 
     public class Manager
@@ -55,7 +55,7 @@ namespace RefactorThis.DetachedUpdate.Tests.Models
         public int PartKey2 { get; set; }
 
         public string FirstName { get; set; }
-        public List<Employee> Employees { get; set; }
+        public virtual ICollection<Employee> Employees { get; set; }
     }
 
     public class Employee
