@@ -145,6 +145,43 @@ namespace RefactorThis.DetachedUpdate.Tests
             }
         }
 
+        [TestMethod]
+        public void DoesNotUpdateEntityIfNoChangesHaveBeenMade()
+        {
+            Models.Company company1;
+            using (var context = new TestDbContext())
+            {
+                company1 = context.Companies.Single(p => p.Id == 2);
+            } // Simulate detach
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(company1, null);
+                Assert.IsTrue(context.ChangeTracker.Entries().All(p => p.State == System.Data.EntityState.Unchanged));
+            }
+        }
+
+        [TestMethod]
+        public void MarksAssociatedRelationAsChangedEvenIfEntitiesAreUnchanged()
+        {
+            Models.Project project1;
+            Models.Manager manager1;
+            using (var context = new TestDbContext())
+            {
+                project1 = context.Projects.Include(m => m.LeadCoordinator).Single(p => p.Id == 1);
+                manager1 = context.Managers.First();
+            } // Simulate detach
+
+            project1.LeadCoordinator = manager1;
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(project1, p => p.AssociatedEntity(e => e.LeadCoordinator));
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects.Include(m => m.LeadCoordinator).Single(p => p.Id == 1).LeadCoordinator == manager1);
+            }
+        }
+
         #endregion
 
         #region Associated Entity

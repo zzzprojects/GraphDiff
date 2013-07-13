@@ -52,7 +52,6 @@ namespace RefactorThis.EFExtensions
 
                 // Force update of parent entity
                 context.Entry(existing).CurrentValues.SetValues(entity);
-                context.Entry(existing).State = EntityState.Modified;
 
                 // Foreach branch perform recursive update
                 foreach (var member in tree.Members)
@@ -68,7 +67,6 @@ namespace RefactorThis.EFExtensions
             // Get our entity and force update
             T existing = context.FindEntityMatching(entity);
             context.Entry(existing).CurrentValues.SetValues(entity);
-            context.Entry(existing).State = EntityState.Modified;
         }
 
         #region Private
@@ -180,7 +178,6 @@ namespace RefactorThis.EFExtensions
                         if (updateKey == newKey)
                         {
                             context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
-                            context.Entry(dbvalue).State = EntityState.Modified;
                         }
                         else
                             member.Accessor.SetValue(dataStoreEntity, newvalue, null);
