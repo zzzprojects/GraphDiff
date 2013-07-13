@@ -118,6 +118,7 @@ namespace RefactorThis.GraphDiff.Tests
                 context.Employees.Add(employee);
 
                 project2.LeadCoordinator = manager2;
+
                 context.SaveChanges();
             }
         }
@@ -820,6 +821,70 @@ namespace RefactorThis.GraphDiff.Tests
             }
         }
 
+        // added as per ticket #5
+        [TestMethod]
+        public void OwnedMultipleLevelCollectionMapping()
+        {
+            Models.MultiLevelTest multiLevelTest;
+            using (var context = new TestDbContext())
+            {
+                multiLevelTest = context.MultiLevelTest.Add(new Models.MultiLevelTest
+                {
+                    Managers = new[] // test arrays as well
+                    {
+                        new Models.Manager 
+                        {
+                            PartKey = "xxx",
+                            PartKey2 = 2,
+                            Employees = new List<Models.Employee>
+                            {
+                                new Models.Employee 
+                                {
+                                    Key = "xsdf",
+                                    FirstName = "Asdf",
+                                    Hobbies = new[] 
+                                    {
+                                        new Models.Hobby 
+                                        {
+                                            HobbyType = "Test hobby type"
+                                        }
+                                    }
+                                 }
+                             }
+                        }
+                    }
+                });
+                context.SaveChanges();
+            } // Simulate detach
+
+            multiLevelTest.Managers.First().FirstName = "Tester";
+            multiLevelTest.Managers.First().Employees.Add(new Models.Employee
+            {
+                FirstName = "Tim",
+                Key = "Tim1",
+                Manager = multiLevelTest.Managers.First()
+            });
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(multiLevelTest, map => map
+                    .OwnedCollection(x => x.Managers, withx => withx
+                        .AssociatedCollection(pro => pro.Projects)
+                        .OwnedCollection(p => p.Employees, with => with
+                            .AssociatedCollection(m => m.Hobbies)
+                            .OwnedEntity(m => m.Locker))));
+
+                context.SaveChanges();
+
+                var result = context.MultiLevelTest.First();
+                Assert.IsTrue(result.Managers.First().FirstName == "Tester");
+                Assert.IsTrue(result.Managers.First().Employees.Any(p => p.Key == "Tim1"));
+            }
+        }
+
+
+
         #endregion
 
         #region 2 way relation
@@ -845,7 +910,7 @@ namespace RefactorThis.GraphDiff.Tests
         }
 
         #endregion
-        
+
         // TODO Incomplete. Please report any bugs to GraphDiff on github.
         // Will add more tests when I have time.
 

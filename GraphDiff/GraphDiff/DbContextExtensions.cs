@@ -44,10 +44,10 @@ namespace RefactorThis.GraphDiff
 
                 // Parse mapping tree
                 var tree = new UpdateConfigurationVisitor<T>().GetUpdateMembers(mapping);
-                var includeExpressions = EFIncludeHelper.GetIncludeExpressions<T>(tree);
+                var includeStrings = EFIncludeHelper.GetIncludeStrings(tree);
 
                 // Get our entity with all includes needed
-                T existing = context.FindEntityMatching(entity, includeExpressions.ToArray());
+                T existing = context.FindEntityMatching(entity, includeStrings.ToArray());
 
                 // Force update of parent entity
                 context.Entry(existing).CurrentValues.SetValues(entity);
@@ -84,7 +84,21 @@ namespace RefactorThis.GraphDiff
                 // We are dealing with a collection
                 var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
                 var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
-                var keyFields = context.GetKeysFor(updateValues.GetType().GetGenericArguments()[0]);
+
+                if (updateValues == null)
+                    updateValues = new List<object>();
+
+                Type dbCollectionType = dbCollection.GetType();
+                Type innerElementType;
+
+                if (dbCollectionType.IsArray)
+                    innerElementType = dbCollectionType.GetElementType();
+                else if (dbCollectionType.IsGenericType)
+                    innerElementType = dbCollectionType.GetGenericArguments()[0];
+                else
+                    throw new InvalidOperationException("GraphDiff required the collection to be either IEnumerable<T> or T[]");
+
+                var keyFields = context.GetKeysFor(innerElementType);
                 var dbHash = MapCollectionToDictionary(keyFields, dbCollection);
 
                 // Iterate through the elements from the updated graph and try to match them against the db graph.
@@ -244,7 +258,7 @@ namespace RefactorThis.GraphDiff
 
         #region Extensions
 
-        public static T FindEntityMatching<T>(this DbContext context, T entity, params Expression<Func<T, object>>[] includes) where T : class
+        public static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
         {
             var query = context.Set<T>().AsQueryable();
             foreach (var include in includes)

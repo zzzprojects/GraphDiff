@@ -40,6 +40,12 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public virtual ICollection<Company> Stakeholders { get; set; }
     }
 
+    public class MultiLevelTest
+    {
+        public int Id { get; set; }
+        public ICollection<Manager> Managers { get; set; }
+    }
+
     public class Manager
     {
         // to allow for testing of multi keys and data annotations
@@ -51,6 +57,7 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public int PartKey2 { get; set; }
 
         public string FirstName { get; set; }
+        public ICollection<Project> Projects { get; set; }
         public virtual ICollection<Employee> Employees { get; set; }
     }
 
@@ -61,6 +68,7 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public virtual Manager Manager { get; set; } // cyclic navigation
         public string FirstName { get; set; }
         public Locker Locker { get; set; }
+        public ICollection<Hobby> Hobbies { get; set; }
     }
 
     public class Locker
@@ -68,5 +76,11 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public int Id { get; set; }
         public string Combination { get; set; }
         public string Location { get; set; }
+    }
+
+    public class Hobby
+    {
+        public int Id { get; set; }
+        public string HobbyType { get; set; }
     }
 }

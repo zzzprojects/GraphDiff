@@ -24,7 +24,7 @@ namespace RefactorThis.GraphDiff.Internal
         public UpdateMember Parent { get; set; }
         public PropertyInfo Accessor { get; set; }
         public Stack<UpdateMember> Members { get; set; }
-        public Expression IncludeExpression { get; set; }
+        public string IncludeString { get; set; }
         public bool IsCollection { get; set; }
         public bool IsOwned { get; set; }
 
@@ -51,7 +51,7 @@ namespace RefactorThis.GraphDiff.Internal
         /// <returns></returns>
         public UpdateMember GetUpdateMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
-            var initialNode = new UpdateMember() { IncludeExpression = Expression.Parameter(typeof(T), "p") };
+            var initialNode = new UpdateMember();
             currentMember = initialNode;
             Visit(expression);
             return initialNode;
@@ -70,7 +70,10 @@ namespace RefactorThis.GraphDiff.Internal
             currentMember.Members.Push(newMember);
             previousMember = currentMember;
             currentMember = newMember;
-            currentMember.IncludeExpression = CreateIncludeExpression(previousMember, currentMember);
+
+            currentMember.IncludeString = previousMember.IncludeString != null
+                ? previousMember.IncludeString + "." + currentMember.Accessor.Name 
+                : currentMember.Accessor.Name;
 
             // Chose if entity update or reference update and create expression
             switch (currentMethod)
@@ -95,34 +98,6 @@ namespace RefactorThis.GraphDiff.Internal
             return base.VisitMember(expression);
         }
 
-        private Expression CreateIncludeExpression(UpdateMember previousMember, UpdateMember currentMember)
-        {
-            // Add First() for Include expression if previous was a collection
-            if (previousMember.IsCollection)
-            {
-                var previousType = ((MemberExpression)previousMember.IncludeExpression).Type;
-                var currentType = currentMember.Accessor.PropertyType;
-
-                if (previousType.IsGenericType && previousType.GetGenericArguments().Length == 1)
-                {
-                    var innerParam = Expression.Parameter(previousType.GetGenericArguments()[0]);
-                    return Expression.Call(
-                        typeof(Enumerable),
-                        "Select",
-                        new[] { previousType.GetGenericArguments()[0], currentType },
-                        previousMember.IncludeExpression,
-                        Expression.Lambda(
-                            Expression.Property(innerParam, currentMember.Accessor)
-                        , innerParam));
-                }
-                else
-                    throw new NotSupportedException("Only supports generic typed collections of IEnumerable<T>");
-            } 
-            else
-                return Expression.Property(previousMember.IncludeExpression, (PropertyInfo)currentMember.Accessor);
-        }
-
-
         protected override Expression VisitMethodCall(MethodCallExpression expression)
         {
             currentMethod = expression.Method.Name;
@@ -139,24 +114,20 @@ namespace RefactorThis.GraphDiff.Internal
 
     internal static class EFIncludeHelper
     {
-        public static List<Expression<Func<T, object>>> GetIncludeExpressions<T>(UpdateMember member)
+        public static List<string> GetIncludeStrings(UpdateMember root)
         {
-            var expressions = new List<Expression<Func<T, object>>>();
-            GetIncludeExpressions<T>(member, Expression.Parameter(typeof(T), "p"), expressions);
-            return expressions;
-        }
+            var list = new List<string>();
 
-        private static void GetIncludeExpressions<T>(UpdateMember member, ParameterExpression parameter, List<Expression<Func<T, object>>> expressions)
-        {
-            if (!member.HasMembers())
-                expressions.Add(Expression.Lambda<Func<T, object>>(member.IncludeExpression, parameter));
-            else
+            if (root.Members.Count == 0)
             {
-                foreach (var iMember in member.Members)
-                {
-                    GetIncludeExpressions<T>(iMember, parameter, expressions);
-                }
+                list.Add(root.IncludeString);
             }
+
+            foreach (var member in root.Members)
+            {
+                list.AddRange(GetIncludeStrings(member));
+            }
+            return list;
         }
     }
 }
