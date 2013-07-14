@@ -16,6 +16,7 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<Locker> Lockers { get; set; }
         public IDbSet<Employee> Employees { get; set; }
         public IDbSet<MultiLevelTest> MultiLevelTest { get; set; }
+        public IDbSet<Hobby> Hobbies { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

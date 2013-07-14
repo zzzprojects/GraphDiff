@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GraphDiffConfiguration.cs" />
     <Compile Include="UpdateConfigurationVisitor.cs" />
     <Compile Include="IUpdateConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

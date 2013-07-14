@@ -82,5 +82,6 @@ namespace RefactorThis.GraphDiff.Tests.Models
     {
         public int Id { get; set; }
         public string HobbyType { get; set; }
+        public ICollection<Employee> Employees { get; set; }
     }
 }

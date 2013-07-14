@@ -140,7 +140,11 @@ namespace RefactorThis.GraphDiff
                 foreach (object newItem in additions)
                 {
                     if (!member.IsOwned)
+                    {
                         context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
+                        if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
+                            context.Entry(newItem).Reload();
+                    }
 
                     // Otherwise we will add to object
                     dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
@@ -176,9 +180,9 @@ namespace RefactorThis.GraphDiff
                         context.Set(ObjectContext.GetObjectType(newvalue.GetType())).Attach(newvalue);
 
                     member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-                    context.Entry(newvalue).Reload();
-                    // TODO would like to do this: context.Entry(newvalue).State = EntityState.Unchanged;
-                    // However it seems even though we are in an unchanged state EF will still update the database if the original values are different.
+                    context.Entry(newvalue).State = EntityState.Unchanged;
+                    if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
+                        context.Entry(newvalue).Reload();
                 }
                 else
                 {

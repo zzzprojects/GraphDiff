@@ -382,6 +382,12 @@ namespace RefactorThis.GraphDiff.Tests
                     .AssociatedEntity(p => p.LeadCoordinator));
 
                 context.SaveChanges();
+            }
+
+            // Force reload of DB entities.
+            // note can also be done with GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached.
+            using (var context = new TestDbContext())
+            {
                 Assert.IsTrue(context.Projects
                     .Include(p => p.LeadCoordinator)
                     .Single(p => p.Id == 2)
@@ -822,10 +828,12 @@ namespace RefactorThis.GraphDiff.Tests
         }
 
         // added as per ticket #5
+        // also tried to add some more complication to this graph to ensure everything works well
         [TestMethod]
-        public void OwnedMultipleLevelCollectionMapping()
+        public void OwnedMultipleLevelCollectionMappingWithAssociatedReload()
         {
             Models.MultiLevelTest multiLevelTest;
+            Models.Hobby hobby;
             using (var context = new TestDbContext())
             {
                 multiLevelTest = context.MultiLevelTest.Add(new Models.MultiLevelTest
@@ -842,7 +850,7 @@ namespace RefactorThis.GraphDiff.Tests
                                 {
                                     Key = "xsdf",
                                     FirstName = "Asdf",
-                                    Hobbies = new[] 
+                                    Hobbies = new List<Models.Hobby>
                                     {
                                         new Models.Hobby 
                                         {
@@ -854,11 +862,25 @@ namespace RefactorThis.GraphDiff.Tests
                         }
                     }
                 });
+
+                hobby = context.Hobbies.Add(new Models.Hobby { HobbyType = "Skiing" });
                 context.SaveChanges();
             } // Simulate detach
 
-            multiLevelTest.Managers.First().FirstName = "Tester";
-            multiLevelTest.Managers.First().Employees.Add(new Models.Employee
+            // Graph changes
+
+            // Should not update changes to hobby
+            hobby.HobbyType = "Something Else";
+
+            // Update changes to manager
+            var manager = multiLevelTest.Managers.First();
+            manager.FirstName = "Tester";
+
+            // Update changes to employees
+            var employeeToUpdate = manager.Employees.First();
+            employeeToUpdate.Hobbies.Clear();
+            employeeToUpdate.Hobbies.Add(hobby);
+            manager.Employees.Add(new Models.Employee
             {
                 FirstName = "Tim",
                 Key = "Tim1",
@@ -867,6 +889,7 @@ namespace RefactorThis.GraphDiff.Tests
 
             using (var context = new TestDbContext())
             {
+                GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached = true;
                 // Setup mapping
                 context.UpdateGraph(multiLevelTest, map => map
                     .OwnedCollection(x => x.Managers, withx => withx
@@ -877,13 +900,26 @@ namespace RefactorThis.GraphDiff.Tests
 
                 context.SaveChanges();
 
-                var result = context.MultiLevelTest.First();
+                GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached = false;
+
+                var result = context.MultiLevelTest
+                    .Include("Managers.Employees.Hobbies")
+                    .Include("Managers.Employees.Locker")
+                    .Include("Managers.Projects")
+                    .First();
+
+                var updateManager = result.Managers.Single(p => p.PartKey == manager.PartKey && p.PartKey2 == manager.PartKey2);
+                var updateEmployee = updateManager.Employees.Single(p => p.Key == employeeToUpdate.Key);
+                var updateHobby = context.Hobbies.Single(p => p.Id == hobby.Id);
+
+                Assert.IsTrue(updateManager.Employees.Count() == 2);
                 Assert.IsTrue(result.Managers.First().FirstName == "Tester");
+                Assert.IsTrue(updateEmployee.Hobbies.Count() == 1);
+                Assert.IsTrue(updateEmployee.Hobbies.First().HobbyType == "Skiing");
+                Assert.IsTrue(updateHobby.HobbyType == "Skiing");
                 Assert.IsTrue(result.Managers.First().Employees.Any(p => p.Key == "Tim1"));
             }
         }
-
-
 
         #endregion
 
