@@ -175,7 +175,7 @@ namespace RefactorThis.GraphDiff.Tests
             using (var context = new TestDbContext())
             {
                 context.UpdateGraph(company1, null);
-                Assert.IsTrue(context.ChangeTracker.Entries().All(p => p.State == System.Data.EntityState.Unchanged));
+                Assert.IsTrue(context.ChangeTracker.Entries().All(p => p.State == EntityState.Unchanged));
             }
         }
 

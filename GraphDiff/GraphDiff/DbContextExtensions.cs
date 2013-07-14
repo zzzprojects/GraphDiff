@@ -10,7 +10,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Objects;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -245,7 +246,7 @@ namespace RefactorThis.GraphDiff
             object set = generic.Invoke(objectContext, null);
 
             PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
-            System.Data.Metadata.Edm.EntitySet entitySet = (System.Data.Metadata.Edm.EntitySet)entitySetPI.GetValue(set, null);
+            EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
 
             foreach (var prop in entitySet.ElementType.NavigationProperties)
             {
@@ -296,7 +297,7 @@ namespace RefactorThis.GraphDiff
             object set = generic.Invoke(objectContext, null);
 
             PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
-            System.Data.Metadata.Edm.EntitySet entitySet = (System.Data.Metadata.Edm.EntitySet)entitySetPI.GetValue(set, null);
+            EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
 
             foreach (string name in entitySet.ElementType.KeyMembers.Select(k => k.Name))
                 yield return entityType.GetProperty(name);
