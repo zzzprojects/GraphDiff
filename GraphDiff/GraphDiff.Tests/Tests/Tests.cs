@@ -89,12 +89,14 @@ namespace RefactorThis.GraphDiff.Tests
 
                 var manager1 = context.Managers.Add(new Models.Manager
                 {
+                    Key = "sdfsdf",
                     PartKey = "manager1",
                     PartKey2 = 1,
                     FirstName = "Trent"
                 });
                 var manager2 = context.Managers.Add(new Models.Manager
                 {
+                    Key = "bvdvsd",
                     PartKey = "manager2",
                     PartKey2 = 2,
                     FirstName = "Timothy"
@@ -439,7 +441,7 @@ namespace RefactorThis.GraphDiff.Tests
 
             } // Simulate detach
 
-            project.LeadCoordinator = new Models.Manager { FirstName = "Br", PartKey = "TER", PartKey2 = 2 };
+            project.LeadCoordinator = new Models.Manager { Key = "asdfxv", FirstName = "Br", PartKey = "TER", PartKey2 = 2 };
 
             using (var context = new TestDbContext())
             {
@@ -842,6 +844,7 @@ namespace RefactorThis.GraphDiff.Tests
                     {
                         new Models.Manager 
                         {
+                            Key = "dasfds",
                             PartKey = "xxx",
                             PartKey2 = 2,
                             Employees = new List<Models.Employee>

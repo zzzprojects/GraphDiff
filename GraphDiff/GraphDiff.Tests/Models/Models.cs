@@ -46,17 +46,16 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public ICollection<Manager> Managers { get; set; }
     }
 
-    public class Manager
+    public class Manager : Employee
     {
         // to allow for testing of multi keys and data annotations
         [Key]
-        [Column(Order=1)]
+        [Column(Order = 1)]
         public string PartKey { get; set; }
         [Key]
         [Column(Order = 2)]
         public int PartKey2 { get; set; }
 
-        public string FirstName { get; set; }
         public ICollection<Project> Projects { get; set; }
         public virtual ICollection<Employee> Employees { get; set; }
     }

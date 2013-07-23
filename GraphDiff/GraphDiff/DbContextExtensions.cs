@@ -230,6 +230,16 @@ namespace RefactorThis.GraphDiff
             return code;
         }
 
+        private static Type GetFirstBaseType(Type type)
+        {
+            Type baseType = type;
+            while (baseType.BaseType != null &&
+                   baseType.BaseType != typeof(object))
+            {
+                baseType = baseType.BaseType;
+            }
+            return baseType;
+        }
 
         // attaches the navigation property of a child back to its parent (if exists)
         public static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
@@ -241,7 +251,7 @@ namespace RefactorThis.GraphDiff
             var childType = ObjectContext.GetObjectType(child.GetType());
             var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
             MethodInfo m = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { });
-            MethodInfo generic = m.MakeGenericMethod(childType);
+            MethodInfo generic = m.MakeGenericMethod(GetFirstBaseType(childType));
             object set = generic.Invoke(objectContext, null);
 
             PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
@@ -292,7 +302,7 @@ namespace RefactorThis.GraphDiff
         {
             var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
             MethodInfo m = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { });
-            MethodInfo generic = m.MakeGenericMethod(entityType);
+            MethodInfo generic = m.MakeGenericMethod(GetFirstBaseType(entityType));
             object set = generic.Invoke(objectContext, null);
 
             PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
