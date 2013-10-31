@@ -54,7 +54,8 @@
     <Compile Include="Models\Models.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestDbContext.cs" />
-    <Compile Include="Tests\Tests.cs" />
+    <Compile Include="Tests\AttachedTests.cs" />
+    <Compile Include="Tests\DettachedTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GraphDiff\GraphDiff.csproj">
