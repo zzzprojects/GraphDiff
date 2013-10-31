@@ -49,8 +49,13 @@ namespace RefactorThis.GraphDiff
                 // Get our entity with all includes needed
                 T existing = context.FindEntityMatching(entity, includeStrings.ToArray());
 
-                // Force update of parent entity
-                context.Entry(existing).CurrentValues.SetValues(entity);
+                // Se a entidade informada for a mesma encontrada no contexto, então já é o proxy.
+                var actualEntityIsOnTheContext = existing == entity;
+                if (!actualEntityIsOnTheContext)
+                {
+                    // Force update of parent entity
+                    context.Entry(existing).CurrentValues.SetValues(entity);
+                }
 
                 // Foreach branch perform recursive update
                 foreach (var member in tree.Members)
@@ -79,14 +84,47 @@ namespace RefactorThis.GraphDiff
         /// <param name="updatingEntity">The entity (sub)graph after it has been updated</param>
         private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
         {
+            // Get item Type
+            var itemType = member.Accessor.PropertyType.IsGenericType
+                ? member.Accessor.PropertyType.GetGenericArguments().First()
+                : member.Accessor.PropertyType;
+
+            // Create Helpful Linq Methods
+            Func<IEnumerable, IEnumerable> distinct = l => (IEnumerable)typeof(Enumerable).GetMethods().Single(m => m.Name.Equals("Distinct") && m.GetParameters().Count() == 1).MakeGenericMethod(new[] { itemType }).Invoke(null, new object[] { l });
+            Func<IEnumerable, IEnumerable> toList = l => (IEnumerable)typeof(Enumerable).GetMethod("ToList").MakeGenericMethod(new[] { itemType }).Invoke(null, new object[] { l });
+            Func<IEnumerable, object> singleOrDefault = l => typeof(Enumerable).GetMethods().Single(m => m.Name.Equals("SingleOrDefault") && m.GetParameters().Count() == 1).MakeGenericMethod(new[] { itemType }).Invoke(null, new object[] { l });
+
+            // Get member's navigation property
+            var memberNavProp = (member.Parent == null)
+                ? member.IncludeString
+                : member.IncludeString.Substring((member.Parent.IncludeString ?? "").Length).TrimStart('.');
+
+
             if (member.IsCollection)
             {
                 // We are dealing with a collection
-                var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
-                var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
 
-                if (updateValues == null)
-                    updateValues = new List<object>();
+                // Get distinctly the new itens
+                var updateValues = (IEnumerable) member.Accessor.GetValue(updatingEntity, null);
+                updateValues = updateValues != null ? toList(distinct(updateValues)) : new List<object>();
+
+                // Get database values
+                IEnumerable dbCollection;
+                var actualEntityIsOnTheContext = updatingEntity == dataStoreEntity;
+                if (actualEntityIsOnTheContext)
+                {
+                    dbCollection = member.IsOwned
+                        ? toList(context.Entry(updatingEntity).Collection(memberNavProp).Query())
+                        : toList(((ObjectQuery)context.Entry(updatingEntity).Collection(memberNavProp).Query()).Execute(MergeOption.OverwriteChanges));
+
+                    // Assure the entity's child collection wasn't refreshed when getting db values.
+                    member.Accessor.SetValue(updatingEntity, updateValues, null);
+                }
+                else
+                {
+                    dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
+                }
+
 
                 Type dbCollectionType = dbCollection.GetType();
                 Type innerElementType;
@@ -129,6 +167,10 @@ namespace RefactorThis.GraphDiff
                 // Removal of dbItem's left in the collection
                 foreach (var dbItem in dbHash.Values)
                 {
+                    // Removing dbItem, assure it's children will me deleted.
+                    foreach (var subMember in member.Members)
+                        RecursiveGraphUpdate(context, dbItem, dbItem, subMember);
+
                     // Own the collection so remove it completely.
                     if (member.IsOwned)
                         context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
@@ -153,7 +195,13 @@ namespace RefactorThis.GraphDiff
             }
             else // not collection
             {
-                var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
+                var actualEntityIsOnTheContext = updatingEntity == dataStoreEntity;
+                var dbvalue = (actualEntityIsOnTheContext && member.IsOwned)
+                    ? singleOrDefault(context.Entry(updatingEntity).Reference(memberNavProp).Query())
+                    : member.Accessor.GetValue(dataStoreEntity, null);
+                
+
+
                 var newvalue = member.Accessor.GetValue(updatingEntity, null);
                 if (dbvalue == null && newvalue == null) // No value
                     return;
@@ -161,6 +209,14 @@ namespace RefactorThis.GraphDiff
                 // If we own the collection then we need to update the entities otherwise simple relationship update
                 if (!member.IsOwned)
                 {
+
+                    if (dbvalue != null)
+                    {
+                        context.Entry(dbvalue).Reload();
+                        context.Entry(dbvalue).State = EntityState.Unchanged;
+                    }
+
+
                     if (newvalue == null)
                     {
                         member.Accessor.SetValue(dataStoreEntity, null, null);
