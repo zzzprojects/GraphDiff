@@ -279,8 +279,6 @@ namespace RefactorThis.GraphDiff
 			var parentType = ObjectContext.GetObjectType(parent.GetType());
 			var childType = ObjectContext.GetObjectType(child.GetType());
 
-			var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
-
 			object set = CreateObjectSetFor(childType, db);
 
 			PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
@@ -325,9 +323,6 @@ namespace RefactorThis.GraphDiff
 		// Gets the primary key fields for an entity type.
 		public static IEnumerable<PropertyInfo> GetKeysFor(this DbContext db, Type entityType)
 		{
-			// Get the ObjectContext for this DbContext
-			var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
-
 			// Get the ObjectSet (equivalent to DbContext DbSet) for this Entity type - search the base class chain
 			// until we find the class that's actually attached to the DbContext as a DbSet<...>
 			object set = CreateObjectSetFor(entityType, db);
