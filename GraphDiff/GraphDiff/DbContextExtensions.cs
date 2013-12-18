@@ -334,23 +334,7 @@ namespace RefactorThis.GraphDiff
 				yield return entityType.GetProperty(name);
 		}
 
-		public static object TryCreateObjectSetFor(Type entityType, ObjectContext objectContext)
-		{
-			MethodInfo objectContext_CreateObjectSet = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { })
-														.MakeGenericMethod(entityType);
-			object set = null;
-			try
-			{
-				set = objectContext_CreateObjectSet.Invoke(objectContext, null);
-			}
-			catch(Exception)
-			{
-				return null;
-			}
-			return set;
-		}
-
-		// Recursively calls TryCreateObjectSetFor up the Entity's base chain until it finds a valid ObjectSet.
+		// Searches down the Entity's base chain until it finds a valid ObjectSet.
 		// Throws an Exception if none found.
 		public static object CreateObjectSetFor(Type entityType, DbContext db)
 		{
@@ -359,7 +343,11 @@ namespace RefactorThis.GraphDiff
 			var objectSetEntityType = GetBaseTypesDescending(entityType).FirstOrDefault(t => dbSetTypes.Contains(t));
 
 			if (objectSetEntityType == null)
-				throw new MissingFieldException("No DbSet exists in the DbContext for type " + entityType.Name + " or any of its base classes.");
+			{
+				//throw new MissingFieldException("No DbSet exists in the DbContext for type " + entityType.Name + " or any of its base classes.");
+				// Just blunder forward with the original type and hope
+				objectSetEntityType = entityType;
+			}
 
 			var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
 			MethodInfo objectContext_CreateObjectSet = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { })
