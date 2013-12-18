@@ -247,26 +247,6 @@ namespace RefactorThis.GraphDiff
 			return baseType;
 		}
 
-		// Returns the types in the class chain for this type, starting with the type passed in, up to
-		// the last base class before object.
-		private static IEnumerable<Type> GetBaseTypes(Type type)
-		{
-			yield return type;
-
-			Type baseType = type;
-			while (baseType.BaseType != null &&
-				   baseType.BaseType != typeof(object))
-			{
-				baseType = baseType.BaseType;
-				yield return baseType;
-			}
-		}
-
-		// Returns the types in the class chain from the top down, starting with the type below object.
-		private static IEnumerable<Type> GetBaseTypesDescending(Type type)
-		{
-			return GetBaseTypes(type).Reverse();
-		}
 		#endregion
 
 		#region Extensions
@@ -279,7 +259,7 @@ namespace RefactorThis.GraphDiff
 			var parentType = ObjectContext.GetObjectType(parent.GetType());
 			var childType = ObjectContext.GetObjectType(child.GetType());
 
-			object set = CreateObjectSetFor(childType, db);
+			object set = ObjectSetCreator.Current.CreateObjectSetFor(childType, db);
 
 			PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
 			EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
@@ -325,47 +305,13 @@ namespace RefactorThis.GraphDiff
 		{
 			// Get the ObjectSet (equivalent to DbContext DbSet) for this Entity type - search the base class chain
 			// until we find the class that's actually attached to the DbContext as a DbSet<...>
-			object set = CreateObjectSetFor(entityType, db);
+			object set = ObjectSetCreator.Current.CreateObjectSetFor(entityType, db);
 
 			PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
 			EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
 
 			foreach (string name in entitySet.ElementType.KeyMembers.Select(k => k.Name))
 				yield return entityType.GetProperty(name);
-		}
-
-		// Searches down the Entity's base chain until it finds a valid ObjectSet.
-		// Throws an Exception if none found.
-		public static object CreateObjectSetFor(Type entityType, DbContext db)
-		{
-			var dbSetTypes = DbSetTypesFor(db);
-
-			var objectSetEntityType = GetBaseTypesDescending(entityType).FirstOrDefault(t => dbSetTypes.Contains(t));
-
-			if (objectSetEntityType == null)
-			{
-				//throw new MissingFieldException("No DbSet exists in the DbContext for type " + entityType.Name + " or any of its base classes.");
-				// Just blunder forward with the original type and hope
-				objectSetEntityType = entityType;
-			}
-
-			var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
-			MethodInfo objectContext_CreateObjectSet = objectContext.GetType().GetMethod("CreateObjectSet", new Type[] { })
-														.MakeGenericMethod(objectSetEntityType);
-			object set = objectContext_CreateObjectSet.Invoke(objectContext, null);
-			return set;
-		}
-
-		// Types mapped as DbSet or IDbSet<type> in the passed DbContext
-		private static HashSet<Type> DbSetTypesFor(DbContext db)
-		{
-			var dbSetTypes = new HashSet<Type>(db.GetType()
-				.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-				// TODO: Filter to IDbSet/DbSet just in case there are other weirdo properties declared on the DbContext
-				//.Where(p => typeof(DbSet).IsAssignableFrom(p.PropertyType))
-				.Select(p => p.PropertyType.GetGenericArguments()[0]));
-
-			return dbSetTypes;
 		}
 
 		#endregion
