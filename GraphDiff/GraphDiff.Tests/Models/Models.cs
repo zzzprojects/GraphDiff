@@ -94,7 +94,7 @@ namespace RefactorThis.GraphDiff.Tests.Models
 		[MaxLength(400)]
 		public string Name { get; set; }
 
-		public ICollection<ContactInfo> ContactInfos { get; set; }
+		public ICollection<ContactContactInfo> ContactInfos { get; set; }
 	}
 
 	public class BaseContactInfo
