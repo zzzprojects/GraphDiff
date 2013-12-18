@@ -7,6 +7,10 @@ Please see http://refactorthis.wordpress.com/2012/12/11/introducing-graphdiff-fo
 
 Nuget package is at http://nuget.org/packages/RefactorThis.GraphDiff/
 
+# Developing
+
+The Models used for testing will be emitted each time you run any tests, by dropping (if it exists) and recreating a database named GraphDiff in SQL Express, in the default directory for your SQL Express install (hard to find by default - see [here to set it to something simple](http://technet.microsoft.com/en-us/library/dd206993.aspx)).
+
 ## License
 
 See the LICENSE file for license rights and limitations (MIT).
