@@ -43,7 +43,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Collections.Immutable.Net40">
-      <HintPath>..\packages\System.Collections.Immutable.Net40.1.0.27.0\lib\net40\System.Collections.Immutable.Net40.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Collections.Immutable.Net40.1.0.27.0\lib\net40\System.Collections.Immutable.Net40.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
