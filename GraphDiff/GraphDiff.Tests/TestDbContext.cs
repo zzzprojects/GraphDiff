@@ -21,21 +21,19 @@ namespace RefactorThis.GraphDiff.Tests
 
 		public IDbSet<Contact> Contacts { get; set; }
 		public IDbSet<ContactContactInfo> ContactContactInfos { get; set; }
+        public IDbSet<MappedBase> MappedBase { get; set; }
 
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
-			modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
-
 			modelBuilder.Entity<Company>().HasMany(p => p.Contacts).WithRequired().WillCascadeOnDelete(true);
 			modelBuilder.Entity<CompanyContact>().HasMany(p => p.Infos).WithRequired().WillCascadeOnDelete(true);
 			modelBuilder.Entity<Project>().HasMany(p => p.Stakeholders).WithMany();
 			modelBuilder.Entity<Employee>().HasKey(p => p.Key);
+            modelBuilder.Entity<Contact>().Property(p => p.RowVersion).IsConcurrencyToken();
+            modelBuilder.Entity<ContactContactInfo>().Property(p => p.RowVersion).IsConcurrencyToken();
 		}
 
-		public TestDbContext()
-			: base("GraphDiff")
-		{
-		}
+		public TestDbContext() : base("GraphDiff") {}
 	}
 }

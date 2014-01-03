@@ -86,20 +86,25 @@ namespace RefactorThis.GraphDiff.Tests.Models
 	}
 
 
-	#region Base class/Subclass Model tests
-	public class Contact
-	{
-		public int Id { get; set; }
+	#region Base class/Subclass Model & Optimistic Concurrency models
 
+    public class BaseEntity
+    {
+        public int Id { get; set; }
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
+    }
+
+	public class Contact : BaseEntity
+	{
 		[MaxLength(400)]
 		public string Name { get; set; }
 
 		public ICollection<ContactContactInfo> ContactInfos { get; set; }
 	}
 
-	public class BaseContactInfo
+    public abstract class BaseContactInfo : BaseEntity
 	{
-		public int Id { get; set; }
 
 		[MaxLength(100)]
 		public string Type { get; set; }
@@ -114,5 +119,16 @@ namespace RefactorThis.GraphDiff.Tests.Models
 		[ForeignKey("ContactId")]
 		public Contact Contact { get; set; }
 	}
+
+    public abstract class MappedBase
+    {
+        public int Id { get; set; }
+    }
+
+    public class NonMappedInheritor : MappedBase
+    {
+        [MaxLength(128)]
+        public string FirstName { get; set; }
+    }
 	#endregion
 }

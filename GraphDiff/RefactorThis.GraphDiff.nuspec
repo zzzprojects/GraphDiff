@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>RefactorThis.GraphDiff</id>
-        <version>1.3.5</version>
+        <version>1.3.6</version>
         <title>GraphDiff - Entity Framework graph auto-update</title>
         <authors>brentmckendrick</authors>
         <owners>brentmckendrick</owners>
@@ -11,13 +11,18 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>This is the official GraphDiff package.
 
-GraphDiff - Allows for automatic update of a graph of detached entities using Entity Framework v4+.
+GraphDiff - Allows for automatic update of a graph of detached entities using Entity Framework v6+.
 
 If you have ever felt the pain of updating a detached graph with one or more nested collections then this is for you :)</description>
         <summary>MIT (c) Brent McKendrick</summary>
-        <releaseNotes>Update to work with EF 6
-Bug fixes (see GitHub issues)
-MIT license</releaseNotes>
+        <releaseNotes>v1.3.6
+ - Optimistic concurrency support
+ - Abstract base class and inheritance bug fixes and enhacements.
+
+v1.3.5
+ - Update to work with EF 6
+ - Bug fixes (see GitHub issues)
+ - MIT license</releaseNotes>
         <copyright>Brent McKendrick</copyright>
         <language>en-US</language>
         <tags>EntityFramework, EF, CodeFirst, DetachedUpdate</tags>

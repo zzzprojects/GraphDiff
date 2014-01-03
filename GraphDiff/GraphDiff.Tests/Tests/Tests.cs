@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff;
 using System.Data.Entity;
 using System.Transactions;
+using System.Data.Entity.Infrastructure;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -952,9 +953,10 @@ namespace RefactorThis.GraphDiff.Tests
 
 		#region Child List of items that use a Base class that contain their Id/Key
 		[TestMethod]
-		public void ModifyListOfItemsWithBaseClass()
+		public void ModifyListOfItemsWithNonMappedBaseClass()
 		{
 			int id = 0;
+            byte[] rowVersion = null;
 			using(var db = new TestDbContext())
 			{
 				var contact = new Models.Contact
@@ -977,12 +979,14 @@ namespace RefactorThis.GraphDiff.Tests
 				db.Contacts.Add(contact);
 				db.SaveChanges();
 				id = contact.Id;
+                rowVersion = contact.RowVersion;
 			}
 
 			using(var db = new TestDbContext())
 			{
 				var contact = new Models.Contact
 				{
+                    RowVersion = rowVersion,
 					Id = id,
 					Name = "Test2",
 					ContactInfos = new List<Models.ContactContactInfo>
@@ -1000,10 +1004,94 @@ namespace RefactorThis.GraphDiff.Tests
 				db.SaveChanges();
 			}
 		}
+
+        [TestMethod]
+        public void EnsureANonMappedClassCanBeUsedWithMappedBaseClass()
+        {
+            int id = 0;
+            using (var db = new TestDbContext())
+            {
+                var item = new Models.NonMappedInheritor
+                {
+                    FirstName = "Tim"
+                };
+                db.MappedBase.Add(item);
+                db.SaveChanges();
+                id = item.Id;
+            }
+
+            using (var db = new TestDbContext())
+            {
+                var item = new Models.NonMappedInheritor
+                {
+                    Id = id,
+                    FirstName = "James"
+                };
+
+                db.UpdateGraph(item);
+                db.SaveChanges();
+                Assert.IsTrue(db.MappedBase.OfType<Models.NonMappedInheritor>().Single(p => p.Id == id).FirstName == "James");
+            }
+        }
+
 		#endregion
 
-		// TODO Incomplete. Please report any bugs to GraphDiff on github.
-		// Will add more tests when I have time.
+        #region Optimistic Concurrency Tests
 
+        [TestMethod]
+        [ExpectedException(typeof(DbUpdateConcurrencyException))]
+        public void EditingOutOfDateModelShouldThrowOptimisticConcurrencyException()
+        {
+            int id = 0;
+            byte[] rowVersion = new byte[1];
+            using (var db = new TestDbContext())
+            {
+                var contact = new Models.Contact
+                {
+                    Name = "Test",
+                    ContactInfos = new List<Models.ContactContactInfo>
+                    {
+                        new Models.ContactContactInfo
+                        {
+                            Type = "Phone",
+                            Value = "1234567890"
+                        },
+                        new Models.ContactContactInfo
+                        {
+                            Type = "Email",
+                            Value = "a@a.com"
+                        }
+                    }
+                };
+                db.Contacts.Add(contact);
+                db.SaveChanges();
+                id = contact.Id;
+                rowVersion = contact.RowVersion;
+            }
+
+            using (var db = new TestDbContext())
+            {
+                var contact = new Models.Contact
+                {
+                    RowVersion = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x1, 0x1, 0x1, 0x1},
+                    Id = id,
+                    Name = "Test2",
+                    ContactInfos = new List<Models.ContactContactInfo>
+                    {
+                        new Models.ContactContactInfo
+                        {
+                            Type = "Email",
+                            Value = "b@b.com"
+                        }
+                    }
+                };
+
+                db.UpdateGraph(contact, map =>
+                    map.OwnedCollection(c => c.ContactInfos));
+                db.SaveChanges();
+            }
+        }
+
+        #endregion
 	}
 }

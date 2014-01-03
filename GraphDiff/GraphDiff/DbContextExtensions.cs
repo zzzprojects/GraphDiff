@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -50,6 +51,7 @@ namespace RefactorThis.GraphDiff
 				T existing = context.FindEntityMatching(entity, includeStrings.ToArray());
 
 				// Force update of parent entity
+                EnsureConcurrency(context, entity, existing);
 				context.Entry(existing).CurrentValues.SetValues(entity);
 
 				// Foreach branch perform recursive update
@@ -71,6 +73,7 @@ namespace RefactorThis.GraphDiff
 		{
 			// Get our entity and force update
 			T existing = context.FindEntityMatching(entity);
+            EnsureConcurrency(context, entity, existing);
 			context.Entry(existing).CurrentValues.SetValues(entity);
 		}
 
@@ -104,7 +107,7 @@ namespace RefactorThis.GraphDiff
 				else
 					throw new InvalidOperationException("GraphDiff required the collection to be either IEnumerable<T> or T[]");
 
-				var keyFields = context.GetKeysFor(innerElementType);
+				var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
 				var dbHash = MapCollectionToDictionary(keyFields, dbCollection);
 
 				// Iterate through the elements from the updated graph and try to match them against the db graph.
@@ -119,6 +122,7 @@ namespace RefactorThis.GraphDiff
 						// If we own the collection
 						if (member.IsOwned)
 						{
+                            EnsureConcurrency(context, updateItem, dbItem);
 							context.Entry(dbItem).CurrentValues.SetValues(updateItem); // match means we are updating
 							AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
 
@@ -202,6 +206,7 @@ namespace RefactorThis.GraphDiff
 						// perform update if the same
 						if (updateKey == newKey)
 						{
+                            EnsureConcurrency(context, newvalue, dbvalue);
 							context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
 						}
 						else
@@ -235,21 +240,10 @@ namespace RefactorThis.GraphDiff
 
 			return code;
 		}
-
-		private static Type GetFirstBaseType(Type type)
-		{
-			Type baseType = type;
-			while (baseType.BaseType != null &&
-				   baseType.BaseType != typeof(object))
-			{
-				baseType = baseType.BaseType;
-			}
-			return baseType;
-		}
-
 		#endregion
 
 		#region Extensions
+
 		// attaches the navigation property of a child back to its parent (if exists)
 		public static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
 		{
@@ -259,12 +253,10 @@ namespace RefactorThis.GraphDiff
 			var parentType = ObjectContext.GetObjectType(parent.GetType());
 			var childType = ObjectContext.GetObjectType(child.GetType());
 
-			object set = ObjectSetCreator.Current.CreateObjectSetFor(childType, db);
+            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
+            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Where(p => p.FullName == childType.FullName).Single();
 
-			PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
-			EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
-
-			foreach (var prop in entitySet.ElementType.NavigationProperties)
+			foreach (var prop in type.NavigationProperties)
 			{
 				if (prop.TypeUsage.EdmType.Name == parentType.Name)
 				{
@@ -277,40 +269,78 @@ namespace RefactorThis.GraphDiff
 
 		public static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
 		{
+            // attach includes to IQueryable
 			var query = context.Set<T>().AsQueryable();
 			foreach (var include in includes)
 				query = query.Include(include);
 
+            // get key properties of T
 			var keyProperties = context.GetKeysFor(typeof(T)).ToList();
-
-			var values = new List<object>();
-			foreach (PropertyInfo keyProp in keyProperties)
-				values.Add(keyProp.GetValue(entity, null));
 
 			// Run the find operation
 			ParameterExpression parameter = Expression.Parameter(typeof(T));
-			Expression expression = Expression.Equal(Expression.Property(parameter, keyProperties[0]), Expression.Constant(values[0]));
+			Expression expression = Expression.Equal(Expression.Property(parameter, keyProperties[0]), Expression.Constant(keyProperties[0].GetValue(entity, null)));
 			for (int i = 1; i < keyProperties.Count; i++)
 			{
 				expression = Expression.And(expression,
-					Expression.Equal(Expression.Property(parameter, keyProperties[i]), Expression.Constant(values[i])));
+                    Expression.Equal(Expression.Property(parameter, keyProperties[i]), Expression.Constant(keyProperties[i].GetValue(entity, null))));
 			}
 			var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
 			return query.Single<T>(lambda);
-
 		}
+
+        // Ensures concurrency properties are checked (manual at the moment.. todo)
+        public static void EnsureConcurrency<T>(this DbContext db, T from, T to)
+        {
+            // get concurrency properties of T
+            var entityType = ObjectContext.GetObjectType(from.GetType());
+            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
+
+            var objType = metadata.GetItems<EntityType>(DataSpace.OSpace)
+                .Where(p => p.FullName == entityType.FullName)
+                .Single();
+
+            // need internal string, code smells bad.. any better way to do this?
+            string cTypeName = (string)objType.GetType()
+                .GetProperty("CSpaceTypeName", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(objType, null);
+
+            var conceptualType = metadata.GetItems<EntityType>(DataSpace.CSpace)
+                .Where(p => p.FullName == cTypeName)
+                .Single();
+
+            var concurrencyProperties = new List<PropertyInfo>();
+            foreach (var member in conceptualType.Members)
+            {
+                foreach (var facet in member.TypeUsage.Facets)
+                {
+                    if (facet.Name == "ConcurrencyMode" && (ConcurrencyMode)facet.Value == ConcurrencyMode.Fixed)
+                    {
+                        concurrencyProperties.Add(entityType.GetProperty(member.Name));
+                    }
+                }
+            }
+
+            // Check if concurrency properties are equal
+            // TODO EF should do this automatically should it not?
+            foreach (PropertyInfo concurrencyProp in concurrencyProperties)
+            {
+                // if is byte[] use array comparison, else equals().
+                if ((concurrencyProp.PropertyType == typeof(byte[]) && !Utility.ByteArrayCompare((byte[])concurrencyProp.GetValue(from, null), (byte[])concurrencyProp.GetValue(to, null)))
+                    || concurrencyProp.GetValue(from, null).Equals(concurrencyProp.GetValue(to, null)))
+                {
+                    throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
+                }  
+            }
+        }
 
 		// Gets the primary key fields for an entity type.
 		public static IEnumerable<PropertyInfo> GetKeysFor(this DbContext db, Type entityType)
 		{
-			// Get the ObjectSet (equivalent to DbContext DbSet) for this Entity type - search the base class chain
-			// until we find the class that's actually attached to the DbContext as a DbSet<...>
-			object set = ObjectSetCreator.Current.CreateObjectSetFor(entityType, db);
+            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
+            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Where(p => p.FullName == entityType.FullName).Single();
 
-			PropertyInfo entitySetPI = set.GetType().GetProperty("EntitySet");
-			EntitySet entitySet = (EntitySet)entitySetPI.GetValue(set, null);
-
-			foreach (string name in entitySet.ElementType.KeyMembers.Select(k => k.Name))
+			foreach (string name in type.KeyMembers.Select(k => k.Name))
 				yield return entityType.GetProperty(name);
 		}
 
