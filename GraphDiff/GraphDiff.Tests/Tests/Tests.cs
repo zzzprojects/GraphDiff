@@ -1174,7 +1174,7 @@ namespace RefactorThis.GraphDiff.Tests
                 PartKey2 = 23,
                 Employees = new Collection<Employee>()
             };
-            var newEmployee = new Employee { Key = "Some", FirstName = "Employee", Manager = manager };
+            var newEmployee = new Employee { Key = "SomeOther", FirstName = "Employee", Manager = manager };
             manager.Employees.Add(newEmployee);
 
             using (var context = new TestDbContext())
@@ -1182,7 +1182,7 @@ namespace RefactorThis.GraphDiff.Tests
                 context.UpdateGraph(manager, m => m.OwnedCollection(n => n.Employees));
                 context.SaveChanges();
 
-                var employee = context.Employees.Include(e => e.Manager).Single(e => e.Key == "Some");
+                var employee = context.Employees.Include(e => e.Manager).Single(e => e.Key == "SomeOther");
                 Assert.IsTrue(employee.Manager.Key == manager.Key);
             }
         }

@@ -27,13 +27,13 @@ namespace RefactorThis.GraphDiff
 		/// <typeparam name="T">The type of the root entity</typeparam>
 		/// <param name="entity">The root entity.</param>
 		/// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
-		public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class
+        public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
 		{
 			// Guard null mapping
 			if (mapping == null)
 			{
 				// Redirect to simple update
-				UpdateGraph<T>(context, entity);
+				UpdateGraph(context, entity);
 				return;
 			}
 
@@ -48,11 +48,7 @@ namespace RefactorThis.GraphDiff
 				var includeStrings = EFIncludeHelper.GetIncludeStrings(tree);
 
 				// Get our entity with all includes needed
-				T existing = context.FindEntityMatching(entity, includeStrings.ToArray());
-
-				// Force update of parent entity
-                EnsureConcurrency(context, entity, existing);
-				context.Entry(existing).CurrentValues.SetValues(entity);
+                T existing = AddOrUpdateEntity(context, entity, includeStrings.ToArray());
 
 				// Foreach branch perform recursive update
 				foreach (var member in tree.Members)
@@ -69,15 +65,29 @@ namespace RefactorThis.GraphDiff
 		/// </summary>
 		/// <typeparam name="T">The type of the root entity</typeparam>
 		/// <param name="entity">The root entity.</param>
-		public static void UpdateGraph<T>(this DbContext context, T entity) where T : class
+        public static void UpdateGraph<T>(this DbContext context, T entity) where T : class, new()
 		{
-			// Get our entity and force update
-			T existing = context.FindEntityMatching(entity);
-            EnsureConcurrency(context, entity, existing);
-			context.Entry(existing).CurrentValues.SetValues(entity);
+            AddOrUpdateEntity(context, entity);
 		}
 
 		#region Private
+
+        private static T AddOrUpdateEntity<T>(this DbContext context, T entity, params string[] includes) where T : class, new()
+        {
+            if (entity == null)
+                throw new ArgumentNullException("entity");
+
+            T existing = context.FindEntityMatching(entity, includes);
+            if (existing == null)
+            {
+                existing = new T();
+                context.Set<T>().Add(existing);
+            }
+            EnsureConcurrency(context, entity, existing);
+            context.Entry(existing).CurrentValues.SetValues(entity);
+
+            return existing;
+        }
 
 		/// <summary>
 		/// Updates a detached graph of entities by performing a diff comparison of object keys.
@@ -97,7 +107,7 @@ namespace RefactorThis.GraphDiff
 				if (updateValues == null)
 					updateValues = new List<object>();
 
-				Type dbCollectionType = dbCollection.GetType();
+                Type dbCollectionType = member.Accessor.PropertyType;
 				Type innerElementType;
 
 				if (dbCollectionType.IsArray)
@@ -106,6 +116,13 @@ namespace RefactorThis.GraphDiff
 					innerElementType = dbCollectionType.GetGenericArguments()[0];
 				else
 					throw new InvalidOperationException("GraphDiff required the collection to be either IEnumerable<T> or T[]");
+
+                if (dbCollection == null)
+                {
+                    var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
+                    dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
+                    member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
+                }
 
 				var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
 				var dbHash = MapCollectionToDictionary(keyFields, dbCollection);
@@ -286,7 +303,7 @@ namespace RefactorThis.GraphDiff
                     Expression.Equal(Expression.Property(parameter, keyProperties[i]), Expression.Constant(keyProperties[i].GetValue(entity, null))));
 			}
 			var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
-			return query.Single<T>(lambda);
+            return query.SingleOrDefault(lambda);
 		}
 
         // Ensures concurrency properties are checked (manual at the moment.. todo)
