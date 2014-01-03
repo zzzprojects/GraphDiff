@@ -20,20 +20,21 @@ namespace RefactorThis.GraphDiff
 {
 	public static class DbContextExtensions
 	{
-		/// <summary>
-		/// Attaches a graph of entities and performs an update to the data store.
-		/// Author: (c) Brent McKendrick 2012
-		/// </summary>
-		/// <typeparam name="T">The type of the root entity</typeparam>
-		/// <param name="entity">The root entity.</param>
-		/// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
-		public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class
+	    /// <summary>
+	    /// Attaches a graph of entities and performs an update to the data store.
+	    /// Author: (c) Brent McKendrick 2012
+	    /// </summary>
+	    /// <typeparam name="T">The type of the root entity</typeparam>
+        /// <param name="context">The database context to attach / detach.</param>
+	    /// <param name="entity">The root entity.</param>
+	    /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
+	    public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
 		{
 			// Guard null mapping
 			if (mapping == null)
 			{
 				// Redirect to simple update
-				UpdateGraph<T>(context, entity);
+				UpdateGraph(context, entity);
 				return;
 			}
 
@@ -45,14 +46,10 @@ namespace RefactorThis.GraphDiff
 
 				// Parse mapping tree
 				var tree = new UpdateConfigurationVisitor<T>().GetUpdateMembers(mapping);
-				var includeStrings = EFIncludeHelper.GetIncludeStrings(tree);
+				var includeStrings = EntityFrameworkIncludeHelper.GetIncludeStrings(tree);
 
 				// Get our entity with all includes needed
-				T existing = context.FindEntityMatching(entity, includeStrings.ToArray());
-
-				// Force update of parent entity
-                EnsureConcurrency(context, entity, existing);
-				context.Entry(existing).CurrentValues.SetValues(entity);
+                T existing = AddOrUpdateEntity(context, entity, includeStrings.ToArray());
 
 				// Foreach branch perform recursive update
 				foreach (var member in tree.Members)
@@ -67,26 +64,34 @@ namespace RefactorThis.GraphDiff
 		/// <summary>
 		/// Attaches a graph of entities and performs an update to the data store.
 		/// </summary>
+        /// <param name="context">The database context to attach / detach.</param>
 		/// <typeparam name="T">The type of the root entity</typeparam>
 		/// <param name="entity">The root entity.</param>
-		public static void UpdateGraph<T>(this DbContext context, T entity) where T : class
+        public static void UpdateGraph<T>(this DbContext context, T entity) where T : class, new()
 		{
-			// Get our entity and force update
-			T existing = context.FindEntityMatching(entity);
-            EnsureConcurrency(context, entity, existing);
-			context.Entry(existing).CurrentValues.SetValues(entity);
+            AddOrUpdateEntity(context, entity);
 		}
 
 		#region Private
 
-		/// <summary>
-		/// Updates a detached graph of entities by performing a diff comparison of object keys.
-		/// Author: Brent McKendrick
-		/// </summary>
-		/// <param name="context">The database context to attach / detach.</param>
-		/// <param name="dataStoreEntity">The entity (sub)graph as retrieved from the data store.</param>
-		/// <param name="updatingEntity">The entity (sub)graph after it has been updated</param>
-		private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+        private static T AddOrUpdateEntity<T>(this DbContext context, T entity, params string[] includes) where T : class, new()
+        {
+            if (entity == null)
+                throw new ArgumentNullException("entity");
+
+            T existing = context.FindEntityMatching(entity, includes);
+            if (existing == null)
+            {
+                existing = new T();
+                context.Set<T>().Add(existing);
+            }
+            EnsureConcurrency(context, entity, existing);
+            context.Entry(existing).CurrentValues.SetValues(entity);
+
+            return existing;
+        }
+
+	    private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
 		{
 			if (member.IsCollection)
 			{
@@ -97,7 +102,7 @@ namespace RefactorThis.GraphDiff
 				if (updateValues == null)
 					updateValues = new List<object>();
 
-				Type dbCollectionType = dbCollection.GetType();
+                Type dbCollectionType = member.Accessor.PropertyType;
 				Type innerElementType;
 
 				if (dbCollectionType.IsArray)
@@ -107,11 +112,18 @@ namespace RefactorThis.GraphDiff
 				else
 					throw new InvalidOperationException("GraphDiff required the collection to be either IEnumerable<T> or T[]");
 
+                if (dbCollection == null)
+                {
+                    var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
+                    dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
+                    member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
+                }
+
 				var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
-				var dbHash = MapCollectionToDictionary(keyFields, dbCollection);
+				var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
 
 				// Iterate through the elements from the updated graph and try to match them against the db graph.
-				List<object> additions = new List<object>();
+				var additions = new List<object>();
 				foreach (object updateItem in updateValues)
 				{
 					var key = CreateHash(keyFields, updateItem);
@@ -177,7 +189,7 @@ namespace RefactorThis.GraphDiff
 						return;
 					}
 
-					if (dbvalue != null && newvalue != null)
+					if (dbvalue != null)
 					{
 						var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
 						var newKey = CreateHash(keyFields, newvalue);
@@ -217,35 +229,24 @@ namespace RefactorThis.GraphDiff
 
 					AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
 
-					// TODO
 					foreach (var childMember in member.Members)
 						RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
 				}
 			}
 		}
-		private static Dictionary<string, object> MapCollectionToDictionary(IEnumerable<PropertyInfo> keyfields, IEnumerable enumerable)
-		{
-			var hash = new Dictionary<string, object>();
-			foreach (object item in enumerable)
-				hash.Add(CreateHash(keyfields, item), item);
-			return hash;
-		}
-		private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
-		{
-			// Create unique string representing the keys
-			string code = "";
 
-			foreach (var property in keys)
-				code += "|" + property.GetValue(entity, null).GetHashCode();
+	    private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
+	    {
+	        // Create unique string representing the keys
+	        return keys.Aggregate("", (current, property) => current + ("|" + property.GetValue(entity, null).GetHashCode()));
+	    }
 
-			return code;
-		}
-		#endregion
+	    #endregion
 
 		#region Extensions
 
 		// attaches the navigation property of a child back to its parent (if exists)
-		public static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
+	    private static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
 		{
 			if (parent == null || child == null)
 				return;
@@ -254,7 +255,7 @@ namespace RefactorThis.GraphDiff
 			var childType = ObjectContext.GetObjectType(child.GetType());
 
             var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
-            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Where(p => p.FullName == childType.FullName).Single();
+            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == childType.FullName);
 
 			foreach (var prop in type.NavigationProperties)
 			{
@@ -267,7 +268,7 @@ namespace RefactorThis.GraphDiff
 			}
 		}
 
-		public static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
+	    private static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
 		{
             // attach includes to IQueryable
 			var query = context.Set<T>().AsQueryable();
@@ -286,47 +287,35 @@ namespace RefactorThis.GraphDiff
                     Expression.Equal(Expression.Property(parameter, keyProperties[i]), Expression.Constant(keyProperties[i].GetValue(entity, null))));
 			}
 			var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
-			return query.Single<T>(lambda);
+            return query.SingleOrDefault(lambda);
 		}
 
         // Ensures concurrency properties are checked (manual at the moment.. todo)
-        public static void EnsureConcurrency<T>(this DbContext db, T from, T to)
+	    private static void EnsureConcurrency<T>(this DbContext db, T from, T to)
         {
             // get concurrency properties of T
             var entityType = ObjectContext.GetObjectType(from.GetType());
             var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
 
-            var objType = metadata.GetItems<EntityType>(DataSpace.OSpace)
-                .Where(p => p.FullName == entityType.FullName)
-                .Single();
+            var objType = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
 
             // need internal string, code smells bad.. any better way to do this?
-            string cTypeName = (string)objType.GetType()
-                .GetProperty("CSpaceTypeName", BindingFlags.Instance | BindingFlags.NonPublic)
-                .GetValue(objType, null);
+            var cTypeName = (string) objType.GetType()
+                    .GetProperty("CSpaceTypeName", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .GetValue(objType, null);
 
-            var conceptualType = metadata.GetItems<EntityType>(DataSpace.CSpace)
-                .Where(p => p.FullName == cTypeName)
-                .Single();
-
-            var concurrencyProperties = new List<PropertyInfo>();
-            foreach (var member in conceptualType.Members)
-            {
-                foreach (var facet in member.TypeUsage.Facets)
-                {
-                    if (facet.Name == "ConcurrencyMode" && (ConcurrencyMode)facet.Value == ConcurrencyMode.Fixed)
-                    {
-                        concurrencyProperties.Add(entityType.GetProperty(member.Name));
-                    }
-                }
-            }
+            var conceptualType = metadata.GetItems<EntityType>(DataSpace.CSpace).Single(p => p.FullName == cTypeName);
+            var concurrencyProperties = conceptualType.Members
+                    .Where(member => member.TypeUsage.Facets.Any(facet => facet.Name == "ConcurrencyMode" && (ConcurrencyMode) facet.Value == ConcurrencyMode.Fixed))
+                    .Select(member => entityType.GetProperty(member.Name))
+                    .ToList();
 
             // Check if concurrency properties are equal
             // TODO EF should do this automatically should it not?
             foreach (PropertyInfo concurrencyProp in concurrencyProperties)
             {
                 // if is byte[] use array comparison, else equals().
-                if ((concurrencyProp.PropertyType == typeof(byte[]) && !Utility.ByteArrayCompare((byte[])concurrencyProp.GetValue(from, null), (byte[])concurrencyProp.GetValue(to, null)))
+                if ((concurrencyProp.PropertyType == typeof(byte[]) && !((byte[])concurrencyProp.GetValue(from, null)).SequenceEqual((byte[])concurrencyProp.GetValue(to, null)))
                     || concurrencyProp.GetValue(from, null).Equals(concurrencyProp.GetValue(to, null)))
                 {
                     throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
@@ -335,13 +324,11 @@ namespace RefactorThis.GraphDiff
         }
 
 		// Gets the primary key fields for an entity type.
-		public static IEnumerable<PropertyInfo> GetKeysFor(this DbContext db, Type entityType)
+	    private static List<PropertyInfo> GetKeysFor(this DbContext db, Type entityType)
 		{
             var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
-            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Where(p => p.FullName == entityType.FullName).Single();
-
-			foreach (string name in type.KeyMembers.Select(k => k.Name))
-				yield return entityType.GetProperty(name);
+            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
+            return type.KeyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
 		}
 
 		#endregion

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -85,7 +83,6 @@ namespace RefactorThis.GraphDiff.Tests.Models
 		public ICollection<Employee> Employees { get; set; }
 	}
 
-
 	#region Base class/Subclass Model & Optimistic Concurrency models
 
     public class BaseEntity
@@ -130,5 +127,6 @@ namespace RefactorThis.GraphDiff.Tests.Models
         [MaxLength(128)]
         public string FirstName { get; set; }
     }
+
 	#endregion
 }

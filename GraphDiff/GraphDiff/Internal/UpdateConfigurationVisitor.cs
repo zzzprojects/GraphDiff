@@ -27,11 +27,6 @@ namespace RefactorThis.GraphDiff.Internal
         public string IncludeString { get; set; }
         public bool IsCollection { get; set; }
         public bool IsOwned { get; set; }
-
-        public bool HasMembers()
-        {
-            return Members.Count > 0;
-        }
     }
 
     /// <summary>
@@ -40,9 +35,9 @@ namespace RefactorThis.GraphDiff.Internal
     /// <typeparam name="T"></typeparam>
     internal class UpdateConfigurationVisitor<T> : ExpressionVisitor
     {
-        UpdateMember currentMember;
-        UpdateMember previousMember = null;
-        string currentMethod = "";
+        private UpdateMember _currentMember;
+        private UpdateMember _previousMember;
+        private string _currentMethod = "";
 
         /// <summary>
         /// Translates the Expression tree to a tree of UpdateMembers
@@ -52,7 +47,7 @@ namespace RefactorThis.GraphDiff.Internal
         public UpdateMember GetUpdateMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
             var initialNode = new UpdateMember();
-            currentMember = initialNode;
+            _currentMember = initialNode;
             Visit(expression);
             return initialNode;
         }
@@ -60,11 +55,10 @@ namespace RefactorThis.GraphDiff.Internal
         protected override Expression VisitMember(MemberExpression memberExpression)
         {
             // Create new node for this item
-
             var newMember = new UpdateMember
             {
                 Members = new Stack<UpdateMember>(),
-                Parent = currentMember
+                Parent = _currentMember
             };
 
             // Added as a bug fix to support Expressions as variables.
@@ -84,35 +78,35 @@ namespace RefactorThis.GraphDiff.Internal
                     newMember.Accessor = (PropertyInfo)value.Body.Member;
                 }
             }
-            else if (memberExpression.Member is MemberInfo)
+            else
             {
                 newMember.Accessor = (PropertyInfo)memberExpression.Member;
             }
 
-            currentMember.Members.Push(newMember);
-            previousMember = currentMember;
-            currentMember = newMember;
+            _currentMember.Members.Push(newMember);
+            _previousMember = _currentMember;
+            _currentMember = newMember;
 
-            currentMember.IncludeString = previousMember.IncludeString != null
-                ? previousMember.IncludeString + "." + currentMember.Accessor.Name 
-                : currentMember.Accessor.Name;
+            _currentMember.IncludeString = _previousMember.IncludeString != null
+                ? _previousMember.IncludeString + "." + _currentMember.Accessor.Name 
+                : _currentMember.Accessor.Name;
 
             // Chose if entity update or reference update and create expression
-            switch (currentMethod)
+            switch (_currentMethod)
             {
                 case "OwnedEntity":
-                    currentMember.IsOwned = true;
+                    _currentMember.IsOwned = true;
                     break;
                 case "AssociatedEntity":
-                    currentMember.IsOwned = false;
+                    _currentMember.IsOwned = false;
                     break;
                 case "OwnedCollection":
-                    currentMember.IsOwned = true;
-                    currentMember.IsCollection = true;
+                    _currentMember.IsOwned = true;
+                    _currentMember.IsCollection = true;
                     break;
                 case "AssociatedCollection":
-                    currentMember.IsOwned = false;
-                    currentMember.IsCollection = true;
+                    _currentMember.IsOwned = false;
+                    _currentMember.IsCollection = true;
                     break;
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");
@@ -122,19 +116,19 @@ namespace RefactorThis.GraphDiff.Internal
 
         protected override Expression VisitMethodCall(MethodCallExpression expression)
         {
-            currentMethod = expression.Method.Name;
+            _currentMethod = expression.Method.Name;
 
             // go left to right in the subtree (ignore first argument for now)
             for (int i = 1; i < expression.Arguments.Count; i++)
                 Visit(expression.Arguments[i]);
 
             // go back up the tree and continue
-            currentMember = currentMember.Parent;
+            _currentMember = _currentMember.Parent;
             return Visit(expression.Arguments[0]);
         }
     }
 
-    internal static class EFIncludeHelper
+    internal static class EntityFrameworkIncludeHelper
     {
         public static List<string> GetIncludeStrings(UpdateMember root)
         {
