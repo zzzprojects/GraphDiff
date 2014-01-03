@@ -9,11 +9,8 @@ using System.Transactions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 
-namespace RefactorThis.GraphDiff.Tests
+namespace RefactorThis.GraphDiff.Tests.Tests
 {
-	/// <summary>
-	/// Tests
-	/// </summary>
 	[TestClass]
 	public class Tests
 	{
@@ -23,7 +20,7 @@ namespace RefactorThis.GraphDiff.Tests
 
 		public Tests()
 		{
-			Database.SetInitializer<TestDbContext>(new DropCreateDatabaseAlways<TestDbContext>());
+			Database.SetInitializer(new DropCreateDatabaseAlways<TestDbContext>());
 		}
 
 		[ClassInitialize]
@@ -31,18 +28,18 @@ namespace RefactorThis.GraphDiff.Tests
 		{
 			using (var context = new TestDbContext())
 			{
-				var company1 = context.Companies.Add(new Models.Company
+				var company1 = context.Companies.Add(new Company
 				{
 					Name = "Company 1",
-					Contacts = new List<Models.CompanyContact>
+					Contacts = new List<CompanyContact>
 					{
-						new Models.CompanyContact 
+						new CompanyContact 
 						{ 
 							FirstName = "Bob",
 							LastName = "Brown",
-							Infos = new List<Models.ContactInfo>
+							Infos = new List<ContactInfo>
 							{
-								new Models.ContactInfo
+								new ContactInfo
 								{
 									Description = "Home",
 									Email = "test@test.com",
@@ -53,18 +50,18 @@ namespace RefactorThis.GraphDiff.Tests
 					}
 				});
 
-				var company2 = context.Companies.Add(new Models.Company
+				var company2 = context.Companies.Add(new Company
 				{
 					Name = "Company 2",
-					Contacts = new List<Models.CompanyContact>
+					Contacts = new List<CompanyContact>
 					{
-						new Models.CompanyContact 
+						new CompanyContact 
 						{ 
 							FirstName = "Tim",
 							LastName = "Jones",
-							Infos = new List<Models.ContactInfo>
+							Infos = new List<ContactInfo>
 							{
-								new Models.ContactInfo
+								new ContactInfo
 								{
 									Description = "Work",
 									Email = "test@test.com",
@@ -75,28 +72,28 @@ namespace RefactorThis.GraphDiff.Tests
 					}
 				});
 
-				var project1 = context.Projects.Add(new Models.Project
+				context.Projects.Add(new Project
 				{
 					Name = "Major Project 1",
 					Deadline = DateTime.Now,
-					Stakeholders = new List<Models.Company> { company2 }
+					Stakeholders = new List<Company> { company2 }
 				});
 
-				var project2 = context.Projects.Add(new Models.Project
+				var project2 = context.Projects.Add(new Project
 				{
 					Name = "Major Project 2",
 					Deadline = DateTime.Now,
-					Stakeholders = new List<Models.Company> { company1 }
+					Stakeholders = new List<Company> { company1 }
 				});
 
-				var manager1 = context.Managers.Add(new Models.Manager
+				var manager1 = context.Managers.Add(new Manager
 				{
 					Key = "sdfsdf",
 					PartKey = "manager1",
 					PartKey2 = 1,
 					FirstName = "Trent"
 				});
-				var manager2 = context.Managers.Add(new Models.Manager
+				var manager2 = context.Managers.Add(new Manager
 				{
 					Key = "bvdvsd",
 					PartKey = "manager2",
@@ -104,13 +101,13 @@ namespace RefactorThis.GraphDiff.Tests
 					FirstName = "Timothy"
 				});
 
-				var locker1 = new Models.Locker
+				var locker1 = new Locker
 				{
 					Combination = "Asdfasdf",
 					Location = "Middle Earth"
 				};
 
-				var employee = new Models.Employee
+				var employee = new Employee
 				{
 					Manager = manager1,
 					Key = "Asdf",
@@ -132,13 +129,13 @@ namespace RefactorThis.GraphDiff.Tests
 		#region Test Initialize and Cleanup
 
 		[TestInitialize]
-		public virtual void CreateTransactionOnTestInitialize()
+		public void CreateTransactionOnTestInitialize()
 		{
 			_transactionScope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { Timeout = new TimeSpan(0, 10, 0) });
 		}
 
 		[TestCleanup]
-		public virtual void DisposeTransactionOnTestCleanup()
+		public void DisposeTransactionOnTestCleanup()
 		{
 			Transaction.Current.Rollback();
 			_transactionScope.Dispose();
@@ -151,7 +148,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void BaseEntityUpdate()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies.Single(p => p.Id == 2);
@@ -170,7 +167,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void DoesNotUpdateEntityIfNoChangesHaveBeenMade()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies.Single(p => p.Id == 2);
@@ -186,8 +183,8 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void MarksAssociatedRelationAsChangedEvenIfEntitiesAreUnchanged()
 		{
-			Models.Project project1;
-			Models.Manager manager1;
+			Project project1;
+			Manager manager1;
 			using (var context = new TestDbContext())
 			{
 				project1 = context.Projects.Include(m => m.LeadCoordinator).Single(p => p.Id == 1);
@@ -211,8 +208,8 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityWherePreviousValueWasNull()
 		{
-			Models.Project project;
-			Models.Manager coord;
+			Project project;
+			Manager coord;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -243,7 +240,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityWhereNewValueIsNull()
 		{
-			Models.Project project;
+			Project project;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -271,8 +268,8 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityWherePreviousValueIsNewValue()
 		{
-			Models.Project project;
-			Models.Manager coord;
+			Project project;
+			Manager coord;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -303,8 +300,8 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityWherePreviousValueIsNotNewValue()
 		{
-			Models.Project project;
-			Models.Manager coord;
+			Project project;
+			Manager coord;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -335,7 +332,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityValuesShouldNotBeUpdated()
 		{
-			Models.Project project;
+			Project project;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -363,8 +360,8 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedEntityValuesForNewValueShouldNotBeUpdated()
 		{
-			Models.Project project;
-			Models.Manager coord;
+			Project project;
+			Manager coord;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -406,7 +403,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedEntityUpdateValues()
 		{
-			Models.Project project;
+			Project project;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -434,7 +431,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedEntityNewEntity()
 		{
-			Models.Project project;
+			Project project;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -443,7 +440,7 @@ namespace RefactorThis.GraphDiff.Tests
 
 			} // Simulate detach
 
-			project.LeadCoordinator = new Models.Manager { Key = "asdfxv", FirstName = "Br", PartKey = "TER", PartKey2 = 2 };
+			project.LeadCoordinator = new Manager { Key = "asdfxv", FirstName = "Br", PartKey = "TER", PartKey2 = 2 };
 
 			using (var context = new TestDbContext())
 			{
@@ -462,7 +459,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedEntityRemoveEntity()
 		{
-			Models.Project project;
+			Project project;
 			using (var context = new TestDbContext())
 			{
 				project = context.Projects
@@ -495,8 +492,8 @@ namespace RefactorThis.GraphDiff.Tests
 		public void AssociatedCollectionAdd()
 		{
 			// don't know what to do about this yet..
-			Models.Project project1;
-			Models.Company company2;
+			Project project1;
+			Company company2;
 			using (var context = new TestDbContext())
 			{
 				project1 = context.Projects
@@ -525,7 +522,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedCollectionRemove()
 		{
-			Models.Project project1;
+			Project project1;
 			using (var context = new TestDbContext())
 			{
 				project1 = context.Projects
@@ -556,7 +553,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void AssociatedCollectionsEntitiesValuesShouldNotBeUpdated()
 		{
-			Models.Project project1;
+			Project project1;
 			using (var context = new TestDbContext())
 			{
 				project1 = context.Projects
@@ -588,7 +585,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionUpdate()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
@@ -622,7 +619,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionAdd()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
@@ -631,13 +628,13 @@ namespace RefactorThis.GraphDiff.Tests
 			} // Simulate detach
 
 			company1.Name = "Company #1"; // Change from Company 1 to Company #1
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Charlie",
 				LastName = "Sheen",
-				Infos = new List<Models.ContactInfo>
+				Infos = new List<ContactInfo>
 				{
-					new Models.ContactInfo { PhoneNumber = "123456789", Description = "Home" }
+					new ContactInfo { PhoneNumber = "123456789", Description = "Home" }
 				}
 			});
 
@@ -663,7 +660,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionAddMultiple()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
@@ -672,35 +669,35 @@ namespace RefactorThis.GraphDiff.Tests
 			} // Simulate detach
 
 			company1.Name = "Company #1"; // Change from Company 1 to Company #1
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Charlie",
 				LastName = "Sheen",
-				Infos = new List<Models.ContactInfo>
+				Infos = new List<ContactInfo>
 				{
-					new Models.ContactInfo { PhoneNumber = "123456789", Description = "Home" }
+					new ContactInfo { PhoneNumber = "123456789", Description = "Home" }
 				}
 			});
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Tim",
 				LastName = "Sheen"
 			});
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Emily",
 				LastName = "Sheen"
 			});
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Mr",
 				LastName = "Sheen",
-				Infos = new List<Models.ContactInfo>
+				Infos = new List<ContactInfo>
 				{
-					new Models.ContactInfo { PhoneNumber = "123456789", Description = "Home" }
+					new ContactInfo { PhoneNumber = "123456789", Description = "Home" }
 				}
 			});
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Mr",
 				LastName = "X"
@@ -724,7 +721,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionRemove()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
@@ -752,32 +749,31 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionAddRemoveUpdate()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
 					.Include(p => p.Contacts.Select(m => m.Infos))
 					.Single(p => p.Id == 2);
 
-				company1.Contacts.Add(new Models.CompanyContact { FirstName = "Hello", LastName = "Test" });
+				company1.Contacts.Add(new CompanyContact { FirstName = "Hello", LastName = "Test" });
 				context.SaveChanges();
 			} // Simulate detach
 
 			// Update, remove and add
 			company1.Name = "Company #1"; // Change from Company 1 to Company #1
 
-			string originalname = company1.Contacts.First().FirstName;
 			company1.Contacts.First().FirstName = "Terrrrrry";
 
 			company1.Contacts.Remove(company1.Contacts.Skip(1).First());
 
-			company1.Contacts.Add(new Models.CompanyContact
+			company1.Contacts.Add(new CompanyContact
 			{
 				FirstName = "Charlie",
 				LastName = "Sheen",
-				Infos = new List<Models.ContactInfo>
+				Infos = new List<ContactInfo>
 				{
-					new Models.ContactInfo { PhoneNumber = "123456789", Description = "Home" }
+					new ContactInfo { PhoneNumber = "123456789", Description = "Home" }
 				}
 			});
 
@@ -804,7 +800,7 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedCollectionWithOwnedCollection()
 		{
-			Models.Company company1;
+			Company company1;
 			using (var context = new TestDbContext())
 			{
 				company1 = context.Companies
@@ -813,7 +809,7 @@ namespace RefactorThis.GraphDiff.Tests
 			} // Simulate detach
 
 			company1.Contacts.First().Infos.First().Email = "testeremail";
-			company1.Contacts.First().Infos.Add(new Models.ContactInfo { Description = "Test", Email = "test@test.com" });
+			company1.Contacts.First().Infos.Add(new ContactInfo { Description = "Test", Email = "test@test.com" });
 
 			using (var context = new TestDbContext())
 			{
@@ -836,28 +832,28 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void OwnedMultipleLevelCollectionMappingWithAssociatedReload()
 		{
-			Models.MultiLevelTest multiLevelTest;
-			Models.Hobby hobby;
+			MultiLevelTest multiLevelTest;
+			Hobby hobby;
 			using (var context = new TestDbContext())
 			{
-				multiLevelTest = context.MultiLevelTest.Add(new Models.MultiLevelTest
+				multiLevelTest = context.MultiLevelTest.Add(new MultiLevelTest
 				{
 					Managers = new[] // test arrays as well
 					{
-						new Models.Manager 
+						new Manager 
 						{
 							Key = "dasfds",
 							PartKey = "xxx",
 							PartKey2 = 2,
-							Employees = new List<Models.Employee>
+							Employees = new List<Employee>
 							{
-								new Models.Employee 
+								new Employee 
 								{
 									Key = "xsdf",
 									FirstName = "Asdf",
-									Hobbies = new List<Models.Hobby>
+									Hobbies = new List<Hobby>
 									{
-										new Models.Hobby 
+										new Hobby 
 										{
 											HobbyType = "Test hobby type"
 										}
@@ -868,7 +864,7 @@ namespace RefactorThis.GraphDiff.Tests
 					}
 				});
 
-				hobby = context.Hobbies.Add(new Models.Hobby { HobbyType = "Skiing" });
+				hobby = context.Hobbies.Add(new Hobby { HobbyType = "Skiing" });
 				context.SaveChanges();
 			} // Simulate detach
 
@@ -885,7 +881,7 @@ namespace RefactorThis.GraphDiff.Tests
 			var employeeToUpdate = manager.Employees.First();
 			employeeToUpdate.Hobbies.Clear();
 			employeeToUpdate.Hobbies.Add(hobby);
-			manager.Employees.Add(new Models.Employee
+			manager.Employees.Add(new Employee
 			{
 				FirstName = "Tim",
 				Key = "Tim1",
@@ -933,13 +929,13 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void EnsureWeCanUseCyclicRelationsOnOwnedCollections()
 		{
-			Models.Manager manager;
+			Manager manager;
 			using (var context = new TestDbContext())
 			{
 				manager = context.Managers.Include(p => p.Employees).First();
 			} // Simulate disconnect
 
-			var newEmployee = new Models.Employee { Key = "assdf", FirstName = "Test Employee", Manager = manager };
+			var newEmployee = new Employee { Key = "assdf", FirstName = "Test Employee", Manager = manager };
 			manager.Employees.Add(newEmployee);
 
 			using (var context = new TestDbContext())
@@ -956,21 +952,21 @@ namespace RefactorThis.GraphDiff.Tests
 		[TestMethod]
 		public void ModifyListOfItemsWithNonMappedBaseClass()
 		{
-			int id = 0;
-            byte[] rowVersion = null;
+			int id;
+            byte[] rowVersion;
 			using(var db = new TestDbContext())
 			{
-				var contact = new Models.Contact
+				var contact = new Contact
 				{
 					Name = "Test",
-					ContactInfos = new List<Models.ContactContactInfo>
+					ContactInfos = new List<ContactContactInfo>
 					{
-						new Models.ContactContactInfo
+						new ContactContactInfo
 						{
 							Type = "Phone",
 							Value = "1234567890"
 						},
-						new Models.ContactContactInfo
+						new ContactContactInfo
 						{
 							Type = "Email",
 							Value = "a@a.com"
@@ -985,14 +981,14 @@ namespace RefactorThis.GraphDiff.Tests
 
 			using(var db = new TestDbContext())
 			{
-				var contact = new Models.Contact
+				var contact = new Contact
 				{
                     RowVersion = rowVersion,
 					Id = id,
 					Name = "Test2",
-					ContactInfos = new List<Models.ContactContactInfo>
+					ContactInfos = new List<ContactContactInfo>
 					{
-						new Models.ContactContactInfo
+						new ContactContactInfo
 						{
 							Type = "Email",
 							Value = "b@b.com"
@@ -1009,10 +1005,10 @@ namespace RefactorThis.GraphDiff.Tests
         [TestMethod]
         public void EnsureANonMappedClassCanBeUsedWithMappedBaseClass()
         {
-            int id = 0;
+            int id;
             using (var db = new TestDbContext())
             {
-                var item = new Models.NonMappedInheritor
+                var item = new NonMappedInheritor
                 {
                     FirstName = "Tim"
                 };
@@ -1023,7 +1019,7 @@ namespace RefactorThis.GraphDiff.Tests
 
             using (var db = new TestDbContext())
             {
-                var item = new Models.NonMappedInheritor
+                var item = new NonMappedInheritor
                 {
                     Id = id,
                     FirstName = "James"
@@ -1031,7 +1027,7 @@ namespace RefactorThis.GraphDiff.Tests
 
                 db.UpdateGraph(item);
                 db.SaveChanges();
-                Assert.IsTrue(db.MappedBase.OfType<Models.NonMappedInheritor>().Single(p => p.Id == id).FirstName == "James");
+                Assert.IsTrue(db.MappedBase.OfType<NonMappedInheritor>().Single(p => p.Id == id).FirstName == "James");
             }
         }
 
@@ -1043,21 +1039,20 @@ namespace RefactorThis.GraphDiff.Tests
         [ExpectedException(typeof(DbUpdateConcurrencyException))]
         public void EditingOutOfDateModelShouldThrowOptimisticConcurrencyException()
         {
-            int id = 0;
-            byte[] rowVersion = new byte[1];
+            int id;
             using (var db = new TestDbContext())
             {
-                var contact = new Models.Contact
+                var contact = new Contact
                 {
                     Name = "Test",
-                    ContactInfos = new List<Models.ContactContactInfo>
+                    ContactInfos = new List<ContactContactInfo>
                     {
-                        new Models.ContactContactInfo
+                        new ContactContactInfo
                         {
                             Type = "Phone",
                             Value = "1234567890"
                         },
-                        new Models.ContactContactInfo
+                        new ContactContactInfo
                         {
                             Type = "Email",
                             Value = "a@a.com"
@@ -1067,19 +1062,18 @@ namespace RefactorThis.GraphDiff.Tests
                 db.Contacts.Add(contact);
                 db.SaveChanges();
                 id = contact.Id;
-                rowVersion = contact.RowVersion;
             }
 
             using (var db = new TestDbContext())
             {
-                var contact = new Models.Contact
+                var contact = new Contact
                 {
                     RowVersion = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x1, 0x1, 0x1, 0x1},
                     Id = id,
                     Name = "Test2",
-                    ContactInfos = new List<Models.ContactContactInfo>
+                    ContactInfos = new List<ContactContactInfo>
                     {
-                        new Models.ContactContactInfo
+                        new ContactContactInfo
                         {
                             Type = "Email",
                             Value = "b@b.com"
@@ -1100,7 +1094,7 @@ namespace RefactorThis.GraphDiff.Tests
         [TestMethod]
         public void EnsureWeCanVisitExpressionsStoredAsFields()
         {
-            Models.Project project;
+            Project project;
             using (var context = new TestDbContext())
             {
                 project = context.Projects
@@ -1111,8 +1105,8 @@ namespace RefactorThis.GraphDiff.Tests
 
             project.LeadCoordinator.FirstName = "Tada";
 
-            Expression<Func<Models.Project, Models.Manager>> lambda = (p => p.LeadCoordinator);
-            Expression<Func<IUpdateConfiguration<Models.Project>, dynamic>> exp = map => map.OwnedEntity(lambda);
+            Expression<Func<Project, Manager>> lambda = (p => p.LeadCoordinator);
+            Expression<Func<IUpdateConfiguration<Project>, dynamic>> exp = map => map.OwnedEntity(lambda);
 
             using (var context = new TestDbContext())
             {
@@ -1127,12 +1121,12 @@ namespace RefactorThis.GraphDiff.Tests
             }
         }
 
-        public Expression<Func<Models.Project, Models.Manager>> Lambda { get; set; }
+        public Expression<Func<Project, Manager>> Lambda { get; set; }
 
         [TestMethod]
         public void EnsureWeCanVisitExpressionsStoredAsProperties()
         {
-            Models.Project project;
+            Project project;
             using (var context = new TestDbContext())
             {
                 project = context.Projects
@@ -1144,7 +1138,7 @@ namespace RefactorThis.GraphDiff.Tests
             project.LeadCoordinator.FirstName = "Tada";
 
             Lambda = (p => p.LeadCoordinator);
-            Expression<Func<IUpdateConfiguration<Models.Project>, dynamic>> exp = map => map.OwnedEntity(Lambda, with => with.OwnedCollection(m => m.Hobbies));
+            Expression<Func<IUpdateConfiguration<Project>, dynamic>> exp = map => map.OwnedEntity(Lambda, with => with.OwnedCollection(m => m.Hobbies));
 
             using (var context = new TestDbContext())
             {
@@ -1158,7 +1152,6 @@ namespace RefactorThis.GraphDiff.Tests
                     .LeadCoordinator.FirstName == "Tada");
             }
         }
-
 
         #endregion
 
