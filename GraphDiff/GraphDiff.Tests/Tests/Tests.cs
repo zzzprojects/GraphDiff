@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RefactorThis.GraphDiff;
+using System.Collections.ObjectModel;
 using System.Data.Entity;
-using System.Transactions;
 using System.Data.Entity.Infrastructure;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Transactions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RefactorThis.GraphDiff.Tests.Models;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -1159,6 +1159,33 @@ namespace RefactorThis.GraphDiff.Tests
             }
         }
 
+
+        #endregion
+
+        #region Attach new root
+
+        [TestMethod]
+        public void EnsureNewRootsCanBeAdded()
+        {
+            var manager = new Manager
+            {
+                Key = "Some",
+                PartKey = "Boss",
+                PartKey2 = 23,
+                Employees = new Collection<Employee>()
+            };
+            var newEmployee = new Employee { Key = "Some", FirstName = "Employee", Manager = manager };
+            manager.Employees.Add(newEmployee);
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(manager, m => m.OwnedCollection(n => n.Employees));
+                context.SaveChanges();
+
+                var employee = context.Employees.Include(e => e.Manager).Single(e => e.Key == "Some");
+                Assert.IsTrue(employee.Manager.Key == manager.Key);
+            }
+        }
 
         #endregion
     }
