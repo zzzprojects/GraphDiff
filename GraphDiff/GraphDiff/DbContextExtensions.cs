@@ -45,7 +45,7 @@ namespace RefactorThis.GraphDiff
 
 				// Parse mapping tree
 				var tree = new UpdateConfigurationVisitor<T>().GetUpdateMembers(mapping);
-				var includeStrings = EFIncludeHelper.GetIncludeStrings(tree);
+				var includeStrings = EntityFrameworkIncludeHelper.GetIncludeStrings(tree);
 
 				// Get our entity with all includes needed
                 T existing = AddOrUpdateEntity(context, entity, includeStrings.ToArray());
