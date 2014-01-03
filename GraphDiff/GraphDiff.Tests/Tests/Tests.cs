@@ -14,7 +14,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 	[TestClass]
 	public class Tests
 	{
-		#region Class construction & initialization
+		#region Class init & cleanup
 
 		private TransactionScope _transactionScope;
 
@@ -22,111 +22,6 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 		{
 			Database.SetInitializer(new DropCreateDatabaseAlways<TestDbContext>());
 		}
-
-		[ClassInitialize]
-		public static void SetupTheDatabase(TestContext testContext)
-		{
-			using (var context = new TestDbContext())
-			{
-				var company1 = context.Companies.Add(new Company
-				{
-					Name = "Company 1",
-					Contacts = new List<CompanyContact>
-					{
-						new CompanyContact 
-						{ 
-							FirstName = "Bob",
-							LastName = "Brown",
-							Infos = new List<ContactInfo>
-							{
-								new ContactInfo
-								{
-									Description = "Home",
-									Email = "test@test.com",
-									PhoneNumber = "0255525255"
-								}
-							}
-						}
-					}
-				});
-
-				var company2 = context.Companies.Add(new Company
-				{
-					Name = "Company 2",
-					Contacts = new List<CompanyContact>
-					{
-						new CompanyContact 
-						{ 
-							FirstName = "Tim",
-							LastName = "Jones",
-							Infos = new List<ContactInfo>
-							{
-								new ContactInfo
-								{
-									Description = "Work",
-									Email = "test@test.com",
-									PhoneNumber = "456456456456"
-								}
-							}
-						}
-					}
-				});
-
-				context.Projects.Add(new Project
-				{
-					Name = "Major Project 1",
-					Deadline = DateTime.Now,
-					Stakeholders = new List<Company> { company2 }
-				});
-
-				var project2 = context.Projects.Add(new Project
-				{
-					Name = "Major Project 2",
-					Deadline = DateTime.Now,
-					Stakeholders = new List<Company> { company1 }
-				});
-
-				var manager1 = context.Managers.Add(new Manager
-				{
-					Key = "sdfsdf",
-					PartKey = "manager1",
-					PartKey2 = 1,
-					FirstName = "Trent"
-				});
-				var manager2 = context.Managers.Add(new Manager
-				{
-					Key = "bvdvsd",
-					PartKey = "manager2",
-					PartKey2 = 2,
-					FirstName = "Timothy"
-				});
-
-				var locker1 = new Locker
-				{
-					Combination = "Asdfasdf",
-					Location = "Middle Earth"
-				};
-
-				var employee = new Employee
-				{
-					Manager = manager1,
-					Key = "Asdf",
-					FirstName = "Test employee",
-					Locker = locker1
-				};
-
-				context.Lockers.Add(locker1);
-				context.Employees.Add(employee);
-
-				project2.LeadCoordinator = manager2;
-
-				context.SaveChanges();
-			}
-		}
-
-		#endregion
-
-		#region Test Initialize and Cleanup
 
 		[TestInitialize]
 		public void CreateTransactionOnTestInitialize()
@@ -1174,9 +1069,38 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             {
                 context.UpdateGraph(manager, m => m.OwnedCollection(n => n.Employees));
                 context.SaveChanges();
+            }
 
+            using (var context = new TestDbContext())
+            {
                 var employee = context.Employees.Include(e => e.Manager).Single(e => e.Key == "SomeOther");
                 Assert.IsTrue(employee.Manager.Key == manager.Key);
+            }
+        }
+
+        [TestMethod]
+        public void EnsureNewRootCanLinkToExistingAssociation()
+        {
+            var employee = new Employee
+            {
+                Key = "Some",
+                Hobbies = new List<Hobby>()
+            };
+
+            Hobby hobby;
+
+            using (var context = new TestDbContext())
+            {
+                hobby = context.Hobbies.Add(new Hobby { HobbyType = "Skiing" });
+                employee.Hobbies.Add(hobby);
+                context.UpdateGraph(employee, m => m.AssociatedCollection(n => n.Hobbies));
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                var employee2 = context.Employees.Include(e => e.Hobbies).Single(e => e.Key == "Some");
+                Assert.IsTrue(employee2.Hobbies.First().Id == hobby.Id);
             }
         }
 

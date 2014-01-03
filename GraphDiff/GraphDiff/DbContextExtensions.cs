@@ -48,7 +48,7 @@ namespace RefactorThis.GraphDiff
 				var tree = new UpdateConfigurationVisitor<T>().GetUpdateMembers(mapping);
 				var includeStrings = EntityFrameworkIncludeHelper.GetIncludeStrings(tree);
 
-				// Get our entity with all includes needed
+				// Get our entity with all includes needed, or add
                 T existing = AddOrUpdateEntity(context, entity, includeStrings.ToArray());
 
 				// Foreach branch perform recursive update
@@ -110,7 +110,7 @@ namespace RefactorThis.GraphDiff
 				else if (dbCollectionType.IsGenericType)
 					innerElementType = dbCollectionType.GetGenericArguments()[0];
 				else
-					throw new InvalidOperationException("GraphDiff required the collection to be either IEnumerable<T> or T[]");
+					throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
 
                 if (dbCollection == null)
                 {
@@ -124,9 +124,10 @@ namespace RefactorThis.GraphDiff
 
 				// Iterate through the elements from the updated graph and try to match them against the db graph.
 				var additions = new List<object>();
-				foreach (object updateItem in updateValues)
+				foreach (var updateItem in updateValues)
 				{
 					var key = CreateHash(keyFields, updateItem);
+
 					// try to find in db collection
 					object dbItem;
 					if (dbHash.TryGetValue(key, out dbItem))
@@ -163,7 +164,9 @@ namespace RefactorThis.GraphDiff
 				{
 					if (!member.IsOwned)
 					{
-						context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
+						if (context.Entry(newItem).State == EntityState.Detached)
+                            context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
+
 						if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
 							context.Entry(newItem).Reload();
 					}
@@ -235,11 +238,16 @@ namespace RefactorThis.GraphDiff
 			}
 		}
 
-	    private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
-	    {
-	        // Create unique string representing the keys
-	        return keys.Aggregate("", (current, property) => current + ("|" + property.GetValue(entity, null).GetHashCode()));
-	    }
+        private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
+        {
+            // Create unique string representing the keys
+            string code = "";
+
+            foreach (var property in keys)
+                code += "|" + property.GetValue(entity, null).GetHashCode();
+
+            return code;
+        }
 
 	    #endregion
 

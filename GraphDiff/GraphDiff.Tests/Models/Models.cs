@@ -47,6 +47,8 @@ namespace RefactorThis.GraphDiff.Tests.Models
 
 	public class Manager : Employee
 	{
+        // TODO these got override with Employee base class 'Key' in an update recently.
+        // need to add new tests for multiple keys
 		// to allow for testing of multi keys and data annotations
 		[Key]
 		[Column(Order = 1)]
