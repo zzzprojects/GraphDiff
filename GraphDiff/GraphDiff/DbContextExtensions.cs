@@ -326,7 +326,7 @@ namespace RefactorThis.GraphDiff
             foreach (PropertyInfo concurrencyProp in concurrencyProperties)
             {
                 // if is byte[] use array comparison, else equals().
-                if ((concurrencyProp.PropertyType == typeof(byte[]) && !Utility.ByteArrayCompare((byte[])concurrencyProp.GetValue(from, null), (byte[])concurrencyProp.GetValue(to, null)))
+                if ((concurrencyProp.PropertyType == typeof(byte[]) && !((byte[])concurrencyProp.GetValue(from, null)).SequenceEqual((byte[])concurrencyProp.GetValue(to, null)))
                     || concurrencyProp.GetValue(from, null).Equals(concurrencyProp.GetValue(to, null)))
                 {
                     throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
