@@ -7,6 +7,7 @@ using RefactorThis.GraphDiff;
 using System.Data.Entity;
 using System.Transactions;
 using System.Data.Entity.Infrastructure;
+using System.Linq.Expressions;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -1093,5 +1094,72 @@ namespace RefactorThis.GraphDiff.Tests
         }
 
         #endregion
-	}
+
+        #region Expressions stored as fields and properties
+
+        [TestMethod]
+        public void EnsureWeCanVisitExpressionsStoredAsFields()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator.FirstName = "Tada";
+
+            Expression<Func<Models.Project, Models.Manager>> lambda = (p => p.LeadCoordinator);
+            Expression<Func<IUpdateConfiguration<Models.Project>, dynamic>> exp = map => map.OwnedEntity(lambda);
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, exp);
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.FirstName == "Tada");
+            }
+        }
+
+        public Expression<Func<Models.Project, Models.Manager>> Lambda { get; set; }
+
+        [TestMethod]
+        public void EnsureWeCanVisitExpressionsStoredAsProperties()
+        {
+            Models.Project project;
+            using (var context = new TestDbContext())
+            {
+                project = context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2);
+
+            } // Simulate detach
+
+            project.LeadCoordinator.FirstName = "Tada";
+
+            Lambda = (p => p.LeadCoordinator);
+            Expression<Func<IUpdateConfiguration<Models.Project>, dynamic>> exp = map => map.OwnedEntity(Lambda, with => with.OwnedCollection(m => m.Hobbies));
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(project, exp);
+
+                context.SaveChanges();
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.FirstName == "Tada");
+            }
+        }
+
+
+        #endregion
+    }
 }

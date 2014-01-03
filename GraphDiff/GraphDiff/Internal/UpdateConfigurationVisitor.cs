@@ -57,15 +57,37 @@ namespace RefactorThis.GraphDiff.Internal
             return initialNode;
         }
 
-        protected override Expression VisitMember(MemberExpression expression)
+        protected override Expression VisitMember(MemberExpression memberExpression)
         {
             // Create new node for this item
-            var newMember = new UpdateMember 
-            { 
+
+            var newMember = new UpdateMember
+            {
                 Members = new Stack<UpdateMember>(),
-                Parent = currentMember,
-                Accessor = (PropertyInfo)expression.Member
+                Parent = currentMember
             };
+
+            // Added as a bug fix to support Expressions as variables.
+            var expression = memberExpression.Expression;
+            if (expression is ConstantExpression)
+            {
+                object container = ((ConstantExpression)expression).Value;
+                var member = memberExpression.Member;
+                if (member is FieldInfo)
+                {
+                    dynamic value = ((FieldInfo)member).GetValue(container);
+                    newMember.Accessor = (PropertyInfo)value.Body.Member;
+                }
+                if (member is PropertyInfo)
+                {
+                    dynamic value = ((PropertyInfo)member).GetValue(container, null);
+                    newMember.Accessor = (PropertyInfo)value.Body.Member;
+                }
+            }
+            else if (memberExpression.Member is MemberInfo)
+            {
+                newMember.Accessor = (PropertyInfo)memberExpression.Member;
+            }
 
             currentMember.Members.Push(newMember);
             previousMember = currentMember;
@@ -95,7 +117,7 @@ namespace RefactorThis.GraphDiff.Internal
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");
             }
-            return base.VisitMember(expression);
+            return base.VisitMember(memberExpression);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression expression)
