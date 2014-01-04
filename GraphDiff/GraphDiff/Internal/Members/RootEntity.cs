@@ -6,7 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Members.Entities
+namespace RefactorThis.GraphDiff.Internal.Members
 {
     internal class RootEntity : AMember
     {
@@ -80,7 +80,7 @@ namespace RefactorThis.GraphDiff.Internal.Members.Entities
         private static Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(IObjectContextAdapter context, T entity) where T : class
         {
             // get key properties of T
-            var keyProperties = context.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
+            var keyProperties = GetPrimaryKeyFieldsFor(context, typeof(T)).ToList();
 
             ParameterExpression parameter = Expression.Parameter(typeof(T));
             Expression expression = CreateEqualsExpression(entity, keyProperties[0], parameter);

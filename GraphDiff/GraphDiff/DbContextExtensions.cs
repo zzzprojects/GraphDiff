@@ -5,7 +5,6 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
@@ -34,8 +33,6 @@ namespace RefactorThis.GraphDiff
 	        var root = mapping == null ? new RootEntity(null, null) : new ConfigurationVisitor<T>().GetMembers(mapping);
 	        root.Update(context, null, entity);
 	    }
-
-        #region Extensions
 
         // attaches the navigation property of a child back to its parent (if exists)
 	    internal static void AttachCyclicNavigationProperty(this IObjectContextAdapter context, object parent, object child)
@@ -99,25 +96,6 @@ namespace RefactorThis.GraphDiff
 	        }
 	    }
 
-	    internal static List<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter db, Type entityType)
-	    {
-	        var keyMembers = db.ObjectContext.MetadataWorkspace
-	                .GetItems<EntityType>(DataSpace.OSpace)
-	                .Single(p => p.FullName == entityType.FullName)
-	                .KeyMembers;
-
-	        return keyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
-	    }
-
-	    internal static bool IsKeyIdentical(this IObjectContextAdapter context, object newValue, object dbValue)
-	    {
-	        if (newValue == null || dbValue == null)
-	            return false;
-
-	        var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(newValue.GetType()));
-	        return CreateHash(keyFields, newValue) == CreateHash(keyFields, dbValue);
-	    }
-
 	    internal static void AttachAndReloadEntity(this DbContext context, object entity)
 	    {
 	        if (context.Entry(entity).State == EntityState.Detached)
@@ -126,18 +104,5 @@ namespace RefactorThis.GraphDiff
 	        if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
 	            context.Entry(entity).Reload();
 	    }
-
-	    internal static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
-	    {
-	        // Create unique string representing the keys
-	        string code = "";
-
-	        foreach (var property in keys)
-	            code += "|" + property.GetValue(entity, null).GetHashCode();
-
-	        return code;
-        }
-
-        #endregion
 	}
 }

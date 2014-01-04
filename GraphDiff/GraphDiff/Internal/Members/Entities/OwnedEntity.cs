@@ -13,7 +13,7 @@ namespace RefactorThis.GraphDiff.Internal.Members.Entities
         protected override void UpdateInternal<T>(DbContext context, T existing, object dbValue, object newValue)
         {
             // Check if the same key, if so then update values on the entity
-            if (context.IsKeyIdentical(newValue, dbValue))
+            if (IsKeyIdentical(context, newValue, dbValue))
                 context.UpdateValuesWithConcurrencyCheck(newValue, dbValue);
             else
                 SetValue(existing, newValue);

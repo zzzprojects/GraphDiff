@@ -40,14 +40,14 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                 SetValue(existing, dbCollection);
             }
 
-            var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(innerElementType));
-            var dbHash = dbCollection.Cast<object>().ToDictionary(item => DbContextExtensions.CreateHash(keyFields, item));
+            var keyFields = GetPrimaryKeyFieldsFor(context, ObjectContext.GetObjectType(innerElementType));
+            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph.
             var additions = new List<object>();
             foreach (var updateItem in updateValues)
             {
-                var key = DbContextExtensions.CreateHash(keyFields, updateItem);
+                var key = CreateHash(keyFields, updateItem);
 
                 // try to find item with same key in db collection
                 object dbItem;

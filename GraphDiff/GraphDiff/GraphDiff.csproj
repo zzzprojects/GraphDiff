@@ -59,7 +59,7 @@
     <Compile Include="Internal\Members\Entities\AssociatedEntity.cs" />
     <Compile Include="Internal\Members\Collections\OwnedCollection.cs" />
     <Compile Include="Internal\Members\Entities\OwnedEntity.cs" />
-    <Compile Include="Internal\Members\Entities\RootEntity.cs" />
+    <Compile Include="Internal\Members\RootEntity.cs" />
     <Compile Include="Internal\ConfigurationVisitor.cs" />
     <Compile Include="IUpdateConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

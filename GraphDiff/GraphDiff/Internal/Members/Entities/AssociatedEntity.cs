@@ -19,7 +19,7 @@ namespace RefactorThis.GraphDiff.Internal.Members.Entities
             }
 
             // do nothing if the key is already identical
-            if (context.IsKeyIdentical(newValue, dbValue))
+            if (IsKeyIdentical(context, newValue, dbValue))
                 return;
 
             context.AttachAndReloadEntity(newValue);

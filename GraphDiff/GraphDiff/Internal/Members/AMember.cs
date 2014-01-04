@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Infrastructure;
+using System.Linq;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Members
@@ -40,5 +44,24 @@ namespace RefactorThis.GraphDiff.Internal.Members
         }
 
         internal abstract void Update<T>(DbContext context, T existing, T entity) where T : class, new();
+
+        protected static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
+        {
+            // Create unique string representing the keys
+            string code = "";
+            foreach (var property in keys)
+                code += "|" + property.GetValue(entity, null).GetHashCode();
+            return code;
+        }
+
+        protected static List<PropertyInfo> GetPrimaryKeyFieldsFor(IObjectContextAdapter db, Type entityType)
+        {
+            var keyMembers = db.ObjectContext.MetadataWorkspace
+                    .GetItems<EntityType>(DataSpace.OSpace)
+                    .Single(p => p.FullName == entityType.FullName)
+                    .KeyMembers;
+
+            return keyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
+        }
     }
 }
