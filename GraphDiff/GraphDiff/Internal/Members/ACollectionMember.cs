@@ -17,8 +17,8 @@ namespace RefactorThis.GraphDiff.Internal.Members
 
         internal override void Update<T>(DbContext context, T existing, T entity)
         {
-            var updateValues = (IEnumerable)Accessor.GetValue(entity, null);
-            var dbCollection = (IEnumerable)Accessor.GetValue(existing, null);
+            var updateValues = GetValue<IEnumerable>(entity);
+            var dbCollection = GetValue<IEnumerable>(existing);
 
             if (updateValues == null)
                 updateValues = new List<object>();
@@ -37,7 +37,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
             {
                 var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
                 dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
-                Accessor.SetValue(existing, dbCollection, null);
+                SetValue(existing, dbCollection);
             }
 
             var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(innerElementType));

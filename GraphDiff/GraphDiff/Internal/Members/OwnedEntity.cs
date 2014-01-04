@@ -16,7 +16,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
             if (context.IsKeyIdentical(newValue, dbValue))
                 context.UpdateValuesWithConcurrencyCheck(newValue, dbValue);
             else
-                Accessor.SetValue(existing, newValue, null);
+                SetValue(existing, newValue);
 
             context.AttachCyclicNavigationProperty(existing, newValue);
 

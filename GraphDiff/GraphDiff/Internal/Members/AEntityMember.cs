@@ -12,8 +12,8 @@ namespace RefactorThis.GraphDiff.Internal.Members
 
         internal override void Update<T>(DbContext context, T existing, T entity)
         {
-            var dbValue = Accessor.GetValue(existing, null);
-            var newValue = Accessor.GetValue(entity, null);
+            var dbValue = GetValue<object>(existing);
+            var newValue = GetValue<object>(entity);
             if (dbValue == null && newValue == null)
                 return;
 

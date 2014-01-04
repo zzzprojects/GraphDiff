@@ -14,7 +14,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
         {
             if (newValue == null)
             {
-                Accessor.SetValue(existing, null, null);
+                SetValue(existing, null);
                 return;
             }
 
@@ -24,7 +24,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
 
             context.AttachAndReloadEntity(newValue);
 
-            Accessor.SetValue(existing, newValue, null);
+            SetValue(existing, newValue);
         }
     }
 }

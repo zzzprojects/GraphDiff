@@ -8,7 +8,8 @@ namespace RefactorThis.GraphDiff.Internal.Members
     {
         internal AMember Parent { get; private set; }
         internal Stack<AMember> Members { get; private set; }
-        internal PropertyInfo Accessor { get; private set; }
+        
+        protected readonly PropertyInfo Accessor;
 
         internal string IncludeString
         {
@@ -26,6 +27,16 @@ namespace RefactorThis.GraphDiff.Internal.Members
             Accessor = accessor;
             Members = new Stack<AMember>();
             Parent = parent;
+        }
+
+        protected T GetValue<T>(object instance)
+        {
+            return (T)Accessor.GetValue(instance, null);
+        }
+
+        protected void SetValue(object instance, object value)
+        {
+            Accessor.SetValue(instance, value, null);
         }
 
         internal abstract void Update<T>(DbContext context, T existing, T entity) where T : class, new();
