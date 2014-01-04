@@ -15,7 +15,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using RefactorThis.GraphDiff.Internal;
-using RefactorThis.GraphDiff.Internal.Nodes;
+using RefactorThis.GraphDiff.Internal.Members;
 
 namespace RefactorThis.GraphDiff
 {

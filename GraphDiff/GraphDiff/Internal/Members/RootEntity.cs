@@ -1,7 +1,7 @@
 ﻿using System.Data.Entity;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Nodes
+namespace RefactorThis.GraphDiff.Internal.Members
 {
     internal class RootEntity : AMember
     {

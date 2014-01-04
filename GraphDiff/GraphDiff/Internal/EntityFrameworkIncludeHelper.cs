@@ -5,7 +5,7 @@
  */
 
 using System.Collections.Generic;
-using RefactorThis.GraphDiff.Internal.Nodes;
+using RefactorThis.GraphDiff.Internal.Members;
 
 namespace RefactorThis.GraphDiff.Internal
 {
