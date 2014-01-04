@@ -53,7 +53,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 
 			using (var context = new TestDbContext())
 			{
-				context.UpdateGraph(company1, null);
+				context.UpdateGraph(company1);
 				context.SaveChanges();
 				Assert.IsTrue(context.Companies.Single(p => p.Id == 2).Name == "Company #1");
 			}
@@ -70,7 +70,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 
 			using (var context = new TestDbContext())
 			{
-				context.UpdateGraph(company1, null);
+				context.UpdateGraph(company1);
 				Assert.IsTrue(context.ChangeTracker.Entries().All(p => p.State == EntityState.Unchanged));
 			}
 		}

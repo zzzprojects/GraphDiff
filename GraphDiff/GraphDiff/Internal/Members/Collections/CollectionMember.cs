@@ -45,10 +45,10 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
 
             // remove obsolete items
             foreach (var dbItem in dbHash.Values)
-                RemoveElement<T>(context, dbItem, dbCollection);
+                RemoveElement(context, dbItem, dbCollection);
         }
 
-        private void AddElement<T>(DbContext context, T existing, object updateItem, IEnumerable dbCollection)
+        private void AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
                 AttachAndReloadEntity(context, updateItem);
@@ -71,7 +71,7 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                 childMember.Update(context, dbItem, updateItem);
         }
 
-        private void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
+        private void RemoveElement(DbContext context, object dbItem, object dbCollection)
         {
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
 

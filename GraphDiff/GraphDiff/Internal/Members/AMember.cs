@@ -93,7 +93,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
             context.Entry(to).CurrentValues.SetValues(from);
         }
 
-        protected static void EnsureConcurrency<T>(IObjectContextAdapter db, T from, T to)
+        private static void EnsureConcurrency<T>(IObjectContextAdapter db, T from, T to)
         {
             // get concurrency properties of T
             var entityType = ObjectContext.GetObjectType(@from.GetType());
