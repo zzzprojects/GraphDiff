@@ -1,4 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Collections;
+using System.Data.Entity;
+using System.Data.Entity.Core.Objects;
+using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Members.Collections
 {
@@ -7,6 +10,25 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
         internal OwnedCollection(AMember parent, PropertyInfo accessor)
                 : base(parent, accessor)
         {
+        }
+
+        //protected override void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        //{
+        //    base.UpdateElement(context, existing, updateItem, dbItem);
+
+        //    UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
+
+        //    AttachCyclicNavigationProperty(context, existing, updateItem);
+
+        //    foreach (var childMember in Members)
+        //        childMember.Update(context, existing, updateItem);
+        //}
+
+        protected override void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
+        {
+            base.RemoveElement<T>(context, dbItem, dbCollection);
+
+            context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
         }
     }
 }

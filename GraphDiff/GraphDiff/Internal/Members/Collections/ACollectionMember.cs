@@ -25,7 +25,6 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
             var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph
-            var additions = new List<object>();
             foreach (var updateItem in updateValues)
             {
                 var key = CreateHash(keyFields, updateItem);
@@ -34,7 +33,6 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                 object dbItem;
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
-                    // If we own the collection
                     if (this is OwnedCollection)
                     {
                         UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
@@ -44,34 +42,31 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                         foreach (var childMember in Members)
                             childMember.Update(context, dbHash[key], updateItem);
                     }
-
                     dbHash.Remove(key); // remove to leave only db removals in the collection
                 }
                 else
-                    additions.Add(updateItem);
+                    AddElement(context, existing, updateItem, dbCollection);
             }
 
-            // Removal of dbItem's left in the collection
+            // remove obsolete items
             foreach (var dbItem in dbHash.Values)
-            {
-                // Own the collection so remove it completely.
-                if (this is OwnedCollection)
-                    context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
+                RemoveElement<T>(context, dbItem, dbCollection);
+        }
 
-                dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
-            }
+        protected virtual void AddElement<T>(DbContext context, T existing, object updateItem, IEnumerable dbCollection)
+        {
+            dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
-            // Add elements marked for addition
-            foreach (object newItem in additions)
-            {
-                if (this is AssociatedCollection)
-                    AttachAndReloadEntity(context, newItem);
+            AttachCyclicNavigationProperty(context, existing, updateItem);
+        }
 
-                // Otherwise we will add to object
-                dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
+        //protected virtual void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        //{
+        //}
 
-                AttachCyclicNavigationProperty(context, existing, newItem);
-            }
+        protected virtual void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
+        {
+            dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
         }
 
         private IEnumerable CreateMissingCollection(object existing, Type elementType)
