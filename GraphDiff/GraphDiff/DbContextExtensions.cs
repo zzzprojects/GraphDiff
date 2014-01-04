@@ -29,13 +29,13 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">The database context to attach / detach.</param>
 	    /// <param name="entity">The root entity.</param>
 	    /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
-	    public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
+	    public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null) where T : class, new()
 		{
 			// Guard null mapping
 			if (mapping == null)
 			{
 				// Redirect to simple update
-				UpdateGraph(context, entity);
+                AddOrUpdateEntity(context, entity);
 				return;
 			}
 
@@ -53,17 +53,6 @@ namespace RefactorThis.GraphDiff
 			{
 				context.Configuration.AutoDetectChangesEnabled = isAutoDetectEnabled;
 			}
-		}
-
-		/// <summary>
-		/// Attaches a graph of entities and performs an update to the data store.
-		/// </summary>
-        /// <param name="context">The database context to attach / detach.</param>
-		/// <typeparam name="T">The type of the root entity</typeparam>
-		/// <param name="entity">The root entity.</param>
-        public static void UpdateGraph<T>(this DbContext context, T entity) where T : class, new()
-		{
-            AddOrUpdateEntity(context, entity);
 		}
 
 		#region Private
