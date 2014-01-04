@@ -123,7 +123,7 @@ namespace RefactorThis.GraphDiff
                 member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
             }
 
-            var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
+            var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(innerElementType));
             var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph.
@@ -132,7 +132,7 @@ namespace RefactorThis.GraphDiff
             {
                 var key = CreateHash(keyFields, updateItem);
 
-                // try to find in db collection
+                // try to find item with same key in db collection
                 object dbItem;
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
@@ -220,7 +220,7 @@ namespace RefactorThis.GraphDiff
 	        if (newValue == null || dbValue == null)
 	            return false;
 
-	        var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newValue.GetType()));
+	        var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(newValue.GetType()));
 	        return CreateHash(keyFields, newValue) == CreateHash(keyFields, dbValue);
 	    }
 
@@ -279,7 +279,7 @@ namespace RefactorThis.GraphDiff
 				query = query.Include(include);
 
             // get key properties of T
-			var keyProperties = context.GetKeysFor(typeof(T)).ToList();
+			var keyProperties = context.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
 
 			// Run the find operation
 			ParameterExpression parameter = Expression.Parameter(typeof(T));
@@ -333,14 +333,17 @@ namespace RefactorThis.GraphDiff
         }
 
 		// Gets the primary key fields for an entity type.
-	    private static List<PropertyInfo> GetKeysFor(this DbContext db, Type entityType)
-		{
-            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
-            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
-            return type.KeyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
-		}
+	    private static List<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter db, Type entityType)
+	    {
+	        var keyMembers = db.ObjectContext.MetadataWorkspace
+	                .GetItems<EntityType>(DataSpace.OSpace)
+	                .Single(p => p.FullName == entityType.FullName)
+	                .KeyMembers;
 
-		#endregion
+	        return keyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
+	    }
+
+	    #endregion
 
 	}
 }
