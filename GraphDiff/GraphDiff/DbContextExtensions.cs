@@ -255,7 +255,7 @@ namespace RefactorThis.GraphDiff
 		#region Extensions
 
 		// attaches the navigation property of a child back to its parent (if exists)
-	    private static void AttachCyclicNavigationProperty(DbContext db, object parent, object child)
+	    private static void AttachCyclicNavigationProperty(this IObjectContextAdapter context, object parent, object child)
 		{
 			if (parent == null || child == null)
 				return;
@@ -263,18 +263,18 @@ namespace RefactorThis.GraphDiff
 			var parentType = ObjectContext.GetObjectType(parent.GetType());
 			var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
-            var type = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == childType.FullName);
+	        var navigationProperties = context.ObjectContext.MetadataWorkspace
+	                .GetItems<EntityType>(DataSpace.OSpace)
+	                .Single(p => p.FullName == childType.FullName)
+	                .NavigationProperties;
 
-			foreach (var prop in type.NavigationProperties)
-			{
-				if (prop.TypeUsage.EdmType.Name == parentType.Name)
-				{
-					var propInfo = childType.GetProperty(prop.Name);
-					propInfo.SetValue(child, parent, null);
-					break;
-				}
-			}
+	        var parentNavigationProperty = navigationProperties
+	                .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
+	                .Select(navigation => childType.GetProperty(navigation.Name))
+	                .FirstOrDefault();
+
+            if (parentNavigationProperty != null)
+                parentNavigationProperty.SetValue(child, parent, null);
 		}
 
 	    private static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
