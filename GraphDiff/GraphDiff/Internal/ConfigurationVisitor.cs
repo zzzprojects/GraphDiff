@@ -10,7 +10,7 @@ namespace RefactorThis.GraphDiff.Internal
         private AMember _currentMember;
         private string _currentMethod = "";
 
-        public AMember GetMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
+        public RootEntity GetMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
             var initialNode = new RootEntity(null, null);
             _currentMember = initialNode;

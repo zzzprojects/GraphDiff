@@ -30,50 +30,14 @@ namespace RefactorThis.GraphDiff
 	    /// <param name="entity">The root entity.</param>
 	    /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
 	    public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null) where T : class, new()
-		{
-			// Guard null mapping
-			if (mapping == null)
-			{
-				// Redirect to simple update
-                AddOrUpdateEntity(context, entity);
-				return;
-			}
+	    {
+	        var root = mapping == null ? new RootEntity(null, null) : new ConfigurationVisitor<T>().GetMembers(mapping);
+	        root.Update(context, null, entity);
+	    }
 
-			bool isAutoDetectEnabled = context.Configuration.AutoDetectChangesEnabled;
-			try
-			{
-				// performance improvement for large graphs
-				context.Configuration.AutoDetectChangesEnabled = false;
+	    #region Private
 
-				// Parse mapping tree
-				var tree = new ConfigurationVisitor<T>().GetMembers(mapping);
-                tree.Update(context, null, entity);
-			}
-			finally
-			{
-				context.Configuration.AutoDetectChangesEnabled = isAutoDetectEnabled;
-			}
-		}
-
-		#region Private
-
-        internal static T AddOrUpdateEntity<T>(this DbContext context, T entity, params string[] includes) where T : class, new()
-        {
-            if (entity == null)
-                throw new ArgumentNullException("entity");
-
-            T existing = context.FindEntityMatching(entity, includes);
-            if (existing == null)
-            {
-                existing = new T();
-                context.Set<T>().Add(existing);
-            }
-            context.UpdateValuesWithConcurrencyCheck(entity, existing);
-
-            return existing;
-        }
-
-	    internal static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
+        internal static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 		{
 			if (member is OwnedCollection || member is AssociatedCollection)
 				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
@@ -225,7 +189,7 @@ namespace RefactorThis.GraphDiff
                 parentNavigationProperty.SetValue(child, parent, null);
         }
 
-	    private static void UpdateValuesWithConcurrencyCheck<T>(this DbContext context, T from, T to) where T : class
+	    internal static void UpdateValuesWithConcurrencyCheck<T>(this DbContext context, T from, T to) where T : class
 	    {
 	        context.EnsureConcurrency(from, to);
 	        context.Entry(to).CurrentValues.SetValues(from);
@@ -264,7 +228,7 @@ namespace RefactorThis.GraphDiff
 	        }
 	    }
 
-	    private static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
+	    internal static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
 	    {
 	        // attach includes to IQueryable
 	        var query = context.Set<T>().AsQueryable();
