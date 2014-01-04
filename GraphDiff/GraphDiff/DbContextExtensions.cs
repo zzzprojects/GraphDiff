@@ -85,8 +85,7 @@ namespace RefactorThis.GraphDiff
                 existing = new T();
                 context.Set<T>().Add(existing);
             }
-            EnsureConcurrency(context, entity, existing);
-            context.Entry(existing).CurrentValues.SetValues(entity);
+            context.UpdateValuesWithConcurrencyCheck(entity, existing);
 
             return existing;
         }
@@ -94,151 +93,157 @@ namespace RefactorThis.GraphDiff
 	    private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
 		{
 			if (member.IsCollection)
-			{
-				// We are dealing with a collection
-				var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
-				var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
-
-				if (updateValues == null)
-					updateValues = new List<object>();
-
-                Type dbCollectionType = member.Accessor.PropertyType;
-				Type innerElementType;
-
-				if (dbCollectionType.IsArray)
-					innerElementType = dbCollectionType.GetElementType();
-				else if (dbCollectionType.IsGenericType)
-					innerElementType = dbCollectionType.GetGenericArguments()[0];
-				else
-					throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
-
-                if (dbCollection == null)
-                {
-                    var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
-                    dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
-                    member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
-                }
-
-				var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
-				var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
-
-				// Iterate through the elements from the updated graph and try to match them against the db graph.
-				var additions = new List<object>();
-				foreach (var updateItem in updateValues)
-				{
-					var key = CreateHash(keyFields, updateItem);
-
-					// try to find in db collection
-					object dbItem;
-					if (dbHash.TryGetValue(key, out dbItem))
-					{
-						// If we own the collection
-						if (member.IsOwned)
-						{
-                            EnsureConcurrency(context, updateItem, dbItem);
-							context.Entry(dbItem).CurrentValues.SetValues(updateItem); // match means we are updating
-							AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
-
-							foreach (var childMember in member.Members)
-								RecursiveGraphUpdate(context, dbHash[key], updateItem, childMember);
-						}
-
-						dbHash.Remove(key); // remove to leave only db removals in the collection
-					}
-					else
-						additions.Add(updateItem);
-				}
-
-				// Removal of dbItem's left in the collection
-				foreach (var dbItem in dbHash.Values)
-				{
-					// Own the collection so remove it completely.
-					if (member.IsOwned)
-						context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
-
-					dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
-				}
-
-				// Add elements marked for addition
-				foreach (object newItem in additions)
-				{
-					if (!member.IsOwned)
-					{
-						if (context.Entry(newItem).State == EntityState.Detached)
-                            context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
-
-						if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
-							context.Entry(newItem).Reload();
-					}
-
-					// Otherwise we will add to object
-					dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
-					AttachCyclicNavigationProperty(context, dataStoreEntity, newItem);
-				}
-			}
-			else // not collection
-			{
-				var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
-				var newvalue = member.Accessor.GetValue(updatingEntity, null);
-				if (dbvalue == null && newvalue == null) // No value
-					return;
-
-				// If we own the collection then we need to update the entities otherwise simple relationship update
-				if (!member.IsOwned)
-				{
-					if (newvalue == null)
-					{
-						member.Accessor.SetValue(dataStoreEntity, null, null);
-						return;
-					}
-
-					if (dbvalue != null)
-					{
-						var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
-						var newKey = CreateHash(keyFields, newvalue);
-						var updateKey = CreateHash(keyFields, dbvalue);
-						if (newKey == updateKey)
-							return; // do nothing if the same key
-					}
-
-					if (context.Entry(newvalue).State == EntityState.Detached)
-						context.Set(ObjectContext.GetObjectType(newvalue.GetType())).Attach(newvalue);
-
-					member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-					context.Entry(newvalue).State = EntityState.Unchanged;
-					if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
-						context.Entry(newvalue).Reload();
-				}
-				else
-				{
-					if (dbvalue != null && newvalue != null)
-					{
-						// Check if the same key, if so then update values on the entity
-						var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
-						var newKey = CreateHash(keyFields, newvalue);
-						var updateKey = CreateHash(keyFields, dbvalue);
-
-						// perform update if the same
-						if (updateKey == newKey)
-						{
-                            EnsureConcurrency(context, newvalue, dbvalue);
-							context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
-						}
-						else
-							member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-					}
-					else
-						member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-
-					AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
-
-					foreach (var childMember in member.Members)
-						RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
-				}
-			}
+				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
+			else
+				UpdateEntityRecursive(context, dataStoreEntity, updatingEntity, member);
 		}
 
-        private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
+        private static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+        {
+            var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
+            var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
+
+            if (updateValues == null)
+                updateValues = new List<object>();
+
+            Type dbCollectionType = member.Accessor.PropertyType;
+            Type innerElementType;
+
+            if (dbCollectionType.IsArray)
+                innerElementType = dbCollectionType.GetElementType();
+            else if (dbCollectionType.IsGenericType)
+                innerElementType = dbCollectionType.GetGenericArguments()[0];
+            else
+                throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
+
+            if (dbCollection == null)
+            {
+                var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
+                dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
+                member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
+            }
+
+            var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(innerElementType));
+            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
+
+            // Iterate through the elements from the updated graph and try to match them against the db graph.
+            var additions = new List<object>();
+            foreach (var updateItem in updateValues)
+            {
+                var key = CreateHash(keyFields, updateItem);
+
+                // try to find in db collection
+                object dbItem;
+                if (dbHash.TryGetValue(key, out dbItem))
+                {
+                    // If we own the collection
+                    if (member.IsOwned)
+                    {
+                        context.UpdateValuesWithConcurrencyCheck(updateItem, dbItem);
+
+                        AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
+
+                        foreach (var childMember in member.Members)
+                            RecursiveGraphUpdate(context, dbHash[key], updateItem, childMember);
+                    }
+
+                    dbHash.Remove(key); // remove to leave only db removals in the collection
+                }
+                else
+                    additions.Add(updateItem);
+            }
+
+            // Removal of dbItem's left in the collection
+            foreach (var dbItem in dbHash.Values)
+            {
+                // Own the collection so remove it completely.
+                if (member.IsOwned)
+                    context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
+
+                dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
+            }
+
+            // Add elements marked for addition
+            foreach (object newItem in additions)
+            {
+                if (!member.IsOwned)
+                {
+                    if (context.Entry(newItem).State == EntityState.Detached)
+                        context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
+
+                    context.ReloadEntity(newItem);
+                }
+
+                // Otherwise we will add to object
+                dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
+                AttachCyclicNavigationProperty(context, dataStoreEntity, newItem);
+            }
+        }
+
+	    private static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+	    {
+	        var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
+	        var newvalue = member.Accessor.GetValue(updatingEntity, null);
+	        if (dbvalue == null && newvalue == null) // No value
+	            return;
+
+	        // If we own the collection then we need to update the entities otherwise simple relationship update
+	        if (!member.IsOwned)
+	        {
+	            if (newvalue == null)
+	            {
+	                member.Accessor.SetValue(dataStoreEntity, null, null);
+	                return;
+	            }
+
+	            if (dbvalue != null)
+	            {
+	                var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
+	                var newKey = CreateHash(keyFields, newvalue);
+	                var updateKey = CreateHash(keyFields, dbvalue);
+	                if (newKey == updateKey)
+                        return; // do nothing if the same key
+	            }
+
+	            if (context.Entry(newvalue).State == EntityState.Detached)
+	                context.Set(ObjectContext.GetObjectType(newvalue.GetType())).Attach(newvalue);
+
+	            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+	            context.Entry(newvalue).State = EntityState.Unchanged;
+                context.ReloadEntity(newvalue);
+	        }
+	        else
+	        {
+	            if (dbvalue != null && newvalue != null)
+	            {
+	                // Check if the same key, if so then update values on the entity
+	                var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
+	                var newKey = CreateHash(keyFields, newvalue);
+	                var updateKey = CreateHash(keyFields, dbvalue);
+
+	                // perform update if the same
+	                if (updateKey == newKey)
+	                    context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
+	                else
+	                    member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+	            }
+	            else
+	                member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+
+	            AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
+
+	            foreach (var childMember in member.Members)
+	                RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
+	        }
+	    }
+
+	    private static void ReloadEntity(this DbContext context, object entity)
+	    {
+	        if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
+	            context.Entry(entity).Reload();
+	    }
+
+	    private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
         {
             // Create unique string representing the keys
             string code = "";
@@ -297,6 +302,12 @@ namespace RefactorThis.GraphDiff
 			var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
             return query.SingleOrDefault(lambda);
 		}
+
+        private static void UpdateValuesWithConcurrencyCheck<T>(this DbContext context, T from, T to) where T : class
+	    {
+            context.EnsureConcurrency(from, to);
+            context.Entry(to).CurrentValues.SetValues(from);
+	    }
 
         // Ensures concurrency properties are checked (manual at the moment.. todo)
 	    private static void EnsureConcurrency<T>(this DbContext db, T from, T to)
