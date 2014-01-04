@@ -9,6 +9,8 @@ using RefactorThis.GraphDiff.Internal.Members;
 
 namespace RefactorThis.GraphDiff.Internal
 {
+#warning move to RootEntity
+
     internal static class EntityFrameworkIncludeHelper
     {
         public static List<string> GetIncludeStrings(AMember root)

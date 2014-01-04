@@ -5,7 +5,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
@@ -35,131 +34,10 @@ namespace RefactorThis.GraphDiff
 	        root.Update(context, null, entity);
 	    }
 
-	    #region Private
-
-	    internal static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
-        {
-            var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
-            var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
-
-            if (updateValues == null)
-                updateValues = new List<object>();
-
-            Type dbCollectionType = member.Accessor.PropertyType;
-            Type innerElementType;
-
-            if (dbCollectionType.IsArray)
-                innerElementType = dbCollectionType.GetElementType();
-            else if (dbCollectionType.IsGenericType)
-                innerElementType = dbCollectionType.GetGenericArguments()[0];
-            else
-                throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
-
-            if (dbCollection == null)
-            {
-                var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
-                dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
-                member.Accessor.SetValue(dataStoreEntity, dbCollection, null);
-            }
-
-            var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(innerElementType));
-            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
-
-            // Iterate through the elements from the updated graph and try to match them against the db graph.
-            var additions = new List<object>();
-            foreach (var updateItem in updateValues)
-            {
-                var key = CreateHash(keyFields, updateItem);
-
-                // try to find item with same key in db collection
-                object dbItem;
-                if (dbHash.TryGetValue(key, out dbItem))
-                {
-                    // If we own the collection
-                    if (member is OwnedCollection)
-                    {
-                        context.UpdateValuesWithConcurrencyCheck(updateItem, dbItem);
-
-                        AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
-
-                        foreach (var childMember in member.Members)
-                            childMember.Update(context, dbHash[key], updateItem);
-                    }
-
-                    dbHash.Remove(key); // remove to leave only db removals in the collection
-                }
-                else
-                    additions.Add(updateItem);
-            }
-
-            // Removal of dbItem's left in the collection
-            foreach (var dbItem in dbHash.Values)
-            {
-                // Own the collection so remove it completely.
-                if (member is OwnedCollection)
-                    context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
-
-                dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
-            }
-
-            // Add elements marked for addition
-            foreach (object newItem in additions)
-            {
-                if (member is AssociatedCollection)
-                    context.AttachAndReloadEntity(newItem);
-
-                // Otherwise we will add to object
-                dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
-
-                AttachCyclicNavigationProperty(context, dataStoreEntity, newItem);
-            }
-        }
-
-	    internal static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
-	    {
-	        var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
-	        var newvalue = member.Accessor.GetValue(updatingEntity, null);
-	        if (dbvalue == null && newvalue == null) // No value
-	            return;
-
-	        // If we own the collection then we need to update the entities otherwise simple relationship update
-	        if (member is OwnedEntity)
-	        {
-	            // Check if the same key, if so then update values on the entity
-                if (IsKeyIdentical(context, newvalue, dbvalue))
-	                context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
-	            else
-	                member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-
-                AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
-
-	            foreach (var childMember in member.Members)
-                    childMember.Update(context, dbvalue, newvalue);
-	        }
-	        else
-	        {
-	            if (newvalue == null)
-	            {
-	                member.Accessor.SetValue(dataStoreEntity, null, null);
-	                return;
-	            }
-
-	            // do nothing if the key is already identical
-                if (IsKeyIdentical(context, newvalue, dbvalue))
-	                return;
-
-                context.AttachAndReloadEntity(newvalue);
-
-	            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-	        }
-	    }
-
-	    #endregion
-
         #region Extensions
 
         // attaches the navigation property of a child back to its parent (if exists)
-        private static void AttachCyclicNavigationProperty(this IObjectContextAdapter context, object parent, object child)
+	    internal static void AttachCyclicNavigationProperty(this IObjectContextAdapter context, object parent, object child)
         {
             if (parent == null || child == null)
                 return;
@@ -248,7 +126,7 @@ namespace RefactorThis.GraphDiff
 	        return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null)));
 	    }
 
-	    private static List<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter db, Type entityType)
+	    internal static List<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter db, Type entityType)
 	    {
 	        var keyMembers = db.ObjectContext.MetadataWorkspace
 	                .GetItems<EntityType>(DataSpace.OSpace)
@@ -258,7 +136,7 @@ namespace RefactorThis.GraphDiff
 	        return keyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
 	    }
 
-	    private static bool IsKeyIdentical(this IObjectContextAdapter context, object newValue, object dbValue)
+	    internal static bool IsKeyIdentical(this IObjectContextAdapter context, object newValue, object dbValue)
 	    {
 	        if (newValue == null || dbValue == null)
 	            return false;
@@ -267,7 +145,7 @@ namespace RefactorThis.GraphDiff
 	        return CreateHash(keyFields, newValue) == CreateHash(keyFields, dbValue);
 	    }
 
-	    private static void AttachAndReloadEntity(this DbContext context, object entity)
+	    internal static void AttachAndReloadEntity(this DbContext context, object entity)
 	    {
 	        if (context.Entry(entity).State == EntityState.Detached)
 	            context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(entity);
@@ -276,7 +154,7 @@ namespace RefactorThis.GraphDiff
 	            context.Entry(entity).Reload();
 	    }
 
-	    private static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
+	    internal static string CreateHash(IEnumerable<PropertyInfo> keys, object entity)
 	    {
 	        // Create unique string representing the keys
 	        string code = "";
