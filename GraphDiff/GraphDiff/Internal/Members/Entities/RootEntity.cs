@@ -6,7 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Members
+namespace RefactorThis.GraphDiff.Internal.Members.Entities
 {
     internal class RootEntity : AMember
     {

@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Members
+namespace RefactorThis.GraphDiff.Internal.Members.Collections
 {
     internal class OwnedCollection : ACollectionMember
     {

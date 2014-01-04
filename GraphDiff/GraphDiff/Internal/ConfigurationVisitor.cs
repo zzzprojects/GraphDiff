@@ -2,6 +2,8 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using RefactorThis.GraphDiff.Internal.Members;
+using RefactorThis.GraphDiff.Internal.Members.Collections;
+using RefactorThis.GraphDiff.Internal.Members.Entities;
 
 namespace RefactorThis.GraphDiff.Internal
 {

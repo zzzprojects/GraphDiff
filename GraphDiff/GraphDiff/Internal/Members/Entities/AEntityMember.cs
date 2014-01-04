@@ -1,7 +1,7 @@
 ﻿using System.Data.Entity;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Members
+namespace RefactorThis.GraphDiff.Internal.Members.Entities
 {
     internal abstract class AEntityMember : AMember
     {

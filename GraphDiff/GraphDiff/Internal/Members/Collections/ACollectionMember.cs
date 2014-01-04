@@ -6,7 +6,7 @@ using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Members
+namespace RefactorThis.GraphDiff.Internal.Members.Collections
 {
     internal abstract class ACollectionMember : AMember
     {
