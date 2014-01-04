@@ -15,6 +15,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using RefactorThis.GraphDiff.Internal;
+using RefactorThis.GraphDiff.Internal.Nodes;
 
 namespace RefactorThis.GraphDiff
 {
@@ -45,7 +46,7 @@ namespace RefactorThis.GraphDiff
 				context.Configuration.AutoDetectChangesEnabled = false;
 
 				// Parse mapping tree
-				var tree = new UpdateConfigurationVisitor<T>().GetUpdateMembers(mapping);
+				var tree = new ConfigurationVisitor<T>().GetMembers(mapping);
 				var includeStrings = EntityFrameworkIncludeHelper.GetIncludeStrings(tree);
 
 				// Get our entity with all includes needed, or add
@@ -90,15 +91,15 @@ namespace RefactorThis.GraphDiff
             return existing;
         }
 
-	    private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+	    private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 		{
-			if (member.IsCollection)
+			if (member is OwnedCollectionMember || member is AssociatedCollectionMember)
 				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
 			else
 				UpdateEntityRecursive(context, dataStoreEntity, updatingEntity, member);
 		}
 
-        private static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+        private static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
         {
             var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
             var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
@@ -137,7 +138,7 @@ namespace RefactorThis.GraphDiff
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
                     // If we own the collection
-                    if (member.IsOwned)
+                    if (member is OwnedCollectionMember)
                     {
                         context.UpdateValuesWithConcurrencyCheck(updateItem, dbItem);
 
@@ -157,7 +158,7 @@ namespace RefactorThis.GraphDiff
             foreach (var dbItem in dbHash.Values)
             {
                 // Own the collection so remove it completely.
-                if (member.IsOwned)
+                if (member is OwnedCollectionMember)
                     context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
 
                 dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
@@ -166,7 +167,7 @@ namespace RefactorThis.GraphDiff
             // Add elements marked for addition
             foreach (object newItem in additions)
             {
-                if (!member.IsOwned)
+                if (member is AssociatedCollectionMember)
                     context.AttachAndReloadEntity(newItem);
 
                 // Otherwise we will add to object
@@ -176,7 +177,7 @@ namespace RefactorThis.GraphDiff
             }
         }
 
-	    private static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, UpdateMember member)
+        private static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 	    {
 	        var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
 	        var newvalue = member.Accessor.GetValue(updatingEntity, null);
@@ -184,7 +185,7 @@ namespace RefactorThis.GraphDiff
 	            return;
 
 	        // If we own the collection then we need to update the entities otherwise simple relationship update
-	        if (member.IsOwned)
+	        if (member is OwnedEntityMember)
 	        {
 	            // Check if the same key, if so then update values on the entity
                 if (IsKeyIdentical(context, newvalue, dbvalue))
