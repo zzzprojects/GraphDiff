@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Nodes
@@ -25,6 +26,12 @@ namespace RefactorThis.GraphDiff.Internal.Nodes
             Accessor = accessor;
             Members = new Stack<AMember>();
             Parent = parent;
+        }
+
+#warning mark as abstract as soon as every child class implements the method
+        internal virtual void Update<T>(DbContext context, T existing, T entity) where T : class, new()
+        {
+            DbContextExtensions.RecursiveGraphUpdate(context, existing, entity, this);
         }
     }
 }

@@ -47,14 +47,7 @@ namespace RefactorThis.GraphDiff
 
 				// Parse mapping tree
 				var tree = new ConfigurationVisitor<T>().GetMembers(mapping);
-				var includeStrings = EntityFrameworkIncludeHelper.GetIncludeStrings(tree);
-
-				// Get our entity with all includes needed, or add
-                T existing = AddOrUpdateEntity(context, entity, includeStrings.ToArray());
-
-				// Foreach branch perform recursive update
-				foreach (var member in tree.Members)
-					RecursiveGraphUpdate(context, existing, entity, member);
+                tree.Update(context, null, entity);
 			}
 			finally
 			{
@@ -75,7 +68,7 @@ namespace RefactorThis.GraphDiff
 
 		#region Private
 
-        private static T AddOrUpdateEntity<T>(this DbContext context, T entity, params string[] includes) where T : class, new()
+        internal static T AddOrUpdateEntity<T>(this DbContext context, T entity, params string[] includes) where T : class, new()
         {
             if (entity == null)
                 throw new ArgumentNullException("entity");
@@ -91,7 +84,7 @@ namespace RefactorThis.GraphDiff
             return existing;
         }
 
-	    private static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
+	    internal static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 		{
 			if (member is OwnedCollectionMember || member is AssociatedCollectionMember)
 				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
