@@ -188,7 +188,20 @@ namespace RefactorThis.GraphDiff
 	            return;
 
 	        // If we own the collection then we need to update the entities otherwise simple relationship update
-	        if (!member.IsOwned)
+	        if (member.IsOwned)
+	        {
+	            // Check if the same key, if so then update values on the entity
+	            if (IsKeyIdentical(context, newvalue, dbvalue))
+	                context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
+	            else
+	                member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+
+	            AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
+
+	            foreach (var childMember in member.Members)
+	                RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
+	        }
+	        else
 	        {
 	            if (newvalue == null)
 	            {
@@ -206,19 +219,6 @@ namespace RefactorThis.GraphDiff
 	            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
 	            context.Entry(newvalue).State = EntityState.Unchanged;
 	            context.ReloadEntity(newvalue);
-	        }
-	        else
-	        {
-	            // Check if the same key, if so then update values on the entity
-	            if (IsKeyIdentical(context, newvalue, dbvalue))
-	                context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
-	            else
-	                member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-
-	            AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
-
-	            foreach (var childMember in member.Members)
-	                RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
 	        }
 	    }
 
