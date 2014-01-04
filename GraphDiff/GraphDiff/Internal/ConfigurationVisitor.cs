@@ -56,10 +56,10 @@ namespace RefactorThis.GraphDiff.Internal
                     newMember = new AssociatedEntity(_currentMember, accessor);
                     break;
                 case "OwnedCollection":
-                    newMember = new OwnedCollection(_currentMember, accessor);
+                    newMember = new CollectionMember(_currentMember, accessor, true);
                     break;
                 case "AssociatedCollection":
-                    newMember = new AssociatedCollection(_currentMember, accessor);
+                    newMember = new CollectionMember(_currentMember, accessor, false);
                     break;
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");

@@ -8,11 +8,14 @@ using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Members.Collections
 {
-    internal abstract class ACollectionMember : AMember
+    internal class CollectionMember : AMember
     {
-        protected ACollectionMember(AMember parent, PropertyInfo accessor)
+        private readonly bool _isOwned;
+
+        internal CollectionMember(AMember parent, PropertyInfo accessor, bool isOwned)
             : base(parent, accessor)
         {
+            _isOwned = isOwned;
         }
 
         internal override void Update<T>(DbContext context, T existing, T entity)
@@ -45,20 +48,35 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                 RemoveElement<T>(context, dbItem, dbCollection);
         }
 
-        protected virtual void AddElement<T>(DbContext context, T existing, object updateItem, IEnumerable dbCollection)
+        private void AddElement<T>(DbContext context, T existing, object updateItem, IEnumerable dbCollection)
         {
+            if (!_isOwned)
+                AttachAndReloadEntity(context, updateItem);
+
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
             AttachCyclicNavigationProperty(context, existing, updateItem);
         }
 
-        protected virtual void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        private void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
         {
+            if (!_isOwned)
+                return;
+
+            UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
+
+            AttachCyclicNavigationProperty(context, existing, updateItem);
+
+            foreach (var childMember in Members)
+                childMember.Update(context, dbItem, updateItem);
         }
 
-        protected virtual void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
+        private void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
         {
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
+
+            if (_isOwned)
+                context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
         }
 
         private IEnumerable CreateMissingCollection(object existing, Type elementType)
