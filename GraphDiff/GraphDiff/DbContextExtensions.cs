@@ -306,11 +306,11 @@ namespace RefactorThis.GraphDiff
 	    }
 
         // Ensures concurrency properties are checked (manual at the moment.. todo)
-	    private static void EnsureConcurrency<T>(this DbContext db, T from, T to)
+	    private static void EnsureConcurrency<T>(this IObjectContextAdapter db, T from, T to)
         {
             // get concurrency properties of T
             var entityType = ObjectContext.GetObjectType(from.GetType());
-            var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
+            var metadata = db.ObjectContext.MetadataWorkspace;
 
             var objType = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
 
