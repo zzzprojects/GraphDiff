@@ -271,29 +271,7 @@ namespace RefactorThis.GraphDiff
                 parentNavigationProperty.SetValue(child, parent, null);
 		}
 
-	    private static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
-		{
-            // attach includes to IQueryable
-			var query = context.Set<T>().AsQueryable();
-			foreach (var include in includes)
-				query = query.Include(include);
-
-            // get key properties of T
-			var keyProperties = context.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
-
-			// Run the find operation
-			ParameterExpression parameter = Expression.Parameter(typeof(T));
-			Expression expression = Expression.Equal(Expression.Property(parameter, keyProperties[0]), Expression.Constant(keyProperties[0].GetValue(entity, null)));
-			for (int i = 1; i < keyProperties.Count; i++)
-			{
-				expression = Expression.And(expression,
-                    Expression.Equal(Expression.Property(parameter, keyProperties[i]), Expression.Constant(keyProperties[i].GetValue(entity, null))));
-			}
-			var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
-            return query.SingleOrDefault(lambda);
-		}
-
-        private static void UpdateValuesWithConcurrencyCheck<T>(this DbContext context, T from, T to) where T : class
+	    private static void UpdateValuesWithConcurrencyCheck<T>(this DbContext context, T from, T to) where T : class
 	    {
             context.EnsureConcurrency(from, to);
             context.Entry(to).CurrentValues.SetValues(from);
@@ -332,7 +310,34 @@ namespace RefactorThis.GraphDiff
             }
         }
 
-		// Gets the primary key fields for an entity type.
+        private static T FindEntityMatching<T>(this DbContext context, T entity, params string[] includes) where T : class
+        {
+            // attach includes to IQueryable
+            var query = context.Set<T>().AsQueryable();
+            foreach (var include in includes)
+                query = query.Include(include);
+
+            // Run the find operation
+            return query.SingleOrDefault(context.CreateKeyPredicateExpression(entity));
+        }
+
+        private static Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(this IObjectContextAdapter context, T entity) where T : class
+        {
+            // get key properties of T
+            var keyProperties = context.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
+
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            Expression expression = CreateEqualsExpression(entity, keyProperties[0], parameter);
+            for (int i = 1; i < keyProperties.Count; i++)
+                expression = Expression.And(expression, CreateEqualsExpression(entity, keyProperties[i], parameter));
+            return Expression.Lambda<Func<T, bool>>(expression, parameter);
+        }
+
+        private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
+        {
+            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null)));
+        }
+
 	    private static List<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter db, Type entityType)
 	    {
 	        var keyMembers = db.ObjectContext.MetadataWorkspace
