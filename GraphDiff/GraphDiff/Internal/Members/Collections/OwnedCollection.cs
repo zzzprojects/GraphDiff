@@ -12,17 +12,17 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
         {
         }
 
-        //protected override void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
-        //{
-        //    base.UpdateElement(context, existing, updateItem, dbItem);
+        protected override void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        {
+            base.UpdateElement(context, existing, updateItem, dbItem);
 
-        //    UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
+            UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
 
-        //    AttachCyclicNavigationProperty(context, existing, updateItem);
+            AttachCyclicNavigationProperty(context, existing, updateItem);
 
-        //    foreach (var childMember in Members)
-        //        childMember.Update(context, existing, updateItem);
-        //}
+            foreach (var childMember in Members)
+                childMember.Update(context, dbItem, updateItem);
+        }
 
         protected override void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
         {

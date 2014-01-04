@@ -33,16 +33,8 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                 object dbItem;
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
-                    if (this is OwnedCollection)
-                    {
-                        UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
-
-                        AttachCyclicNavigationProperty(context, existing, updateItem);
-
-                        foreach (var childMember in Members)
-                            childMember.Update(context, dbHash[key], updateItem);
-                    }
-                    dbHash.Remove(key); // remove to leave only db removals in the collection
+                    UpdateElement(context, existing, updateItem, dbItem);
+                    dbHash.Remove(key);
                 }
                 else
                     AddElement(context, existing, updateItem, dbCollection);
@@ -60,9 +52,9 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
             AttachCyclicNavigationProperty(context, existing, updateItem);
         }
 
-        //protected virtual void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
-        //{
-        //}
+        protected virtual void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        {
+        }
 
         protected virtual void RemoveElement<T>(DbContext context, object dbItem, IEnumerable dbCollection)
         {
