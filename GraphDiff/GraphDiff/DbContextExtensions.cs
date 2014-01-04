@@ -196,8 +196,8 @@ namespace RefactorThis.GraphDiff
 	                return;
 	            }
 
-                // do nothing if the key is already identical
-	            if (dbvalue != null && IsKeyIdentical(context, newvalue, dbvalue))
+	            // do nothing if the key is already identical
+	            if (IsKeyIdentical(context, newvalue, dbvalue))
 	                return;
 
 	            if (context.Entry(newvalue).State == EntityState.Detached)
@@ -205,18 +205,13 @@ namespace RefactorThis.GraphDiff
 
 	            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
 	            context.Entry(newvalue).State = EntityState.Unchanged;
-                context.ReloadEntity(newvalue);
+	            context.ReloadEntity(newvalue);
 	        }
 	        else
 	        {
-	            if (dbvalue != null && newvalue != null)
-	            {
-	                // Check if the same key, if so then update values on the entity
-                    if (IsKeyIdentical(context, newvalue, dbvalue))
-	                    context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
-	                else
-	                    member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-	            }
+	            // Check if the same key, if so then update values on the entity
+	            if (IsKeyIdentical(context, newvalue, dbvalue))
+	                context.UpdateValuesWithConcurrencyCheck(newvalue, dbvalue);
 	            else
 	                member.Accessor.SetValue(dataStoreEntity, newvalue, null);
 
@@ -227,10 +222,13 @@ namespace RefactorThis.GraphDiff
 	        }
 	    }
 
-	    private static bool IsKeyIdentical(DbContext context, object newvalue, object dbvalue)
+	    private static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)
 	    {
-	        var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newvalue.GetType()));
-	        return CreateHash(keyFields, newvalue) == CreateHash(keyFields, dbvalue);
+	        if (newValue == null || dbValue == null)
+	            return false;
+
+	        var keyFields = context.GetKeysFor(ObjectContext.GetObjectType(newValue.GetType()));
+	        return CreateHash(keyFields, newValue) == CreateHash(keyFields, dbValue);
 	    }
 
 	    private static void ReloadEntity(this DbContext context, object entity)
