@@ -167,15 +167,11 @@ namespace RefactorThis.GraphDiff
             foreach (object newItem in additions)
             {
                 if (!member.IsOwned)
-                {
-                    if (context.Entry(newItem).State == EntityState.Detached)
-                        context.Set(ObjectContext.GetObjectType(newItem.GetType())).Attach(newItem);
-
-                    context.ReloadEntity(newItem);
-                }
+                    context.AttachAndReloadEntity(newItem);
 
                 // Otherwise we will add to object
                 dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
+
                 AttachCyclicNavigationProperty(context, dataStoreEntity, newItem);
             }
         }
@@ -213,12 +209,9 @@ namespace RefactorThis.GraphDiff
 	            if (IsKeyIdentical(context, newvalue, dbvalue))
 	                return;
 
-	            if (context.Entry(newvalue).State == EntityState.Detached)
-	                context.Set(ObjectContext.GetObjectType(newvalue.GetType())).Attach(newvalue);
+                context.AttachAndReloadEntity(newvalue);
 
 	            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
-	            context.Entry(newvalue).State = EntityState.Unchanged;
-	            context.ReloadEntity(newvalue);
 	        }
 	    }
 
@@ -231,8 +224,11 @@ namespace RefactorThis.GraphDiff
 	        return CreateHash(keyFields, newValue) == CreateHash(keyFields, dbValue);
 	    }
 
-	    private static void ReloadEntity(this DbContext context, object entity)
+	    private static void AttachAndReloadEntity(this DbContext context, object entity)
 	    {
+            if (context.Entry(entity).State == EntityState.Detached)
+                context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(entity);
+
 	        if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
 	            context.Entry(entity).Reload();
 	    }
