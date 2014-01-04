@@ -10,18 +10,16 @@ using System.Linq.Expressions;
 
 namespace RefactorThis.GraphDiff
 {
-    /* Configuration and Mapping of update */
-
     /// <summary>
     /// Mapping configuration for an update graph
     /// </summary>
-    /// <typeparam name="T">The type of the parent enity</typeparam>
+    /// <typeparam name="T">The type of the parent entity</typeparam>
     public interface IUpdateConfiguration<T> { }
 
     public static class UpdateConfigurationExtensions
     {
         /// <summary>
-        /// States that the child entity is a part of the aggregate and will be updated, added removed if changed in the parent's
+        /// States that the child entity is a part of the aggregate and will be updated, added or removed if changed in the parent's
         /// navigational property.
         /// </summary>
         /// <typeparam name="T">The parent entity type</typeparam>
@@ -49,7 +47,7 @@ namespace RefactorThis.GraphDiff
         }
 
         /// <summary>
-        /// States that the child entity is a part of the aggregate and will be updated, added removed if changed in the parent's
+        /// States that the child entity is a part of the aggregate and will be updated, added or removed if changed in the parent's
         /// navigational property.
         /// </summary>
         /// <typeparam name="T">The parent entity type</typeparam>
@@ -63,11 +61,9 @@ namespace RefactorThis.GraphDiff
             return config;
         }
 
-        /* Collection configuration */
-
         /// <summary>
         /// States that the child collection is a part of the aggregate and the entities inside will be updated,
-        /// added removed if changed in the parent's navigational property.
+        /// added or removed if changed in the parent's navigational property.
         /// </summary>
         /// <typeparam name="T">The parent entity type</typeparam>
         /// <typeparam name="T2">The child collection type </typeparam>
@@ -95,7 +91,7 @@ namespace RefactorThis.GraphDiff
 
         /// <summary>
         /// States that the child collection is a part of the aggregate and the entities inside will be updated,
-        /// added removed if changed in the parent's navigational property.
+        /// added or removed if changed in the parent's navigational property.
         /// </summary>
         /// <typeparam name="T">The parent entity type</typeparam>
         /// <typeparam name="T2">The child collection type </typeparam>
