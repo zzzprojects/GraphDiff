@@ -37,15 +37,7 @@ namespace RefactorThis.GraphDiff
 
 	    #region Private
 
-        internal static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
-		{
-			if (member is OwnedCollection || member is AssociatedCollection)
-				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
-			else
-				UpdateEntityRecursive(context, dataStoreEntity, updatingEntity, member);
-		}
-
-        private static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
+	    internal static void UpdateCollectionRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
         {
             var updateValues = (IEnumerable)member.Accessor.GetValue(updatingEntity, null);
             var dbCollection = (IEnumerable)member.Accessor.GetValue(dataStoreEntity, null);
@@ -91,7 +83,7 @@ namespace RefactorThis.GraphDiff
                         AttachCyclicNavigationProperty(context, dataStoreEntity, updateItem);
 
                         foreach (var childMember in member.Members)
-                            RecursiveGraphUpdate(context, dbHash[key], updateItem, childMember);
+                            childMember.Update(context, dbHash[key], updateItem);
                     }
 
                     dbHash.Remove(key); // remove to leave only db removals in the collection
@@ -123,7 +115,7 @@ namespace RefactorThis.GraphDiff
             }
         }
 
-        private static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
+	    internal static void UpdateEntityRecursive(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 	    {
 	        var dbvalue = member.Accessor.GetValue(dataStoreEntity, null);
 	        var newvalue = member.Accessor.GetValue(updatingEntity, null);
@@ -142,7 +134,7 @@ namespace RefactorThis.GraphDiff
                 AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
 
 	            foreach (var childMember in member.Members)
-	                RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
+                    childMember.Update(context, dbvalue, newvalue);
 	        }
 	        else
 	        {

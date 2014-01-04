@@ -21,17 +21,13 @@ namespace RefactorThis.GraphDiff.Internal.Members
             }
         }
 
-        internal AMember(AMember parent, PropertyInfo accessor)
+        protected AMember(AMember parent, PropertyInfo accessor)
         {
             Accessor = accessor;
             Members = new Stack<AMember>();
             Parent = parent;
         }
 
-#warning mark as abstract as soon as every child class implements the method
-        internal virtual void Update<T>(DbContext context, T existing, T entity) where T : class, new()
-        {
-            DbContextExtensions.RecursiveGraphUpdate(context, existing, entity, this);
-        }
+        internal abstract void Update<T>(DbContext context, T existing, T entity) where T : class, new();
     }
 }

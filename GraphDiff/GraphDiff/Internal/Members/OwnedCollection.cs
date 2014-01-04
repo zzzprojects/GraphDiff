@@ -2,7 +2,7 @@
 
 namespace RefactorThis.GraphDiff.Internal.Members
 {
-    internal class OwnedCollection : AMember
+    internal class OwnedCollection : ACollectionMember
     {
         internal OwnedCollection(AMember parent, PropertyInfo accessor)
                 : base(parent, accessor)

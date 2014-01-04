@@ -52,6 +52,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GraphDiffConfiguration.cs" />
+    <Compile Include="Internal\Members\ACollectionMember.cs" />
+    <Compile Include="Internal\Members\AEntityMember.cs" />
     <Compile Include="Internal\Members\AMember.cs" />
     <Compile Include="Internal\Members\AssociatedCollection.cs" />
     <Compile Include="Internal\Members\AssociatedEntity.cs" />

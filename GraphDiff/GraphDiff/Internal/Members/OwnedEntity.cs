@@ -2,7 +2,7 @@
 
 namespace RefactorThis.GraphDiff.Internal.Members
 {
-    internal class OwnedEntity : AMember
+    internal class OwnedEntity : AEntityMember
     {
         internal OwnedEntity(AMember parent, PropertyInfo accessor)
                 : base(parent, accessor)
