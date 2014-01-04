@@ -17,33 +17,14 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
 
         internal override void Update<T>(DbContext context, T existing, T entity)
         {
-            var updateValues = GetValue<IEnumerable>(entity);
-            var dbCollection = GetValue<IEnumerable>(existing);
-
-            if (updateValues == null)
-                updateValues = new List<object>();
-
-            Type dbCollectionType = Accessor.PropertyType;
-            Type innerElementType;
-
-            if (dbCollectionType.IsArray)
-                innerElementType = dbCollectionType.GetElementType();
-            else if (dbCollectionType.IsGenericType)
-                innerElementType = dbCollectionType.GetGenericArguments()[0];
-            else
-                throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
-
-            if (dbCollection == null)
-            {
-                var newDbCollectionType = !dbCollectionType.IsInterface ? dbCollectionType : typeof(List<>).MakeGenericType(innerElementType);
-                dbCollection = (IEnumerable)Activator.CreateInstance(newDbCollectionType);
-                SetValue(existing, dbCollection);
-            }
+            var innerElementType = GetCollectionElementType();
+            var updateValues = GetValue<IEnumerable>(entity) ?? new List<object>();
+            var dbCollection = GetValue<IEnumerable>(existing) ?? CreateMissingCollection(existing, innerElementType);
 
             var keyFields = GetPrimaryKeyFieldsFor(context, ObjectContext.GetObjectType(innerElementType));
             var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHash(keyFields, item));
 
-            // Iterate through the elements from the updated graph and try to match them against the db graph.
+            // Iterate through the elements from the updated graph and try to match them against the db graph
             var additions = new List<object>();
             foreach (var updateItem in updateValues)
             {
@@ -91,6 +72,25 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
 
                 AttachCyclicNavigationProperty(context, existing, newItem);
             }
+        }
+
+        private IEnumerable CreateMissingCollection(object existing, Type elementType)
+        {
+            var collectionType = !Accessor.PropertyType.IsInterface ? Accessor.PropertyType : typeof(List<>).MakeGenericType(elementType);
+            var collection = (IEnumerable)Activator.CreateInstance(collectionType);
+            SetValue(existing, collection);
+            return collection;
+        }
+
+        private Type GetCollectionElementType()
+        {
+            if (Accessor.PropertyType.IsArray)
+                return Accessor.PropertyType.GetElementType();
+
+            if (Accessor.PropertyType.IsGenericType)
+                return Accessor.PropertyType.GetGenericArguments()[0];
+
+            throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
         }
     }
 }
