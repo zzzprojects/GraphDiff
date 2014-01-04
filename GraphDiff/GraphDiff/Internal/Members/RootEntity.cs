@@ -47,7 +47,7 @@ namespace RefactorThis.GraphDiff.Internal.Members
                 existing = new T();
                 context.Set<T>().Add(existing);
             }
-            context.UpdateValuesWithConcurrencyCheck(entity, existing);
+            UpdateValuesWithConcurrencyCheck(context, entity, existing);
 
             return existing;
         }

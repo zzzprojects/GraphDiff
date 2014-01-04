@@ -22,7 +22,7 @@ namespace RefactorThis.GraphDiff.Internal.Members.Entities
             if (IsKeyIdentical(context, newValue, dbValue))
                 return;
 
-            context.AttachAndReloadEntity(newValue);
+            AttachAndReloadEntity(context, newValue);
 
             SetValue(existing, newValue);
         }

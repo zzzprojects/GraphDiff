@@ -56,9 +56,9 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
                     // If we own the collection
                     if (this is OwnedCollection)
                     {
-                        context.UpdateValuesWithConcurrencyCheck(updateItem, dbItem);
+                        UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
 
-                        context.AttachCyclicNavigationProperty(existing, updateItem);
+                        AttachCyclicNavigationProperty(context, existing, updateItem);
 
                         foreach (var childMember in Members)
                             childMember.Update(context, dbHash[key], updateItem);
@@ -84,12 +84,12 @@ namespace RefactorThis.GraphDiff.Internal.Members.Collections
             foreach (object newItem in additions)
             {
                 if (this is AssociatedCollection)
-                    context.AttachAndReloadEntity(newItem);
+                    AttachAndReloadEntity(context, newItem);
 
                 // Otherwise we will add to object
                 dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { newItem });
 
-                context.AttachCyclicNavigationProperty(existing, newItem);
+                AttachCyclicNavigationProperty(context, existing, newItem);
             }
         }
     }

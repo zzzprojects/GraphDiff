@@ -14,11 +14,11 @@ namespace RefactorThis.GraphDiff.Internal.Members.Entities
         {
             // Check if the same key, if so then update values on the entity
             if (IsKeyIdentical(context, newValue, dbValue))
-                context.UpdateValuesWithConcurrencyCheck(newValue, dbValue);
+                UpdateValuesWithConcurrencyCheck(context, newValue, dbValue);
             else
                 SetValue(existing, newValue);
 
-            context.AttachCyclicNavigationProperty(existing, newValue);
+            AttachCyclicNavigationProperty(context, existing, newValue);
 
             foreach (var childMember in Members)
                 childMember.Update(context, dbValue, newValue);
