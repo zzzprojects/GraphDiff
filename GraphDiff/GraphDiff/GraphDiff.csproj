@@ -53,11 +53,11 @@
   <ItemGroup>
     <Compile Include="GraphDiffConfiguration.cs" />
     <Compile Include="Internal\Nodes\AMember.cs" />
-    <Compile Include="Internal\Nodes\AssociatedCollectionMember.cs" />
-    <Compile Include="Internal\Nodes\AssociatedEntityMember.cs" />
-    <Compile Include="Internal\Nodes\OwnedCollectionMember.cs" />
-    <Compile Include="Internal\Nodes\OwnedEntityMember.cs" />
-    <Compile Include="Internal\Nodes\RootMember.cs" />
+    <Compile Include="Internal\Nodes\AssociatedCollection.cs" />
+    <Compile Include="Internal\Nodes\AssociatedEntity.cs" />
+    <Compile Include="Internal\Nodes\OwnedCollection.cs" />
+    <Compile Include="Internal\Nodes\OwnedEntity.cs" />
+    <Compile Include="Internal\Nodes\RootEntity.cs" />
     <Compile Include="Internal\ConfigurationVisitor.cs" />
     <Compile Include="Internal\EntityFrameworkIncludeHelper.cs" />
     <Compile Include="IUpdateConfiguration.cs" />

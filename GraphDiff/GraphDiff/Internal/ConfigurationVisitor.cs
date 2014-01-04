@@ -12,7 +12,7 @@ namespace RefactorThis.GraphDiff.Internal
 
         public AMember GetMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
-            var initialNode = new RootMember(null, null);
+            var initialNode = new RootEntity(null, null);
             _currentMember = initialNode;
             Visit(expression);
             return initialNode;
@@ -48,16 +48,16 @@ namespace RefactorThis.GraphDiff.Internal
             switch (_currentMethod)
             {
                 case "OwnedEntity":
-                    newMember = new OwnedEntityMember(_currentMember, accessor);
+                    newMember = new OwnedEntity(_currentMember, accessor);
                     break;
                 case "AssociatedEntity":
-                    newMember = new AssociatedEntityMember(_currentMember, accessor);
+                    newMember = new AssociatedEntity(_currentMember, accessor);
                     break;
                 case "OwnedCollection":
-                    newMember = new OwnedCollectionMember(_currentMember, accessor);
+                    newMember = new OwnedCollection(_currentMember, accessor);
                     break;
                 case "AssociatedCollection":
-                    newMember = new AssociatedCollectionMember(_currentMember, accessor);
+                    newMember = new AssociatedCollection(_currentMember, accessor);
                     break;
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");

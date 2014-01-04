@@ -86,7 +86,7 @@ namespace RefactorThis.GraphDiff
 
 	    internal static void RecursiveGraphUpdate(DbContext context, object dataStoreEntity, object updatingEntity, AMember member)
 		{
-			if (member is OwnedCollectionMember || member is AssociatedCollectionMember)
+			if (member is OwnedCollection || member is AssociatedCollection)
 				UpdateCollectionRecursive(context, dataStoreEntity, updatingEntity, member);
 			else
 				UpdateEntityRecursive(context, dataStoreEntity, updatingEntity, member);
@@ -131,7 +131,7 @@ namespace RefactorThis.GraphDiff
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
                     // If we own the collection
-                    if (member is OwnedCollectionMember)
+                    if (member is OwnedCollection)
                     {
                         context.UpdateValuesWithConcurrencyCheck(updateItem, dbItem);
 
@@ -151,7 +151,7 @@ namespace RefactorThis.GraphDiff
             foreach (var dbItem in dbHash.Values)
             {
                 // Own the collection so remove it completely.
-                if (member is OwnedCollectionMember)
+                if (member is OwnedCollection)
                     context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
 
                 dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
@@ -160,7 +160,7 @@ namespace RefactorThis.GraphDiff
             // Add elements marked for addition
             foreach (object newItem in additions)
             {
-                if (member is AssociatedCollectionMember)
+                if (member is AssociatedCollection)
                     context.AttachAndReloadEntity(newItem);
 
                 // Otherwise we will add to object
@@ -178,7 +178,7 @@ namespace RefactorThis.GraphDiff
 	            return;
 
 	        // If we own the collection then we need to update the entities otherwise simple relationship update
-	        if (member is OwnedEntityMember)
+	        if (member is OwnedEntity)
 	        {
 	            // Check if the same key, if so then update values on the entity
                 if (IsKeyIdentical(context, newvalue, dbvalue))

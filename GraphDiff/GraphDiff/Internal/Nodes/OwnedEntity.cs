@@ -2,9 +2,9 @@
 
 namespace RefactorThis.GraphDiff.Internal.Nodes
 {
-    internal class AssociatedCollectionMember : AMember
+    internal class OwnedEntity : AMember
     {
-        internal AssociatedCollectionMember(AMember parent, PropertyInfo accessor)
+        internal OwnedEntity(AMember parent, PropertyInfo accessor)
                 : base(parent, accessor)
         {
         }

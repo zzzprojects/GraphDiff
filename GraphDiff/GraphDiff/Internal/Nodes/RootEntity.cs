@@ -3,9 +3,9 @@ using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Nodes
 {
-    internal class RootMember : AMember
+    internal class RootEntity : AMember
     {
-        internal RootMember(AMember parent, PropertyInfo accessor)
+        internal RootEntity(AMember parent, PropertyInfo accessor)
                 : base(parent, accessor)
         {
         }
