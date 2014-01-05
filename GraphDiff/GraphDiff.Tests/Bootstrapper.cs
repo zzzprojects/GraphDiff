@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.Data.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Data.Entity;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -10,7 +9,7 @@ namespace RefactorThis.GraphDiff.Tests
         [AssemblyInitialize]
         public static void Initialize(TestContext context)
         {
-            Database.SetInitializer<TestDbContext>(new DropCreateDatabaseAlways<TestDbContext>());
+            Database.SetInitializer(new DropCreateDatabaseAlways<TestDbContext>());
             DatabaseScript.Run();
         }
     }
