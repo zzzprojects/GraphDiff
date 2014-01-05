@@ -6,7 +6,7 @@ using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Graph.Collections
+namespace RefactorThis.GraphDiff.Internal.Graph
 {
     internal class CollectionGraphNode : GraphNode
     {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RefactorThis.GraphDiff.Internal.Graph;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
@@ -6,10 +7,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Graph
+namespace RefactorThis.GraphDiff.Internal
 {
     /// <summary>
-    /// GraphDiff facade. Main access point.
+    /// GraphDiff main access point.
     /// </summary>
     /// <typeparam name="T">The root agreggate type</typeparam>
     internal class GraphDiffer<T> where T : class, new()

@@ -43,6 +43,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         #endregion
 
+        // overridden by different implementations
         public virtual void Update<T>(DbContext context, T persisted, T updating) where T : class, new()
         {
             UpdateValuesWithConcurrencyCheck(context, updating, persisted);

@@ -1,7 +1,7 @@
 ﻿using System.Data.Entity;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Graph.Entities
+namespace RefactorThis.GraphDiff.Internal.Graph
 {
     internal class AssociatedEntityGraphNode : GraphNode
     {
