@@ -131,4 +131,25 @@ namespace RefactorThis.GraphDiff.Tests.Models
     }
 
 	#endregion
+
+    public class OwnedNestedTestBase
+    {
+        [Key]
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class OwnedNestedTest : OwnedNestedTestBase
+    {
+        public OwnedNestedTest2 Test2 { get; set; }
+    }
+
+    public class OwnedNestedTest2 : OwnedNestedTestBase
+    {
+        public OwnedNestedTest3 Test3 { get; set; }
+    }
+
+    public class OwnedNestedTest3 : OwnedNestedTestBase
+    {
+    }
 }

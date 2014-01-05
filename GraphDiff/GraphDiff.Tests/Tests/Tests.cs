@@ -817,6 +817,55 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 			}
 		}
 
+        [TestMethod]
+        public void OwnedNestedEntityTest()
+        {
+            OwnedNestedTest test1;
+            using (var context = new TestDbContext())
+            {
+                test1 = new OwnedNestedTest
+                {
+                    Name = "Test1",
+                    Test2 = new OwnedNestedTest2
+                    {
+                        Name = "Test2",
+                        Test3 = new OwnedNestedTest3
+                        {
+                            Name = "Test3"
+                        }
+                    }
+                };
+
+                context.UpdateGraph(test1, map => map
+                    .OwnedEntity(p => p.Test2, with => with
+                        .OwnedEntity(p => p.Test3)));
+
+                context.SaveChanges();
+            } // Simulate detach
+
+            test1.Name = "Updated";
+            test1.Test2.Name = "Updated";
+            test1.Test2.Test3.Name = "Updated";
+            
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                test1 = context.UpdateGraph(test1, map => map
+                    .OwnedEntity(p => p.Test2, with => with
+                        .OwnedEntity(p => p.Test3)));
+
+                context.SaveChanges();
+                test1 = context.OwnedNestedTests.Include(p => p.Test2.Test3).Single(p => p.Id == test1.Id);
+                Assert.IsTrue(test1.Name == "Updated");
+                Assert.IsTrue(test1.Test2.Name == "Updated");
+                Assert.IsTrue(test1.Test2.Test3.Name =="Updated");
+            }
+        }
+
+        // TODO FIXME
+        // need to add test for OwnedEntityGraphNode line 23
+        // shoudl remove old value.
+
 		#endregion
 
 		#region 2 way relation
@@ -1093,6 +1142,11 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             {
                 hobby = context.Hobbies.Add(new Hobby { HobbyType = "Skiing" });
                 employee.Hobbies.Add(hobby);
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
                 context.UpdateGraph(employee, m => m.AssociatedCollection(n => n.Hobbies));
                 context.SaveChanges();
             }
@@ -1101,6 +1155,23 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             {
                 var employee2 = context.Employees.Include(e => e.Hobbies).Single(e => e.Key == "Some");
                 Assert.IsTrue(employee2.Hobbies.First().Id == hobby.Id);
+            }
+        }
+
+        #endregion
+
+        #region Error handling and exceptions
+
+        internal class UnknownType {}
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void IfTypeIsNotKnownThrowNiceException()
+        {
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(new UnknownType());
+                context.SaveChanges();
             }
         }
 

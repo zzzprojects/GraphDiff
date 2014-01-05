@@ -1,20 +1,24 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using RefactorThis.GraphDiff.Internal.Members;
-using RefactorThis.GraphDiff.Internal.Members.Collections;
-using RefactorThis.GraphDiff.Internal.Members.Entities;
+using RefactorThis.GraphDiff.Internal.Graph;
+using RefactorThis.GraphDiff.Internal.Graph.Collections;
+using RefactorThis.GraphDiff.Internal.Graph.Entities;
 
 namespace RefactorThis.GraphDiff.Internal
 {
+    /// <summary>
+    /// Reads an IUpdateConfiguration mapping and produces an GraphNode graph.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class ConfigurationVisitor<T> : ExpressionVisitor
     {
-        private AMember _currentMember;
+        private GraphNode _currentMember;
         private string _currentMethod = "";
 
-        public RootEntity GetMembers(Expression<Func<IUpdateConfiguration<T>, object>> expression)
+        public GraphNode GetNodes(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
-            var initialNode = new RootEntity(null, null);
+            var initialNode = new GraphNode();
             _currentMember = initialNode;
             Visit(expression);
             return initialNode;
@@ -44,22 +48,22 @@ namespace RefactorThis.GraphDiff.Internal
             return Visit(expression.Arguments[0]);
         }
 
-        private AMember CreateNewMember(PropertyInfo accessor)
+        private GraphNode CreateNewMember(PropertyInfo accessor)
         {
-            AMember newMember;
+            GraphNode newMember;
             switch (_currentMethod)
             {
                 case "OwnedEntity":
-                    newMember = new OwnedEntity(_currentMember, accessor);
+                    newMember = new OwnedEntityGraphNode(_currentMember, accessor);
                     break;
                 case "AssociatedEntity":
-                    newMember = new AssociatedEntity(_currentMember, accessor);
+                    newMember = new AssociatedEntityGraphNode(_currentMember, accessor);
                     break;
                 case "OwnedCollection":
-                    newMember = new CollectionMember(_currentMember, accessor, true);
+                    newMember = new CollectionGraphNode(_currentMember, accessor, true);
                     break;
                 case "AssociatedCollection":
-                    newMember = new CollectionMember(_currentMember, accessor, false);
+                    newMember = new CollectionGraphNode(_currentMember, accessor, false);
                     break;
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");

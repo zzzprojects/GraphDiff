@@ -11,7 +11,7 @@ using System.Linq.Expressions;
 namespace RefactorThis.GraphDiff
 {
     /// <summary>
-    /// Mapping configuration for an update graph
+    /// Mapping configuration for a merge graph
     /// </summary>
     /// <typeparam name="T">The type of the parent entity</typeparam>
     public interface IUpdateConfiguration<T> { }
@@ -33,7 +33,7 @@ namespace RefactorThis.GraphDiff
         }
 
         /// <summary>
-        /// States that the child entity is not a part of the aggregate. The parent's navigation property will be updated, but entity changes to the
+        /// States that the child entity is not a part of the aggregate. The parent's navigation property will be updated, but changes to the
         /// child will not be saved.
         /// </summary>
         /// <typeparam name="T">The parent entity type</typeparam>
