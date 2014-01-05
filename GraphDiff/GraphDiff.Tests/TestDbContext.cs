@@ -18,7 +18,6 @@ namespace RefactorThis.GraphDiff.Tests
 		public IDbSet<ContactContactInfo> ContactContactInfos { get; set; }
         public IDbSet<MappedBase> MappedBase { get; set; }
 
-
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
 			modelBuilder.Entity<Company>().HasMany(p => p.Contacts).WithRequired().WillCascadeOnDelete(true);

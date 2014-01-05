@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -55,7 +53,7 @@ namespace RefactorThis.GraphDiff.Tests
 					}
                 });
 
-                var project1 = context.Projects.Add(new Models.Project
+                context.Projects.Add(new Models.Project
                 {
                     Name = "Major Project 1",
                     Deadline = DateTime.Now,
