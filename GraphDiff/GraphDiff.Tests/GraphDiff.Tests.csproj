@@ -74,6 +74,7 @@
     <Compile Include="Tests\AddAggregateBehaviours.cs" />
     <Compile Include="Tests\ThirdTierBehaviours.cs" />
     <Compile Include="Tests\MiscBehaviours.cs" />
+    <Compile Include="Tests\AttachedBehaviours.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GraphDiff\GraphDiff.csproj">

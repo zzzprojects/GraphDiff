@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
@@ -220,6 +221,56 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             }
         }
 
+        [TestMethod]
+        public void ShouldUpdateAggregateWithOwnedEntityAndOwnedCollection()
+        {
+            var node1 = new TestNode
+            {
+                Title = "New Node"
+            };
+
+            using (var context = new TestDbContext())
+            {
+                context.Nodes.Add(node1);
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                node1.Title = "Newly Updated";
+                node1.OneToOneOwned = new OneToOneOwnedModel
+                {
+                    OneToOneOneToManyOwned = new[]
+                    {
+                        new OneToOneOneToManyOwnedModel {Title = "One"},
+                        new OneToOneOneToManyOwnedModel {Title = "Two"},
+                        new OneToOneOneToManyOwnedModel {Title = "Three"}
+                    }
+                };
+
+                node1 = context.UpdateGraph(node1, map => map.OwnedEntity(p => p.OneToOneOwned, with =>
+                    with.OwnedCollection(p => p.OneToOneOneToManyOwned)));
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                var reload = context.Nodes
+                    .Include("OneToOneOwned.OneToOneOneToManyOwned")
+                    .SingleOrDefault(p => p.Id == node1.Id);
+
+                Assert.IsNotNull(reload);
+                Assert.AreEqual(node1.Title, reload.Title);
+                Assert.IsNotNull(reload.OneToOneOwned);
+                Assert.AreEqual(node1.OneToOneOwned.Id, reload.OneToOneOwned.Id);
+
+                Assert.IsNotNull(reload.OneToOneOwned.OneToOneOneToManyOwned);
+                Assert.AreEqual(3, reload.OneToOneOwned.OneToOneOneToManyOwned.Count);
+                Assert.AreEqual(node1.OneToOneOwned.OneToOneOneToManyOwned.First().Id, node1.OneToOneOwned.OneToOneOneToManyOwned.First().Id);
+
+            }
+        }
+        
         //// TODO
         //// need to add test for OwnedEntityGraphNode line 23
         //// shoudl remove old value.

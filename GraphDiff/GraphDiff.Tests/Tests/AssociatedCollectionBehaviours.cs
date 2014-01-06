@@ -109,5 +109,90 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsTrue(node2.OneToManyAssociated.Single().Title == "First One");
             }
         }
+
+        //[TestMethod]
+        //public void ShouldAddRelationToExistingAssociatedCollection_Attached()
+        //{
+        //    var associated = new OneToManyAssociatedModel { Title = "Second One" };
+        //    var node1 = new TestNode
+        //    {
+        //        Title = "New Node",
+        //        OneToManyAssociated = new List<OneToManyAssociatedModel> 
+        //        {
+        //            new OneToManyAssociatedModel { Title = "First One" }
+        //        }
+        //    };
+
+        //    using (var context = new TestDbContext())
+        //    {
+        //        context.Nodes.Add(node1);
+        //        context.OneToManyAssociatedModels.Add(associated);
+        //        node1.OneToManyAssociated.Add(associated);
+
+        //        context.UpdateGraph(node1, map => map
+        //            .AssociatedCollection(p => p.OneToManyAssociated));
+
+        //        context.SaveChanges();
+        //        var node2 = context.Nodes.Include(p => p.OneToManyAssociated).Single(p => p.Id == node1.Id);
+        //        Assert.IsNotNull(node2);
+        //        Assert.IsTrue(node2.OneToManyAssociated.Count == 2);
+        //    }
+        //}
+
+        //[TestMethod]
+        //public void ShouldRemoveRelationFromExistingAssociatedCollection_Attached()
+        //{
+        //    var node1 = new TestNode
+        //    {
+        //        Title = "New Node",
+        //        OneToManyAssociated = new List<OneToManyAssociatedModel> 
+        //        {
+        //            new OneToManyAssociatedModel { Title = "First One" }
+        //        }
+        //    };
+
+        //    using (var context = new TestDbContext())
+        //    {
+        //        context.Nodes.Add(node1);
+        //        node1.OneToManyAssociated.Remove(node1.OneToManyAssociated.First());
+
+        //        // Setup mapping
+        //        context.UpdateGraph(node1, map => map
+        //            .AssociatedCollection(p => p.OneToManyAssociated));
+
+        //        context.SaveChanges();
+        //        var node2 = context.Nodes.Include(p => p.OneToManyAssociated).Single(p => p.Id == node1.Id);
+        //        Assert.IsNotNull(node2);
+        //        Assert.IsTrue(node2.OneToManyAssociated.Count == 0);
+        //    }
+        //}
+
+        //[TestMethod]
+        //public void ShouldNotUpdateEntitesWithinAnAssociatedCollection_Attached()
+        //{
+        //    var node1 = new TestNode
+        //    {
+        //        Title = "New Node",
+        //        OneToManyAssociated = new List<OneToManyAssociatedModel> 
+        //        {
+        //            new OneToManyAssociatedModel { Title = "First One" }
+        //        }
+        //    };
+
+        //    using (var context = new TestDbContext())
+        //    {
+        //        context.Nodes.Add(node1);
+        //        node1.OneToManyAssociated.First().Title = "This should not overwrite value";
+
+        //        // Setup mapping
+        //        context.UpdateGraph(node1, map => map
+        //            .AssociatedCollection(p => p.OneToManyAssociated));
+
+        //        context.SaveChanges();
+        //        var node2 = context.Nodes.Include(p => p.OneToManyAssociated).Single(p => p.Id == node1.Id);
+        //        Assert.IsNotNull(node2);
+        //        Assert.IsTrue(node2.OneToManyAssociated.Single().Title == "First One");
+        //    }
+        //}
     }
 }

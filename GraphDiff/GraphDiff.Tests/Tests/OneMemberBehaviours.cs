@@ -25,7 +25,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
-        public void ShouldUpdateSingleDetachedEntity()
+        public void ShouldUpdateSingleEntity_Detached()
         {
             var node1 = new TestNode
             {
@@ -48,8 +48,26 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             }
         }
 
+        //[TestMethod]
+        //public void ShouldUpdateSingleEntity_Attached()
+        //{
+        //    var node1 = new TestNode
+        //    {
+        //        Title = "Hello"
+        //    };
+
+        //    using (var context = new TestDbContext())
+        //    {
+        //        context.Nodes.Add(node1);
+        //        node1.Title = "Hello2";
+        //        context.UpdateGraph(node1);
+        //        context.SaveChanges();
+        //        Assert.IsTrue(context.Nodes.Single(p => p.Id == node1.Id).Title == "Hello2");
+        //    }
+        //}
+
         [TestMethod]
-        public void ShouldNotUpdateEntityIfNoChangesHaveBeenMade()
+        public void ShouldNotUpdateEntityIfNoChangesHaveBeenMade_Detached()
         {
             var node1 = new TestNode
             {
@@ -69,5 +87,22 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 context.SaveChanges();
             }
         }
+
+        //[TestMethod]
+        //public void ShouldNotUpdateEntityIfNoChangesHaveBeenMade_Attached()
+        //{
+        //    var node1 = new TestNode
+        //    {
+        //        Title = "Hello"
+        //    };
+
+        //    using (var context = new TestDbContext())
+        //    {
+        //        node1 = context.Nodes.Add(node1);
+        //        context.UpdateGraph(node1);
+        //        Assert.IsTrue(context.ChangeTracker.Entries().All(p => p.State == EntityState.Added));
+        //        context.SaveChanges();
+        //    }
+        //}
     }
 }
