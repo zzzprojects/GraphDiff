@@ -328,6 +328,9 @@ namespace RefactorThis.GraphDiff
                 var obj1 = concurrencyProp.GetValue(from, null);
                 var obj2 = concurrencyProp.GetValue(to, null);
 
+                if (obj1 == null && obj2 == null)
+                    continue;
+
                 if (
                     (obj1 == null || obj2 == null) ||
                     (type == typeof(byte[]) && !((byte[])obj1).SequenceEqual((byte[])obj2)) ||

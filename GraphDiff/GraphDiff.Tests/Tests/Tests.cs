@@ -982,6 +982,29 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             }
         }
 
+        [TestMethod]
+	    public void EnsureNewRootsWithOptimisticConcurrencyCanBeAdded()
+	    {
+            using (var db = new TestDbContext())
+            {
+                var contact = new Contact
+                {
+                    Name = "TestContact",
+                    ContactInfos = new List<ContactContactInfo>
+                    {
+                        new ContactContactInfo
+                        {
+                            Type = "Email",
+                            Value = "b@b.com"
+                        }
+                    }
+                };
+
+                db.UpdateGraph(contact, map => map.OwnedCollection(c => c.ContactInfos));
+                db.SaveChanges();
+            }
+	    }
+
         #endregion
 
         #region Expressions stored as fields and properties
