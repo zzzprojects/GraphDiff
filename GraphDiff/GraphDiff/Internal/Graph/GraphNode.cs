@@ -49,7 +49,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             UpdateValuesWithConcurrencyCheck(context, updating, persisted);
 
             // Foreach branch perform recursive update
-            foreach (GraphNode member in Members)
+            foreach (var member in Members)
                 member.Update(context, persisted, updating);
         }
 
@@ -66,10 +66,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected static string CreateHashKey(IEnumerable<PropertyInfo> keys, object entity)
         {
             // Create unique string representing the keys
-            string code = "";
-            foreach (var property in keys)
-                code += "|" + property.GetValue(entity, null).GetHashCode();
-            return code;
+            return keys.Aggregate("", (current, property) => current + ("|" + property.GetValue(entity, null).GetHashCode()));
         }
 
         protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
@@ -96,7 +93,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
         {
-            if (context.Entry(from).State != EntityState.Added)
+            if (context.Entry(to).State != EntityState.Added)
                 EnsureConcurrency(context, from, to);
 
             context.Entry(to).CurrentValues.SetValues(from);
@@ -141,11 +138,19 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             // Check if concurrency properties are equal
             // TODO EF should do this automatically should it not?
-            foreach (PropertyInfo concurrencyProp in concurrencyProperties)
+            foreach (var concurrencyProp in concurrencyProperties)
             {
                 // if is byte[] use array comparison, else equals().
-                if ((concurrencyProp.PropertyType == typeof(byte[]) && !((byte[])concurrencyProp.GetValue(entity1, null)).SequenceEqual((byte[])concurrencyProp.GetValue(entity2, null)))
-                    || concurrencyProp.GetValue(entity1, null).Equals(concurrencyProp.GetValue(entity2, null)))
+
+                var type = concurrencyProp.PropertyType;
+                var obj1 = concurrencyProp.GetValue(entity1, null);
+                var obj2 = concurrencyProp.GetValue(entity2, null);
+
+                if (
+                    (obj1 == null || obj2 == null) ||
+                    (type == typeof (byte[]) && !((byte[]) obj1).SequenceEqual((byte[]) obj2)) ||
+                    (type != typeof (byte[]) && !obj1.Equals(obj2))
+                    )
                 {
                     throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
                 }

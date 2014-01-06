@@ -73,18 +73,24 @@ namespace RefactorThis.GraphDiff.Internal
         {
             PropertyInfo accessor = null;
             var expression = memberExpression.Expression;
-            if (expression is ConstantExpression)
+            var constantExpression = expression as ConstantExpression;
+
+            if (constantExpression != null)
             {
-                object container = ((ConstantExpression) expression).Value;
+                var container = constantExpression.Value;
                 var member = memberExpression.Member;
-                if (member is FieldInfo)
+
+                var fieldInfo = member as FieldInfo;
+                if (fieldInfo != null)
                 {
-                    dynamic value = ((FieldInfo) member).GetValue(container);
+                    dynamic value = fieldInfo.GetValue(container);
                     accessor = (PropertyInfo) value.Body.Member;
                 }
-                if (member is PropertyInfo)
+
+                var info = member as PropertyInfo;
+                if (info != null)
                 {
-                    dynamic value = ((PropertyInfo) member).GetValue(container, null);
+                    dynamic value = info.GetValue(container, null);
                     accessor = (PropertyInfo) value.Body.Member;
                 }
             }

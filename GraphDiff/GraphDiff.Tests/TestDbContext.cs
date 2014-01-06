@@ -5,29 +5,21 @@ namespace RefactorThis.GraphDiff.Tests
 {
 	public class TestDbContext : DbContext
 	{
-		public IDbSet<Company> Companies { get; set; }
-		public IDbSet<CompanyContact> CompanyContacts { get; set; }
-		public IDbSet<Project> Projects { get; set; }
-		public IDbSet<Manager> Managers { get; set; }
-		public IDbSet<Locker> Lockers { get; set; }
-		public IDbSet<Employee> Employees { get; set; }
-		public IDbSet<MultiLevelTest> MultiLevelTest { get; set; }
-		public IDbSet<Hobby> Hobbies { get; set; }
-
-		public IDbSet<Contact> Contacts { get; set; }
-		public IDbSet<ContactContactInfo> ContactContactInfos { get; set; }
-        public IDbSet<MappedBase> MappedBase { get; set; }
-
-        public IDbSet<OwnedNestedTest> OwnedNestedTests { get; set; }
+        public IDbSet<TestNode> Nodes { get; set; }
+        public IDbSet<OneToOneOwnedModel> OneToOneOwnedModels { get; set; }
+        public IDbSet<OneToOneAssociatedModel> OneToOneAssociatedModels { get; set; }
+        public IDbSet<OneToManyAssociatedModel> OneToManyAssociatedModels { get; set; }
+        public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
-			modelBuilder.Entity<Company>().HasMany(p => p.Contacts).WithRequired().WillCascadeOnDelete(true);
-			modelBuilder.Entity<CompanyContact>().HasMany(p => p.Infos).WithRequired().WillCascadeOnDelete(true);
-			modelBuilder.Entity<Project>().HasMany(p => p.Stakeholders).WithMany();
-			modelBuilder.Entity<Employee>().HasKey(p => p.Key);
-            modelBuilder.Entity<Contact>().Property(p => p.RowVersion).IsConcurrencyToken();
-            modelBuilder.Entity<ContactContactInfo>().Property(p => p.RowVersion).IsConcurrencyToken();
+            // associated
+            modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);
+            modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyAssociated).WithOptional(p => p.OneParent);
+
+            // owned
+            modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
+            modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
 		}
 
 		public TestDbContext() : base("GraphDiff") {}

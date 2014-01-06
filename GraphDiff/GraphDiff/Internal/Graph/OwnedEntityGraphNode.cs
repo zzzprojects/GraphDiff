@@ -29,7 +29,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 return;
             }
             
-            if (dbValue != null && newValue != null && IsKeyIdentical(context, newValue, dbValue))
+            if (dbValue != null && IsKeyIdentical(context, newValue, dbValue))
                 UpdateValuesWithConcurrencyCheck(context, newValue, dbValue);
             else
                 dbValue = CreateNewPersistedEntity(context, persisted, newValue);
@@ -42,9 +42,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
         {
-            var instance = Activator.CreateInstance(this.Accessor.PropertyType);
+            var instance = Activator.CreateInstance(Accessor.PropertyType);
             SetValue(existing, instance);
-            context.Set(this.Accessor.PropertyType).Add(instance);
+            context.Set(Accessor.PropertyType).Add(instance);
             UpdateValuesWithConcurrencyCheck(context, newValue, instance);
             return instance;
         }

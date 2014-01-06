@@ -15,7 +15,7 @@ namespace RefactorThis.GraphDiff.Internal
     /// <typeparam name="T">The root agreggate type</typeparam>
     internal class GraphDiffer<T> where T : class, new()
     {
-        private GraphNode _root;
+        private readonly GraphNode _root;
 
         public GraphDiffer(GraphNode root)
         {
@@ -33,6 +33,9 @@ namespace RefactorThis.GraphDiff.Internal
                 // Get our entity with all includes needed, or add
                 T persisted = GetOrAddPersistedEntity(context, updating);
 
+                if (context.Entry(updating).State != EntityState.Detached)
+                    throw new InvalidOperationException("GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UdpateGraph method");
+
                 // Perform recursive update
                 _root.Update(context, persisted, updating);
 
@@ -49,7 +52,7 @@ namespace RefactorThis.GraphDiff.Internal
             if (entity == null)
                 throw new ArgumentNullException("entity");
 
-            T persisted = FindEntityMatching(context, entity);
+            var persisted = FindEntityMatching(context, entity);
 
             if (persisted == null)
             {
@@ -66,8 +69,7 @@ namespace RefactorThis.GraphDiff.Internal
         {
             // attach includes to IQueryable
             var query = context.Set<T>().AsQueryable();
-            foreach (var include in GetIncludeStrings(_root))
-                query = query.Include(include);
+            query = GetIncludeStrings(_root).Aggregate(query, (current, include) => current.Include(include));
 
             // Run the find operation
             return query.SingleOrDefault(CreateKeyPredicateExpression(context, entity));

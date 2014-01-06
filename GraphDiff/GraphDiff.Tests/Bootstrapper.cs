@@ -10,7 +10,14 @@ namespace RefactorThis.GraphDiff.Tests
         public static void Initialize(TestContext context)
         {
             Database.SetInitializer(new DropCreateDatabaseAlways<TestDbContext>());
-            DatabaseScript.Run();
+            using (var db = new TestDbContext())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+            }
         }
     }
 }
