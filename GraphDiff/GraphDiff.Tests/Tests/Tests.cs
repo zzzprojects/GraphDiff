@@ -344,10 +344,10 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 					.OwnedEntity(p => p.LeadCoordinator));
 
 				context.SaveChanges();
-				Assert.IsTrue(context.Projects
-					.Include(p => p.LeadCoordinator)
-					.Single(p => p.Id == 2)
-					.LeadCoordinator.PartKey == "TER");
+                Assert.IsTrue(context.Projects
+                    .Include(p => p.LeadCoordinator)
+                    .Single(p => p.Id == 2)
+                    .LeadCoordinator.PartKey == "TER");
 			}
 		}
 
@@ -721,6 +721,97 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 				Assert.IsTrue(value.Contacts.First().Infos.First().Email == "testeremail");
 			}
 		}
+
+        [TestMethod]
+        public void OwnedEntityWithOwnedCollection()
+        {
+            var project = new Project
+            {
+                Name = "I have nothing but a tight deadline",
+                Deadline = DateTime.Today.AddMonths(1)
+            };
+
+            using (var context = new TestDbContext())
+            {
+                project = context.UpdateGraph(project);
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                project.Name = "I now have a new manager, a promising new employee and some hope";
+                project.LeadCoordinator = new Manager
+                {
+                    Key = "The new manager",
+                    Employees = new Collection<Employee>
+                    {
+                        new Employee
+                        {
+                            Key = "The new employee"
+                        }
+                    }
+                };
+
+                context.UpdateGraph(project, map => map.OwnedEntity(p => p.LeadCoordinator, with => with.OwnedCollection(manager => manager.Employees)));
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                var projectReloaded = context.Projects.Include("LeadCoordinator.Employees").SingleOrDefault(p => p.Id == project.Id);
+                Assert.IsNotNull(projectReloaded);
+                Assert.AreEqual(project.Name, projectReloaded.Name);
+
+                Assert.IsNotNull(projectReloaded.LeadCoordinator);
+                Assert.AreEqual(project.LeadCoordinator.Key, projectReloaded.LeadCoordinator.Key);
+
+                Assert.IsNotNull(projectReloaded.LeadCoordinator.Employees);
+                Assert.AreEqual(1, projectReloaded.LeadCoordinator.Employees.Count);
+                Assert.AreEqual(project.LeadCoordinator.Employees.First().Key, projectReloaded.LeadCoordinator.Employees.First().Key);
+            }
+        }
+
+        [TestMethod]
+        public void NewRootWithOwnedEntityWithOwnedCollection()
+        {
+            Project project;
+            using (var context = new TestDbContext())
+            {
+                project = new Project
+                {
+                    Name = "I have a new manager and a new employee",
+                    Deadline = DateTime.Today.AddMonths(1),
+                    LeadCoordinator = new Manager
+                    {
+                        Key = "The new manager",
+                        Employees = new Collection<Employee>
+                        {
+                            new Employee
+                            {
+                                Key = "The new employee"
+                            }
+                        }
+                    },
+                };
+
+                project = context.UpdateGraph(project, map => map.OwnedEntity(p => p.LeadCoordinator, with => with.OwnedCollection(manager => manager.Employees)));
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                var projectReloaded = context.Projects.Include("LeadCoordinator.Employees").SingleOrDefault(p => p.Id == project.Id);
+                Assert.IsNotNull(projectReloaded);
+                Assert.AreEqual(project.Name, projectReloaded.Name);
+                
+                Assert.IsNotNull(projectReloaded.LeadCoordinator);
+                Assert.AreEqual(project.LeadCoordinator.Key, projectReloaded.LeadCoordinator.Key);
+                
+                Assert.IsNotNull(projectReloaded.LeadCoordinator.Employees);
+                Assert.AreEqual(1, projectReloaded.LeadCoordinator.Employees.Count);
+                Assert.AreEqual(project.LeadCoordinator.Employees.First().Key, projectReloaded.LeadCoordinator.Employees.First().Key);
+            }
+        }
 
 		// added as per ticket #5
 		// also tried to add some more complication to this graph to ensure everything works well

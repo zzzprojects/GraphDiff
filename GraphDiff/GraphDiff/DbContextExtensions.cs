@@ -225,16 +225,24 @@ namespace RefactorThis.GraphDiff
                             EnsureConcurrency(context, newvalue, dbvalue);
 							context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
 						}
-						else
-							member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+                        else
+                            member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+					}
+					else if (newvalue != null)
+					{
+                        dbvalue = Activator.CreateInstance(newvalue.GetType());
+                        member.Accessor.SetValue(dataStoreEntity, dbvalue, null);
+
+                        context.Set(ObjectContext.GetObjectType(dbvalue.GetType())).Add(dbvalue);
+                        context.Entry(dbvalue).CurrentValues.SetValues(newvalue);
 					}
 					else
-						member.Accessor.SetValue(dataStoreEntity, newvalue, null);
+                        member.Accessor.SetValue(dataStoreEntity, newvalue, null);
 
 					AttachCyclicNavigationProperty(context, dataStoreEntity, newvalue);
 
-					foreach (var childMember in member.Members)
-						RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
+				    foreach (var childMember in member.Members)
+                        RecursiveGraphUpdate(context, dbvalue, newvalue, childMember);
 				}
 			}
 		}
