@@ -52,7 +52,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GraphDiffConfiguration.cs" />
-    <Compile Include="Internal\UpdateConfigurationVisitor.cs" />
+    <Compile Include="Internal\Extensions.cs" />
+    <Compile Include="Internal\Graph\CollectionGraphNode.cs" />
+    <Compile Include="Internal\GraphDiffer.cs" />
+    <Compile Include="Internal\Graph\GraphNode.cs" />
+    <Compile Include="Internal\Graph\AssociatedEntityGraphNode.cs" />
+    <Compile Include="Internal\Graph\OwnedEntityGraphNode.cs" />
+    <Compile Include="Internal\ConfigurationVisitor.cs" />
     <Compile Include="IUpdateConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DbContextExtensions.cs" />

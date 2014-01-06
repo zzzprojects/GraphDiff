@@ -59,11 +59,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
-    <Compile Include="DatabaseScript.cs" />
-    <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\TestModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestDbContext.cs" />
-    <Compile Include="Tests\Tests.cs" />
+    <Compile Include="TestBase.cs" />
+    <Compile Include="Tests\AssociatedCollectionBehaviours.cs" />
+    <Compile Include="Tests\OwnedCollectionBehaviours.cs" />
+    <Compile Include="Tests\OneMemberBehaviours.cs" />
+    <Compile Include="Tests\OwnedEntityBehaviours.cs" />
+    <Compile Include="Tests\OptimisticConcurrencyBehaviours.cs" />
+    <Compile Include="Tests\ConfigurationVisitorBehaviours.cs" />
+    <Compile Include="Tests\ErrorHandlingBehaviours.cs" />
+    <Compile Include="Tests\AssociatedEntityBehaviours.cs" />
+    <Compile Include="Tests\AddAggregateBehaviours.cs" />
+    <Compile Include="Tests\ThirdTierBehaviours.cs" />
+    <Compile Include="Tests\MiscBehaviours.cs" />
+    <Compile Include="Tests\AttachedBehaviours.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GraphDiff\GraphDiff.csproj">
