@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
-    public class AddAggregateBehaviours
+    public class AddAggregateBehaviours : TestBase
     {
         [TestMethod]
         public void ShouldAddNewAggregateRoot()

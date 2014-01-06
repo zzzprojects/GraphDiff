@@ -5,14 +5,6 @@ using System.Data.Entity;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
-//     * owned entity
-//     *  - add & replace
-//     *  - remove
-//     *  - update
-//     *  - with owned entity
-//     *  - with associated entity
-//     *  - with owned collection
-//     *  - with associated collection
     [TestClass]
     public class OwnedEntityBehaviours : TestBase
     {

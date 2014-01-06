@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
-    public class OptimisticConcurrencyBehaviours
+    public class OptimisticConcurrencyBehaviours : TestBase
     {
         [TestMethod]
         [ExpectedException(typeof(DbUpdateConcurrencyException))]

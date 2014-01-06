@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
-    public class ErrorHandlingBehaviours
+    public class ErrorHandlingBehaviours : TestBase
     {
         internal class UnknownType { }
 

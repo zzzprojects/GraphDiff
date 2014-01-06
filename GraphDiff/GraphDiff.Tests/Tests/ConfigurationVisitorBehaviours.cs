@@ -8,7 +8,7 @@ using System.Linq;
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
-    public class ConfigurationVisitorBehaviours
+    public class ConfigurationVisitorBehaviours : TestBase
     {
         public Expression<Func<TestNode, OneToOneOwnedModel>> Lambda { get; set; }
 
