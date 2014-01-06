@@ -28,14 +28,13 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">The database context to attach / detach.</param>
 	    /// <param name="entity">The root entity.</param>
 	    /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
-	    public static void UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
+	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
 		{
 			// Guard null mapping
 			if (mapping == null)
 			{
 				// Redirect to simple update
-				UpdateGraph(context, entity);
-				return;
+				return UpdateGraph(context, entity);
 			}
 
 			bool isAutoDetectEnabled = context.Configuration.AutoDetectChangesEnabled;
@@ -54,6 +53,8 @@ namespace RefactorThis.GraphDiff
 				// Foreach branch perform recursive update
 				foreach (var member in tree.Members)
 					RecursiveGraphUpdate(context, existing, entity, member);
+
+			    return existing;
 			}
 			finally
 			{
@@ -67,9 +68,9 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">The database context to attach / detach.</param>
 		/// <typeparam name="T">The type of the root entity</typeparam>
 		/// <param name="entity">The root entity.</param>
-        public static void UpdateGraph<T>(this DbContext context, T entity) where T : class, new()
+        public static T UpdateGraph<T>(this DbContext context, T entity) where T : class, new()
 		{
-            AddOrUpdateEntity(context, entity);
+            return AddOrUpdateEntity(context, entity);
 		}
 
 		#region Private
