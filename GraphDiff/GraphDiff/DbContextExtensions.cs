@@ -323,11 +323,19 @@ namespace RefactorThis.GraphDiff
             foreach (PropertyInfo concurrencyProp in concurrencyProperties)
             {
                 // if is byte[] use array comparison, else equals().
-                if ((concurrencyProp.PropertyType == typeof(byte[]) && !((byte[])concurrencyProp.GetValue(from, null)).SequenceEqual((byte[])concurrencyProp.GetValue(to, null)))
-                    || concurrencyProp.GetValue(from, null).Equals(concurrencyProp.GetValue(to, null)))
+
+                var type = concurrencyProp.PropertyType;
+                var obj1 = concurrencyProp.GetValue(from, null);
+                var obj2 = concurrencyProp.GetValue(to, null);
+
+                if (
+                    (obj1 == null || obj2 == null) ||
+                    (type == typeof(byte[]) && !((byte[])obj1).SequenceEqual((byte[])obj2)) ||
+                    (type != typeof(byte[]) && !obj1.Equals(obj2))
+                    )
                 {
                     throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
-                }  
+                }
             }
         }
 
