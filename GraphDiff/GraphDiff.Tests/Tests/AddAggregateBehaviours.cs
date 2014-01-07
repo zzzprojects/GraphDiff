@@ -1,5 +1,4 @@
-﻿using System.CodeDom;
-using System.Data.Entity;
+﻿using System.Data.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 using System.Linq;

@@ -127,6 +127,8 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         //    {
         //        context.Nodes.Add(node1);
         //        context.OneToManyAssociatedModels.Add(associated);
+        //        context.SaveChanges();
+
         //        node1.OneToManyAssociated.Add(associated);
 
         //        context.UpdateGraph(node1, map => map
@@ -154,6 +156,8 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         //    using (var context = new TestDbContext())
         //    {
         //        context.Nodes.Add(node1);
+        //        context.SaveChanges();
+
         //        node1.OneToManyAssociated.Remove(node1.OneToManyAssociated.First());
 
         //        // Setup mapping
@@ -182,6 +186,8 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         //    using (var context = new TestDbContext())
         //    {
         //        context.Nodes.Add(node1);
+        //        context.SaveChanges();
+
         //        node1.OneToManyAssociated.First().Title = "This should not overwrite value";
 
         //        // Setup mapping
