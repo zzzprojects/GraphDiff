@@ -75,10 +75,19 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private static string GetEntitySetName(ObjectContext context, Type entityType)
         {
-            var set = context.MetadataWorkspace
-                    .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
-                    .BaseEntitySets
-                    .FirstOrDefault(item => item.ElementType.Name.Equals(entityType.Name));
+            Type type = entityType;
+            EntitySetBase set = null;
+
+            while (set == null && type != null)
+            {
+                set = context.MetadataWorkspace
+                        .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
+                        .EntitySets
+                        .FirstOrDefault(item => item.ElementType.Name.Equals(type.Name));
+                
+                type = type.BaseType;
+            }
+            
             return set != null ? set.Name : null;
         }
 
