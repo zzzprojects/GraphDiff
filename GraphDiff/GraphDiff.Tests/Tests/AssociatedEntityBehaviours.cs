@@ -37,6 +37,42 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
+        public void ShouldAddRelationIfPreviousValueWasNullWithCycle()
+        {
+            GroupedTestNode two;
+            GroupedTestNode one;
+            using (var context = new TestDbContext())
+            {
+                var group = new NodeGroup();
+                context.NodeGroups.Add(group);
+                context.SaveChanges();
+
+                one = new GroupedTestNode { Group = group };
+                context.Nodes.Add(one);
+                context.SaveChanges();
+
+                two = new GroupedTestNode { Group = group };
+                context.Nodes.Add(two);
+                context.SaveChanges();
+
+                Assert.AreEqual(2, group.Members.Count);
+            } // Simulate detach
+
+            using (var context = new TestDbContext())
+            {
+                one.Two = two;
+
+                // Setup mapping
+                context.UpdateGraph(one, map => map.AssociatedEntity(o => o.Two));
+                context.SaveChanges();
+
+                var oneReloaded = context.Nodes.OfType<GroupedTestNode>().Include("Two").Single(n => n.Id == one.Id);
+                Assert.IsNotNull(oneReloaded.Two);
+                Assert.AreEqual(two.Id, oneReloaded.Two.Id);
+            }
+        }
+
+        [TestMethod]
         public void ShouldRemoveAssociatedRelationIfNull()
         {
             var node1 = new TestNode { Title = "New Node", OneToOneAssociated = new OneToOneAssociatedModel { Title = "Associated Node" } };
@@ -91,7 +127,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsNotNull(node2);
                 Assert.IsTrue(node2.OneToOneAssociated.OneParent == node2);
                 // should not delete it as it is associated and no cascade rule set.
-                Assert.IsTrue(context.OneToOneAssociatedModels.Single(p => p.Id != otherModel.Id).OneParent == null);                
+                Assert.IsTrue(context.OneToOneAssociatedModels.Single(p => p.Id != otherModel.Id).OneParent == null);
             }
         }
 

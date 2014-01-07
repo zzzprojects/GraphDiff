@@ -9,6 +9,8 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<TestNode> Nodes { get; set; }
         public IDbSet<TestNodeWithBaseReference> NodesWithReference { get; set; }
 
+        public IDbSet<NodeGroup> NodeGroups { get; set; }
+
         public IDbSet<OneToOneOwnedModel> OneToOneOwnedModels { get; set; }
         public IDbSet<OneToOneAssociatedModel> OneToOneAssociatedModels { get; set; }
         public IDbSet<OneToManyAssociatedModel> OneToManyAssociatedModels { get; set; }
@@ -31,6 +33,8 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
+
+            modelBuilder.Entity<GroupedTestNode>().HasOptional(g => g.One).WithOptionalDependent(g => g.Two).WillCascadeOnDelete(false);
 
             // third tier mappings
 

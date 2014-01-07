@@ -75,19 +75,10 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private static string GetEntitySetName(ObjectContext context, Type entityType)
         {
-            Type type = entityType;
-            EntitySetBase set = null;
-
-            while (set == null && type != null)
-            {
-                set = context.MetadataWorkspace
-                        .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
-                        .EntitySets
-                        .FirstOrDefault(item => item.ElementType.Name.Equals(type.Name));
-                
-                type = type.BaseType;
-            }
-            
+            var set = context.MetadataWorkspace
+                    .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
+                    .BaseEntitySets
+                    .FirstOrDefault(item => item.ElementType.Name.Equals(entityType.Name));
             return set != null ? set.Name : null;
         }
 
@@ -121,13 +112,36 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             context.Entry(to).CurrentValues.SetValues(from);
         }
 
-        protected static void AttachAndReloadEntity(DbContext context, object entity)
+        protected static object AttachAndReloadEntity(DbContext context, object entity)
         {
             if (context.Entry(entity).State == EntityState.Detached)
-                context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(entity);
+            {
+                var instance = CreateEmptyEntityWithKey(context, entity);
+
+                context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(instance);
+                context.Entry(instance).Reload();
+
+                return instance;
+            }
 
             if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
                 context.Entry(entity).Reload();
+
+            return entity;
+        }
+
+        private static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
+        {
+            var instance = Activator.CreateInstance(entity.GetType());
+            CopyPrimaryKeyFields(context, entity, instance);
+            return instance;
+        }
+
+        private static void CopyPrimaryKeyFields(IObjectContextAdapter context, object from, object to)
+        {
+            var keyProperties = context.GetPrimaryKeyFieldsFor(from.GetType()).ToList();
+            foreach (var keyProperty in keyProperties)
+                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
         }
 
         protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)

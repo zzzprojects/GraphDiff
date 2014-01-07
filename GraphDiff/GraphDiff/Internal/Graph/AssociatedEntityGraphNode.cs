@@ -25,7 +25,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             if (IsKeyIdentical(context, newValue, dbValue))
                 return;
 
-            AttachAndReloadEntity(context, newValue);
+            newValue = AttachAndReloadEntity(context, newValue);
 
             SetValue(persisted, newValue);
         }
