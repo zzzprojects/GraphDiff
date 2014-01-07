@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
@@ -34,7 +35,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             Members = new Stack<GraphNode>();
         }
 
-        public GraphNode(GraphNode parent, PropertyInfo accessor)
+        protected GraphNode(GraphNode parent, PropertyInfo accessor)
         {
             Accessor = accessor;
             Members = new Stack<GraphNode>();
@@ -63,10 +64,22 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             Accessor.SetValue(instance, value, null);
         }
 
-        protected static string CreateHashKey(IEnumerable<PropertyInfo> keys, object entity)
+        protected static EntityKey CreateEntityKey(DbContext context, object entity)
         {
-            // Create unique string representing the keys
-            return keys.Aggregate("", (current, property) => current + ("|" + property.GetValue(entity, null).GetHashCode()));
+            if (entity == null)
+                throw new ArgumentNullException("entity");
+
+            var objectContext = ((IObjectContextAdapter)context).ObjectContext;
+            return objectContext.CreateEntityKey(GetEntitySetName(objectContext, entity.GetType()), entity);
+        }
+
+        private static string GetEntitySetName(ObjectContext context, Type entityType)
+        {
+            var set = context.MetadataWorkspace
+                    .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
+                    .BaseEntitySets
+                    .FirstOrDefault(item => item.ElementType.Name.Equals(entityType.Name));
+            return set != null ? set.Name : null;
         }
 
         protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
@@ -108,13 +121,12 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 context.Entry(entity).Reload();
         }
 
-        protected static bool IsKeyIdentical(IObjectContextAdapter context, object newValue, object dbValue)
+        protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)
         {
             if (newValue == null || dbValue == null)
                 return false;
 
-            var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(newValue.GetType()));
-            return CreateHashKey(keyFields, newValue) == CreateHashKey(keyFields, dbValue);
+            return CreateEntityKey(context, newValue) == CreateEntityKey(context, dbValue);
         }
 
         private static void EnsureConcurrency<T>(IObjectContextAdapter db, T entity1, T entity2)
