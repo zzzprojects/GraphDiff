@@ -42,7 +42,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
         {
-            var instance = Activator.CreateInstance(Accessor.PropertyType);
+            var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
             context.Set(Accessor.PropertyType).Add(instance);
             UpdateValuesWithConcurrencyCheck(context, newValue, instance);

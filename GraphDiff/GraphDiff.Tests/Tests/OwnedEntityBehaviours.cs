@@ -34,6 +34,28 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
+        public void ShouldAddNewEntityOfChildTypeWhenAddedToParent()
+        {
+            var root = new TestNodeWithBaseReference { Title = "New Node" };
+
+            using (var context = new TestDbContext())
+            {
+                context.NodesWithReference.Add(root);
+                context.SaveChanges();
+            } // Simulate detach
+
+            root.OneToOneOwnedBase = new TestChildNode { Title = "New Entity" };
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                var updatedRoot = context.UpdateGraph(root, map => map.OwnedEntity(p => p.OneToOneOwnedBase));
+                context.SaveChanges();
+
+                Assert.AreEqual(typeof(TestChildNode), updatedRoot.OneToOneOwnedBase.GetType());
+            }
+        }
+
+        [TestMethod]
         public void ShouldUpdateValuesOfEntityWhenEntityAlreadyExists()
         {
             var node1 = new TestNode { Title = "New Node", OneToOneOwned = new OneToOneOwnedModel { Title = "New Entity" } };
