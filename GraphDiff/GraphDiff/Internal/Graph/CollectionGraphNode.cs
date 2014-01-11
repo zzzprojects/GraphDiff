@@ -50,7 +50,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         private void AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
-                updateItem = AttachAndReloadEntity(context, updateItem);
+                updateItem = AttachAndReloadAssociatedEntity(context, updateItem);
 
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 

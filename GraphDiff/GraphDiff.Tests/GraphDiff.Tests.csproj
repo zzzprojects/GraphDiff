@@ -65,6 +65,7 @@
     <Compile Include="TestBase.cs" />
     <Compile Include="Tests\AssociatedCollectionBehaviours.cs" />
     <Compile Include="Tests\GuidKeyBehaviors.cs" />
+    <Compile Include="Tests\AssociatedCollectionTests.cs" />
     <Compile Include="Tests\OwnedCollectionBehaviours.cs" />
     <Compile Include="Tests\OneMemberBehaviours.cs" />
     <Compile Include="Tests\OwnedEntityBehaviours.cs" />

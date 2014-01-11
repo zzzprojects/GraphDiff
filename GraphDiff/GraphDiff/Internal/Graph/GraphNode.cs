@@ -90,10 +90,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var navigationProperties = context.ObjectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .Single(p => p.FullName == childType.FullName)
-                    .NavigationProperties;
+            var navigationProperties = GetNavigationProperties(context, childType);
 
             var parentNavigationProperty = navigationProperties
                     .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
@@ -104,6 +101,14 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 parentNavigationProperty.SetValue(child, parent, null);
         }
 
+        private static IEnumerable<NavigationProperty> GetNavigationProperties(IObjectContextAdapter context, Type entityType)
+        {
+            return context.ObjectContext.MetadataWorkspace
+                    .GetItems<EntityType>(DataSpace.OSpace)
+                    .Single(p => p.FullName == entityType.FullName)
+                    .NavigationProperties;
+        }
+
         protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
         {
             if (context.Entry(to).State != EntityState.Added)
@@ -112,15 +117,17 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             context.Entry(to).CurrentValues.SetValues(from);
         }
 
-        protected static object AttachAndReloadEntity(DbContext context, object entity)
+        protected static object AttachAndReloadAssociatedEntity(DbContext context, object entity)
         {
             if (context.Entry(entity).State == EntityState.Detached)
             {
+                var entityType = ObjectContext.GetObjectType(entity.GetType());
                 var instance = CreateEmptyEntityWithKey(context, entity);
 
-                context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(instance);
+                context.Set(entityType).Attach(instance);
                 context.Entry(instance).Reload();
 
+                AttachRequiredNavigationProperties(context, entity, instance);
                 return instance;
             }
 
@@ -128,6 +135,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 context.Entry(entity).Reload();
 
             return entity;
+        }
+
+        private static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
+        {
+            var entityType = ObjectContext.GetObjectType(updating.GetType());
+            foreach (var navigationProperty in GetNavigationProperties(context, entityType))
+            {
+                if (navigationProperty.ToEndMember.RelationshipMultiplicity != RelationshipMultiplicity.One)
+                    continue;
+
+                var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name);
+                var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
+                
+                if (associatedEntity != null)
+                {
+                    var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
+                    var keyFields = context.GetPrimaryKeyFieldsFor(associatedEntityType);
+                    var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
+                    associatedEntity = context.Set(associatedEntityType).Find(keys);    
+                }
+
+                navigationPropertyInfo.SetValue(persisted, associatedEntity, null);
+            }
         }
 
         private static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
