@@ -74,6 +74,8 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         {
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
 
+            AttachRequiredNavigationProperties(context, dbItem, dbItem);
+
             if (_isOwned)
                 context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
         }

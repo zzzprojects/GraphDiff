@@ -137,7 +137,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             return entity;
         }
 
-        private static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
+        protected static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
         {
             var entityType = ObjectContext.GetObjectType(updating.GetType());
             foreach (var navigationProperty in GetNavigationProperties(context, entityType))

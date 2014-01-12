@@ -17,6 +17,10 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
 	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
+
+        public IDbSet<RootEntity> RootEntities { get; set; }
+
+        public IDbSet<RequiredAssociate> RequiredAssociates { get; set; }
         public IDbSet<GuidEntity> GuidKeyModels { get; set; }
         public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
         public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
@@ -47,6 +51,8 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<OneToOneOwnedModel>().HasMany(p => p.OneToOneOneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<OneToOneOwnedModel>().HasOptional(p => p.OneToOneOneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
             modelBuilder.Entity<OneToOneOwnedModel>().HasMany(p => p.OneToOneOneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
+
+            modelBuilder.Entity<RootEntity>().HasOptional(c => c.Target).WithMany(c => c.Sources);
 
             // Guid mappings
 
