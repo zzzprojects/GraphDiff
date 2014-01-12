@@ -59,6 +59,22 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public TestNode OneToOneOwnedBase { get; set; }
     }
 
+    public class RootEntity : Entity
+    {
+        [Required]
+        public RequiredAssociate RequiredAssociate { get; set; }
+
+        public List<RootEntity> Sources { get; set; }
+
+        public int? TargetId { get; set; }
+        public RootEntity Target { get; set; }
+    }
+
+    public class RequiredAssociate : Entity
+    {
+        public List<RootEntity> RootEntities { get; set; }
+    }
+
     public class MultiKeyModel
     {
         [Key]

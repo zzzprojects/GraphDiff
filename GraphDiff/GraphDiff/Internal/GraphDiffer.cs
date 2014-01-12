@@ -67,9 +67,12 @@ namespace RefactorThis.GraphDiff.Internal
 
         private T FindEntityMatching(DbContext context, T entity)
         {
+            var includeStrings = new List<string>();
+            _root.GetIncludeStrings(context, includeStrings);
+
             // attach includes to IQueryable
             var query = context.Set<T>().AsQueryable();
-            query = GetIncludeStrings(_root).Aggregate(query, (current, include) => current.Include(include));
+            query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
 
             // Run the find operation
             return query.SingleOrDefault(CreateKeyPredicateExpression(context, entity));
@@ -91,20 +94,6 @@ namespace RefactorThis.GraphDiff.Internal
         private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
         {
             return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null), keyProperty.PropertyType));
-        }
-
-        private static IEnumerable<string> GetIncludeStrings(GraphNode root)
-        {
-            var list = new List<string>();
-            if (root.Members.Count == 0 && root.IncludeString != null)
-            {
-                list.Add(root.IncludeString);
-            }
-            foreach (var member in root.Members)
-            {
-                list.AddRange(GetIncludeStrings(member));
-            }
-            return list;
         }
     }
 }

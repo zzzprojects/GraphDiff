@@ -88,6 +88,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             return collection;
         }
 
+        protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        {
+            if (_isOwned)
+                return base.GetRequiredNavigationPropertyIncludes(context);
+
+            return Accessor != null
+                    ? GetRequiredNavigationPropertyIncludes(context, GetCollectionElementType(), IncludeString)
+                    : new string[0];
+        }
+
         private Type GetCollectionElementType()
         {
             if (Accessor.PropertyType.IsArray)

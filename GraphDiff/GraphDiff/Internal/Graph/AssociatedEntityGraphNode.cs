@@ -1,4 +1,5 @@
-﻿using System.Data.Entity;
+﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Graph
@@ -28,6 +29,13 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             newValue = AttachAndReloadAssociatedEntity(context, newValue);
 
             SetValue(persisted, newValue);
+        }
+
+        protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        {
+            return Accessor != null
+                    ? GetRequiredNavigationPropertyIncludes(context, Accessor.PropertyType, IncludeString)
+                    : new string[0];
         }
     }
 }

@@ -19,7 +19,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         
         protected readonly PropertyInfo Accessor;
 
-        public string IncludeString
+        protected string IncludeString
         {
             get
             {
@@ -64,22 +64,35 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             Accessor.SetValue(instance, value, null);
         }
 
-        protected static EntityKey CreateEntityKey(DbContext context, object entity)
+        protected static EntityKey CreateEntityKey(IObjectContextAdapter context, object entity)
         {
             if (entity == null)
                 throw new ArgumentNullException("entity");
 
-            var objectContext = ((IObjectContextAdapter)context).ObjectContext;
-            return objectContext.CreateEntityKey(GetEntitySetName(objectContext, entity.GetType()), entity);
+            return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(entity.GetType()), entity);
         }
 
-        private static string GetEntitySetName(ObjectContext context, Type entityType)
+        internal void GetIncludeStrings(DbContext context, List<string> includeStrings)
         {
-            var set = context.MetadataWorkspace
-                    .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
-                    .BaseEntitySets
-                    .FirstOrDefault(item => item.ElementType.Name.Equals(entityType.Name));
-            return set != null ? set.Name : null;
+            var ownIncludeString = IncludeString;
+            if (!string.IsNullOrEmpty(ownIncludeString))
+                includeStrings.Add(ownIncludeString);
+
+            includeStrings.AddRange(GetRequiredNavigationPropertyIncludes(context));
+
+            foreach (var member in Members)
+                member.GetIncludeStrings(context, includeStrings);
+        }
+
+        protected virtual IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        {
+            return new string[0];
+        }
+
+        protected static IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context, Type entityType, string ownIncludeString)
+        {
+            return context.GetRequiredNavigationPropertiesForType(entityType)
+                    .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
         }
 
         protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
@@ -90,7 +103,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var navigationProperties = GetNavigationProperties(context, childType);
+            var navigationProperties = context.GetNavigationPropertiesForType(childType);
 
             var parentNavigationProperty = navigationProperties
                     .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
@@ -99,14 +112,6 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             if (parentNavigationProperty != null)
                 parentNavigationProperty.SetValue(child, parent, null);
-        }
-
-        private static IEnumerable<NavigationProperty> GetNavigationProperties(IObjectContextAdapter context, Type entityType)
-        {
-            return context.ObjectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .Single(p => p.FullName == entityType.FullName)
-                    .NavigationProperties;
         }
 
         protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
@@ -140,11 +145,8 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
         {
             var entityType = ObjectContext.GetObjectType(updating.GetType());
-            foreach (var navigationProperty in GetNavigationProperties(context, entityType))
+            foreach (var navigationProperty in context.GetRequiredNavigationPropertiesForType(updating.GetType()))
             {
-                if (navigationProperty.ToEndMember.RelationshipMultiplicity != RelationshipMultiplicity.One)
-                    continue;
-
                 var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name);
                 var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
                 
