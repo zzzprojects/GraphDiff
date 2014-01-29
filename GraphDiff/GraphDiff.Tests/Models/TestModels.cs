@@ -50,6 +50,12 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public DateTime Date { get; set; }
     }
 
+    public class InternalKeyModel
+    {
+        [Key]
+        internal int Id { get; set; }
+    }
+
     // ====================================
     // Second tier models
     // ====================================
