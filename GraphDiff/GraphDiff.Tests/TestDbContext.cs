@@ -13,9 +13,14 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
 	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
+        public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
+            // misc
+
+		    modelBuilder.Entity<InternalKeyModel>().HasKey(i => i.Id);
+
             // second tier mappings
 
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);

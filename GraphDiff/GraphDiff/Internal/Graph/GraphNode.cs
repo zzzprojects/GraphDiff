@@ -84,7 +84,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             var parentNavigationProperty = navigationProperties
                     .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
-                    .Select(navigation => childType.GetProperty(navigation.Name))
+                    .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .FirstOrDefault();
 
             if (parentNavigationProperty != null)

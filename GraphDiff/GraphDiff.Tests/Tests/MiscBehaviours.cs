@@ -34,5 +34,17 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsTrue(model.Date == DateTime.Parse("01/01/2010"));
             }
         }
+
+        [TestMethod]
+        public void ShouldSupportInternalKeys()
+        {
+            using (var context = new TestDbContext())
+            {
+                var model = context.UpdateGraph(new InternalKeyModel());
+                context.SaveChanges();
+
+                Assert.AreNotEqual(0, model.Id);
+            }
+        }
     }
 }

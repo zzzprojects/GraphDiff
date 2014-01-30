@@ -18,7 +18,7 @@ namespace RefactorThis.GraphDiff.Internal
             if (metadata == null)
                 throw new InvalidOperationException(String.Format("The type {0} is not known to the DbContext.", entityType.FullName));
 
-            return metadata.KeyMembers.Select(k => entityType.GetProperty(k.Name)).ToList();
+            return metadata.KeyMembers.Select(k => entityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)).ToList();
         }
     }
 }
