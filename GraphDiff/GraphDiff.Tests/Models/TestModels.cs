@@ -56,6 +56,13 @@ namespace RefactorThis.GraphDiff.Tests.Models
         internal int Id { get; set; }
     }
 
+    public class NullableKeyModel
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid? Id { get; set; }
+    }
+
     // ====================================
     // Second tier models
     // ====================================

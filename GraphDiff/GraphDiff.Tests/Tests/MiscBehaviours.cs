@@ -46,5 +46,27 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.AreNotEqual(0, model.Id);
             }
         }
+
+        [TestMethod]
+        public void ShouldSupportNullableKeys()
+        {
+            using (var context = new TestDbContext())
+                context.Database.ExecuteSqlCommand("ALTER TABLE NullableKeyModels ALTER COLUMN Id uniqueidentifier NOT NULL");
+
+            NullableKeyModel model = new NullableKeyModel();
+            using (var context = new TestDbContext())
+            {
+                context.NullableKeyModels.Add(model);
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                model = context.UpdateGraph(model);
+                context.SaveChanges();
+
+                Assert.AreNotEqual(0, model.Id);
+            }
+        }
     }
 }
