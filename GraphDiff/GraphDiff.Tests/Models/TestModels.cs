@@ -36,6 +36,15 @@ namespace RefactorThis.GraphDiff.Tests.Models
         //public ICollection<ManyToManyModel> ManyToManyAssociated { get; set; }
     }
 
+    public class TestChildNode : TestNode
+    {
+    }
+
+    public class TestNodeWithBaseReference : Entity
+    {
+        public TestNode OneToOneOwnedBase { get; set; }
+    }
+
     public class MultiKeyModel
     {
         [Key]

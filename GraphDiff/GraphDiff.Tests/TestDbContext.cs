@@ -6,6 +6,7 @@ namespace RefactorThis.GraphDiff.Tests
 	public class TestDbContext : DbContext
 	{
         public IDbSet<TestNode> Nodes { get; set; }
+        public IDbSet<TestNodeWithBaseReference> NodesWithReference { get; set; }
 
         public IDbSet<OneToOneOwnedModel> OneToOneOwnedModels { get; set; }
         public IDbSet<OneToOneAssociatedModel> OneToOneAssociatedModels { get; set; }

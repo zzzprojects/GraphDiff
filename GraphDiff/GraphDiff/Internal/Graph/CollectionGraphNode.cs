@@ -24,13 +24,12 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var updateValues = GetValue<IEnumerable>(entity) ?? new List<object>();
             var dbCollection = GetValue<IEnumerable>(existing) ?? CreateMissingCollection(existing, innerElementType);
 
-            var keyFields = context.GetPrimaryKeyFieldsFor(ObjectContext.GetObjectType(innerElementType));
-            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateHashKey(keyFields, item));
+            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateEntityKey(context, item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph
             foreach (var updateItem in updateValues)
             {
-                var key = CreateHashKey(keyFields, updateItem);
+                var key = CreateEntityKey(context, updateItem);
 
                 // try to find item with same key in db collection
                 object dbItem;
