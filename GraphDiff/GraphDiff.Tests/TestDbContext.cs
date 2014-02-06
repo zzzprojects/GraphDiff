@@ -1,5 +1,6 @@
 ﻿using System.Data.Entity;
 using RefactorThis.GraphDiff.Tests.Models;
+using RefactorThis.GraphDiff.Tests.Tests;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -14,6 +15,7 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
 	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
+        public IDbSet<GuidEntity> GuidKeyModels { get; set; }
         public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
         public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
 
@@ -41,6 +43,10 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<OneToOneOwnedModel>().HasMany(p => p.OneToOneOneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<OneToOneOwnedModel>().HasOptional(p => p.OneToOneOneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
             modelBuilder.Entity<OneToOneOwnedModel>().HasMany(p => p.OneToOneOneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
+
+            // Guid mappings
+
+            modelBuilder.Entity<GuidTestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent);
 		}
 
 		public TestDbContext() : base("GraphDiff") {}
