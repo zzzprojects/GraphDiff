@@ -90,7 +90,7 @@ namespace RefactorThis.GraphDiff.Internal
 
         private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
         {
-            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null)));
+            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null), keyProperty.PropertyType));
         }
 
         private static IEnumerable<string> GetIncludeStrings(GraphNode root)

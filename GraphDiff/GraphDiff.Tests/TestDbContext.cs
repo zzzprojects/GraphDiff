@@ -14,6 +14,7 @@ namespace RefactorThis.GraphDiff.Tests
 
 	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
         public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
+        public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
