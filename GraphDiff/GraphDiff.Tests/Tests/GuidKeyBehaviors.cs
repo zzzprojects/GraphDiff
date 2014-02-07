@@ -53,5 +53,22 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.AreNotEqual(Guid.Empty, model.OneToOneOwned.Id);
             }
         }
+
+        [TestMethod]
+        public void ShouldSupportAddingRootWithGuidKey()
+        {
+            var model = new GuidTestNode {OneToOneOwned = new GuidOneToOneOwned()};
+
+            using (var context = new TestDbContext())
+            {
+                model = context.UpdateGraph(model, map => map.OwnedEntity(g => g.OneToOneOwned));
+                context.SaveChanges();
+
+                Assert.AreNotEqual(Guid.Empty, model.Id);
+                Assert.IsNotNull(model.OneToOneOwned);
+                Assert.IsNotNull(model.OneToOneOwned.Id);
+                Assert.AreNotEqual(Guid.Empty, model.OneToOneOwned.Id);
+            }
+        }
     }
 }
