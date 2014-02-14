@@ -9,6 +9,11 @@ Please see the initial post @ http://blog.brentmckendrick.com/introducing-graphd
 
 Nuget package is at http://nuget.org/packages/RefactorThis.GraphDiff/
 
+
+## Collaborators
+
+Brent McKendrick, Andreas Pelzer
+
 ## License
 
 See the LICENSE file for license rights and limitations (MIT).
