@@ -109,6 +109,37 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             }
         }
 
+        [TestMethod]
+        public void ShouldNotChangeRequiredAssociateEvenIfItIsUsedTwice()
+        {
+            var requiredAssociate = new RequiredAssociate();
+            var root = new RootEntity { RequiredAssociate = requiredAssociate, Sources = new List<RootEntity>() };
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var owned = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(owned);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.OwnedCollection(r => r.Sources, with => with.AssociatedEntity(s => s.RequiredAssociate)));
+                context.SaveChanges();
+
+                var ownedAfterSave = root.Sources.FirstOrDefault();
+                Assert.IsNotNull(ownedAfterSave);
+                Assert.IsNotNull(ownedAfterSave.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedAfterSave.RequiredAssociate.Id);
+
+                var ownedReloaded = context.RootEntities.Single(r => r.Id == ownedAfterSave.Id);
+                Assert.IsNotNull(ownedReloaded.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedReloaded.RequiredAssociate.Id);
+            }
+        }
 
         [TestMethod]
         public void ShouldRemoveItemsInOwnedCollection()
