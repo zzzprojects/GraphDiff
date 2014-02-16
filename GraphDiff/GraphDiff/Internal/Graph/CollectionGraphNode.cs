@@ -50,7 +50,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         private void AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
-                AttachAndReloadEntity(context, updateItem);
+                updateItem = AttachAndReloadAssociatedEntity(context, updateItem);
 
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
@@ -74,6 +74,8 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         {
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
 
+            AttachRequiredNavigationProperties(context, dbItem, dbItem);
+
             if (_isOwned)
                 context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
         }
@@ -84,6 +86,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var collection = (IEnumerable)Activator.CreateInstance(collectionType);
             SetValue(existing, collection);
             return collection;
+        }
+
+        protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        {
+            if (_isOwned)
+                return base.GetRequiredNavigationPropertyIncludes(context);
+
+            return Accessor != null
+                    ? GetRequiredNavigationPropertyIncludes(context, GetCollectionElementType(), IncludeString)
+                    : new string[0];
         }
 
         private Type GetCollectionElementType()

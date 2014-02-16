@@ -19,7 +19,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         
         protected readonly PropertyInfo Accessor;
 
-        public string IncludeString
+        protected string IncludeString
         {
             get
             {
@@ -64,31 +64,35 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             Accessor.SetValue(instance, value, null);
         }
 
-        protected static EntityKey CreateEntityKey(DbContext context, object entity)
+        protected static EntityKey CreateEntityKey(IObjectContextAdapter context, object entity)
         {
             if (entity == null)
                 throw new ArgumentNullException("entity");
 
-            var objectContext = ((IObjectContextAdapter)context).ObjectContext;
-            return objectContext.CreateEntityKey(GetEntitySetName(objectContext, entity.GetType()), entity);
+            return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(entity.GetType()), entity);
         }
 
-        private static string GetEntitySetName(ObjectContext context, Type entityType)
+        internal void GetIncludeStrings(DbContext context, List<string> includeStrings)
         {
-            Type type = entityType;
-            EntitySetBase set = null;
+            var ownIncludeString = IncludeString;
+            if (!string.IsNullOrEmpty(ownIncludeString))
+                includeStrings.Add(ownIncludeString);
 
-            while (set == null && type != null)
-            {
-                set = context.MetadataWorkspace
-                        .GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace)
-                        .EntitySets
-                        .FirstOrDefault(item => item.ElementType.Name.Equals(type.Name));
-                
-                type = type.BaseType;
-            }
-            
-            return set != null ? set.Name : null;
+            includeStrings.AddRange(GetRequiredNavigationPropertyIncludes(context));
+
+            foreach (var member in Members)
+                member.GetIncludeStrings(context, includeStrings);
+        }
+
+        protected virtual IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        {
+            return new string[0];
+        }
+
+        protected static IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context, Type entityType, string ownIncludeString)
+        {
+            return context.GetRequiredNavigationPropertiesForType(entityType)
+                    .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
         }
 
         protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
@@ -99,10 +103,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var navigationProperties = context.ObjectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .Single(p => p.FullName == childType.FullName)
-                    .NavigationProperties;
+            var navigationProperties = context.GetNavigationPropertiesForType(childType);
 
             var parentNavigationProperty = navigationProperties
                     .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
@@ -121,13 +122,58 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             context.Entry(to).CurrentValues.SetValues(from);
         }
 
-        protected static void AttachAndReloadEntity(DbContext context, object entity)
+        protected static object AttachAndReloadAssociatedEntity(DbContext context, object entity)
         {
             if (context.Entry(entity).State == EntityState.Detached)
-                context.Set(ObjectContext.GetObjectType(entity.GetType())).Attach(entity);
+            {
+                var entityType = ObjectContext.GetObjectType(entity.GetType());
+                var instance = CreateEmptyEntityWithKey(context, entity);
+
+                context.Set(entityType).Attach(instance);
+                context.Entry(instance).Reload();
+
+                AttachRequiredNavigationProperties(context, entity, instance);
+                return instance;
+            }
 
             if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
                 context.Entry(entity).Reload();
+
+            return entity;
+        }
+
+        protected static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
+        {
+            var entityType = ObjectContext.GetObjectType(updating.GetType());
+            foreach (var navigationProperty in context.GetRequiredNavigationPropertiesForType(updating.GetType()))
+            {
+                var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name);
+                var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
+                
+                if (associatedEntity != null)
+                {
+                    var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
+                    var keyFields = context.GetPrimaryKeyFieldsFor(associatedEntityType);
+                    var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
+                    associatedEntity = context.Set(associatedEntityType).Find(keys);    
+                }
+
+                navigationPropertyInfo.SetValue(persisted, associatedEntity, null);
+            }
+        }
+
+        private static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
+        {
+            var instance = Activator.CreateInstance(entity.GetType());
+            CopyPrimaryKeyFields(context, entity, instance);
+            return instance;
+        }
+
+        private static void CopyPrimaryKeyFields(IObjectContextAdapter context, object from, object to)
+        {
+            var keyProperties = context.GetPrimaryKeyFieldsFor(from.GetType()).ToList();
+            foreach (var keyProperty in keyProperties)
+                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
         }
 
         protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)

@@ -36,6 +36,20 @@ namespace RefactorThis.GraphDiff.Tests.Models
         //public ICollection<ManyToManyModel> ManyToManyAssociated { get; set; }
     }
 
+    public class NodeGroup : Entity
+    {
+        public List<GroupedTestNode> Members { get; set; }
+    }
+
+    public class GroupedTestNode : TestNode
+    {
+        public GroupedTestNode One { get; set; }
+
+        public GroupedTestNode Two { get; set; }
+
+        public NodeGroup Group { get; set; }
+    }
+
     public class TestChildNode : TestNode
     {
     }
@@ -43,6 +57,22 @@ namespace RefactorThis.GraphDiff.Tests.Models
     public class TestNodeWithBaseReference : Entity
     {
         public TestNode OneToOneOwnedBase { get; set; }
+    }
+
+    public class RootEntity : Entity
+    {
+        [Required]
+        public RequiredAssociate RequiredAssociate { get; set; }
+
+        public List<RootEntity> Sources { get; set; }
+
+        public int? TargetId { get; set; }
+        public RootEntity Target { get; set; }
+    }
+
+    public class RequiredAssociate : Entity
+    {
+        public List<RootEntity> RootEntities { get; set; }
     }
 
     public class MultiKeyModel

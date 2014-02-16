@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GraphDiffConfiguration.cs" />
+    <Compile Include="Internal\DebugExtensions.cs" />
     <Compile Include="Internal\Extensions.cs" />
     <Compile Include="Internal\Graph\CollectionGraphNode.cs" />
     <Compile Include="Internal\GraphDiffer.cs" />
