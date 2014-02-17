@@ -27,8 +27,10 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateEntityKey(context, item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph
-            foreach (var updateItem in updateValues)
+            var updateList = updateValues.OfType<object>().ToList();
+            for (int i = 0; i < updateList.Count; i++)
             {
+                var updateItem = updateList[i];
                 var key = CreateEntityKey(context, updateItem);
 
                 // try to find item with same key in db collection
@@ -39,7 +41,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     dbHash.Remove(key);
                 }
                 else
-                    AddElement(context, existing, updateItem, dbCollection);
+                    updateList[i] = AddElement(context, existing, updateItem, dbCollection);
             }
 
             // remove obsolete items
@@ -47,14 +49,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 RemoveElement(context, dbItem, dbCollection);
         }
 
-        private void AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
+        private object AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
                 updateItem = AttachAndReloadAssociatedEntity(context, updateItem);
+            else if (context.Entry(updateItem).State == EntityState.Detached)
+            {
+                var entityType = ObjectContext.GetObjectType(updateItem.GetType());
+                var instance = CreateEmptyEntityWithKey(context, updateItem);
+
+                context.Set(entityType).Add(instance);
+                context.Entry(instance).CurrentValues.SetValues(updateItem);
+
+                foreach (var childMember in Members)
+                    childMember.Update(context, instance, updateItem);
+
+                updateItem = instance;
+            }
 
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
             AttachCyclicNavigationProperty(context, existing, updateItem);
+
+            return updateItem;
         }
 
         private void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)

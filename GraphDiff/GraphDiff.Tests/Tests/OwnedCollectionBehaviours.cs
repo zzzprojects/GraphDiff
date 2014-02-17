@@ -62,17 +62,18 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 
             var newModel = new OneToManyOwnedModel { Title = "Hi" };
             node1.OneToManyOwned.Add(newModel);
+
             using (var context = new TestDbContext())
             {
-                // Setup mapping
-                context.UpdateGraph(node1, map => map
-                    .OwnedCollection(p => p.OneToManyOwned));
-
+                node1 = context.UpdateGraph(node1, map => map.OwnedCollection(p => p.OneToManyOwned));
                 context.SaveChanges();
+
                 var node2 = context.Nodes.Include(p => p.OneToManyOwned).Single(p => p.Id == node1.Id);
                 Assert.IsNotNull(node2);
-                Assert.IsTrue(node2.OneToManyOwned.Count == 2);
-                var owned = context.OneToManyOwnedModels.Single(p => p.Id == newModel.Id);
+                Assert.AreEqual(2, node2.OneToManyOwned.Count);
+
+                var ownedId = node1.OneToManyOwned.Skip(1).Select(o => o.Id).Single();
+                var owned = context.OneToManyOwnedModels.Single(p => p.Id == ownedId);
                 Assert.IsTrue(owned.OneParent == node2 && owned.Title == "Hi");
             }
         }
