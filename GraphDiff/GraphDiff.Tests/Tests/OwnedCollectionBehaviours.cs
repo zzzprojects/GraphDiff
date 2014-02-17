@@ -62,18 +62,114 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 
             var newModel = new OneToManyOwnedModel { Title = "Hi" };
             node1.OneToManyOwned.Add(newModel);
+
             using (var context = new TestDbContext())
             {
-                // Setup mapping
-                context.UpdateGraph(node1, map => map
-                    .OwnedCollection(p => p.OneToManyOwned));
-
+                node1 = context.UpdateGraph(node1, map => map.OwnedCollection(p => p.OneToManyOwned));
                 context.SaveChanges();
+
                 var node2 = context.Nodes.Include(p => p.OneToManyOwned).Single(p => p.Id == node1.Id);
                 Assert.IsNotNull(node2);
-                Assert.IsTrue(node2.OneToManyOwned.Count == 2);
-                var owned = context.OneToManyOwnedModels.Single(p => p.Id == newModel.Id);
+                Assert.AreEqual(2, node2.OneToManyOwned.Count);
+
+                var ownedId = node1.OneToManyOwned.Skip(1).Select(o => o.Id).Single();
+                var owned = context.OneToManyOwnedModels.Single(p => p.Id == ownedId);
                 Assert.IsTrue(owned.OneParent == node2 && owned.Title == "Hi");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldAddNewItemInOwnedCollectionWithoutChangingRequiredAssociate()
+        {
+            var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
+            var requiredAssociate = new RequiredAssociate();
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var owned = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(owned);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.OwnedCollection(r => r.Sources, with => with.AssociatedEntity(s => s.RequiredAssociate)));
+                context.SaveChanges();
+
+                var ownedAfterSave = root.Sources.FirstOrDefault();
+                Assert.IsNotNull(ownedAfterSave);
+                Assert.IsNotNull(ownedAfterSave.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedAfterSave.RequiredAssociate.Id);
+
+                var ownedReloaded = context.RootEntities.Single(r => r.Id == ownedAfterSave.Id);
+                Assert.IsNotNull(ownedReloaded.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedReloaded.RequiredAssociate.Id);
+            }
+        }
+
+        [TestMethod]
+        public void ShouldAddTwoNewOwnedItemsWithSharedRequiredAssociate()
+        {
+            var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
+            var requiredAssociate = new RequiredAssociate();
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var ownedOne = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(ownedOne);
+            var ownedTwo = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(ownedTwo);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.OwnedCollection(r => r.Sources, with => with.AssociatedEntity(s => s.RequiredAssociate)));
+                context.SaveChanges();
+
+                Assert.IsTrue(root.Sources.All(s => s.RequiredAssociate.Id == expectedAssociateId));
+
+                var sourceIds = root.Sources.Select(s => s.Id).ToArray();
+                var sourcesReloaded = context.RootEntities.Where(r => sourceIds.Contains(r.Id)).ToList();
+                Assert.IsTrue(sourcesReloaded.All(s => s.RequiredAssociate != null && s.RequiredAssociate.Id == expectedAssociateId));
+            }
+        }
+
+        [TestMethod]
+        public void ShouldNotChangeRequiredAssociateEvenIfItIsUsedTwice()
+        {
+            var requiredAssociate = new RequiredAssociate();
+            var root = new RootEntity { RequiredAssociate = requiredAssociate, Sources = new List<RootEntity>() };
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var owned = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(owned);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.OwnedCollection(r => r.Sources, with => with.AssociatedEntity(s => s.RequiredAssociate)));
+                context.SaveChanges();
+
+                var ownedAfterSave = root.Sources.FirstOrDefault();
+                Assert.IsNotNull(ownedAfterSave);
+                Assert.IsNotNull(ownedAfterSave.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedAfterSave.RequiredAssociate.Id);
+
+                var ownedReloaded = context.RootEntities.Single(r => r.Id == ownedAfterSave.Id);
+                Assert.IsNotNull(ownedReloaded.RequiredAssociate);
+                Assert.AreEqual(expectedAssociateId, ownedReloaded.RequiredAssociate.Id);
             }
         }
 
