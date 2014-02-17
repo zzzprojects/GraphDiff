@@ -183,6 +183,37 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
+        public void ShouldAddTwoAssociatesWithSharedRequiredAssociate()
+        {
+            var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
+            var requiredAssociate = new RequiredAssociate();
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var associateOne = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(associateOne);
+            var associateTwo = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(associateTwo);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.AssociatedCollection(r => r.Sources));
+                context.SaveChanges();
+
+                Assert.IsTrue(root.Sources.All(s => s.RequiredAssociate.Id == expectedAssociateId));
+
+                var sourceIds = root.Sources.Select(s => s.Id).ToArray();
+                var sourcesReloaded = context.RootEntities.Where(r => sourceIds.Contains(r.Id)).ToList();
+                Assert.IsTrue(sourcesReloaded.All(s => s.RequiredAssociate != null && s.RequiredAssociate.Id == expectedAssociateId));
+            }
+        }
+
+        [TestMethod]
         public void ShouldRemoveAssociateWithRequiredAssociate()
         {
             var targetRequired = new RequiredAssociate();

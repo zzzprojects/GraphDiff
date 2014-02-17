@@ -134,7 +134,8 @@ namespace RefactorThis.GraphDiff.Tests.Tests
 
                 Assert.IsTrue(root.Sources.All(s => s.RequiredAssociate.Id == expectedAssociateId));
 
-                var sourcesReloaded = context.RootEntities.Where(r => root.Sources.Any(s => s.Id == r.Id));
+                var sourceIds = root.Sources.Select(s => s.Id).ToArray();
+                var sourcesReloaded = context.RootEntities.Where(r => sourceIds.Contains(r.Id)).ToList();
                 Assert.IsTrue(sourcesReloaded.All(s => s.RequiredAssociate != null && s.RequiredAssociate.Id == expectedAssociateId));
             }
         }
