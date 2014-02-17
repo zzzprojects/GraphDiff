@@ -110,6 +110,36 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
+        public void ShouldAddTwoNewOwnedItemsWithSharedRequiredAssociate()
+        {
+            var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
+            var requiredAssociate = new RequiredAssociate();
+            using (var context = new TestDbContext())
+            {
+                context.RootEntities.Add(root);
+                context.RequiredAssociates.Add(requiredAssociate);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var expectedAssociateId = requiredAssociate.Id;
+            var ownedOne = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(ownedOne);
+            var ownedTwo = new RootEntity { RequiredAssociate = requiredAssociate };
+            root.Sources.Add(ownedTwo);
+
+            using (var context = new TestDbContext())
+            {
+                root = context.UpdateGraph(root, map => map.OwnedCollection(r => r.Sources, with => with.AssociatedEntity(s => s.RequiredAssociate)));
+                context.SaveChanges();
+
+                Assert.IsTrue(root.Sources.All(s => s.RequiredAssociate.Id == expectedAssociateId));
+
+                var sourcesReloaded = context.RootEntities.Where(r => root.Sources.Any(s => s.Id == r.Id));
+                Assert.IsTrue(sourcesReloaded.All(s => s.RequiredAssociate != null && s.RequiredAssociate.Id == expectedAssociateId));
+            }
+        }
+
+        [TestMethod]
         public void ShouldNotChangeRequiredAssociateEvenIfItIsUsedTwice()
         {
             var requiredAssociate = new RequiredAssociate();
