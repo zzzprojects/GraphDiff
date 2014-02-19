@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Collections.ObjectModel;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 using System.Linq;
 using System.Data.Entity;
@@ -39,6 +40,63 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsNotNull(node2);
                 var owned = node2.OneToManyOwned.First();
                 Assert.IsTrue(owned.OneParent == node2 && owned.Title == "What's up");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldUpdateItemInNestedOwnedCollection()
+        {
+            var node1 = new TestNode
+            {
+                Title = "New Node",
+                OneToManyOwned = new List<OneToManyOwnedModel>
+                {
+                    new OneToManyOwnedModel
+                    {
+                        Title = "Hello",
+                        OneToManyOneToManyOwned = new Collection<OneToManyOneToManyOwnedModel>
+                        {
+                            new OneToManyOneToManyOwnedModel {Title = "BeforeUpdate"}
+                        }
+                    }
+                }
+            };
+
+            using (var context = new TestDbContext())
+            {
+                context.Nodes.Add(node1);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var oneToManyOneToManyOwned = node1.OneToManyOwned.Single().OneToManyOneToManyOwned.Single();
+            var expectedId = oneToManyOneToManyOwned.Id;
+            const string expectedTitle = "AfterUpdate";
+            oneToManyOneToManyOwned.Title = expectedTitle;
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                node1 = context.UpdateGraph(node1, map => map.OwnedCollection(p => p.OneToManyOwned,
+                                                                              with => with.OwnedCollection(p => p.OneToManyOneToManyOwned)));
+                context.SaveChanges();
+
+                Assert.AreEqual(1, node1.OneToManyOwned.Count);
+                Assert.AreEqual(1, node1.OneToManyOwned.Single().OneToManyOneToManyOwned.Count);
+
+                oneToManyOneToManyOwned = node1.OneToManyOwned.Single().OneToManyOneToManyOwned.Single();
+                Assert.AreEqual(expectedId, oneToManyOneToManyOwned.Id);
+                Assert.AreEqual(expectedTitle, oneToManyOneToManyOwned.Title);
+
+                var node1Reloaded = context.Nodes
+                        .Include("OneToManyOwned.OneToManyOneToManyOwned")
+                        .Single(n => n.Id == node1.Id);
+
+                Assert.AreEqual(1, node1Reloaded.OneToManyOwned.Count);
+                Assert.AreEqual(1, node1Reloaded.OneToManyOwned.Single().OneToManyOneToManyOwned.Count);
+
+                oneToManyOneToManyOwned = node1Reloaded.OneToManyOwned.Single().OneToManyOneToManyOwned.Single();
+                Assert.AreEqual(expectedId, oneToManyOneToManyOwned.Id);
+                Assert.AreEqual(expectedTitle, oneToManyOneToManyOwned.Title);
             }
         }
 
@@ -283,6 +341,5 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsTrue(list[3].Title == "Finish");
             }
         }
-
     }
 }
