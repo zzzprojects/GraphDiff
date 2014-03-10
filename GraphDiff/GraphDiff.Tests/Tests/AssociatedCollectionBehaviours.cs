@@ -155,20 +155,22 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         {
             var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
             var requiredAssociate = new RequiredAssociate();
+            var owned = new RootEntity { RequiredAssociate = requiredAssociate };
+
             using (var context = new TestDbContext())
             {
                 context.RootEntities.Add(root);
+                context.RootEntities.Add(owned);
                 context.RequiredAssociates.Add(requiredAssociate);
                 context.SaveChanges();
             } // Simulate detach
 
             var expectedAssociateId = requiredAssociate.Id;
-            var owned = new RootEntity { RequiredAssociate = requiredAssociate };
             root.Sources.Add(owned);
 
             using (var context = new TestDbContext())
             {
-                root = context.UpdateGraph(root, map => map.AssociatedCollection(r => r.Sources));
+                root = context.UpdateGraph(root, map => map.AssociatedCollection(r => r.Sources).AssociatedEntity(r => r.RequiredAssociate));
                 context.SaveChanges();
 
                 var ownedAfterSave = root.Sources.FirstOrDefault();
@@ -187,22 +189,25 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         {
             var root = new RootEntity { RequiredAssociate = new RequiredAssociate(), Sources = new List<RootEntity>() };
             var requiredAssociate = new RequiredAssociate();
+            var associateOne = new RootEntity { RequiredAssociate = requiredAssociate };
+            var associateTwo = new RootEntity { RequiredAssociate = requiredAssociate };
+
             using (var context = new TestDbContext())
             {
                 context.RootEntities.Add(root);
+                context.RootEntities.Add(associateOne);
+                context.RootEntities.Add(associateTwo);
                 context.RequiredAssociates.Add(requiredAssociate);
                 context.SaveChanges();
             } // Simulate detach
 
             var expectedAssociateId = requiredAssociate.Id;
-            var associateOne = new RootEntity { RequiredAssociate = requiredAssociate };
             root.Sources.Add(associateOne);
-            var associateTwo = new RootEntity { RequiredAssociate = requiredAssociate };
             root.Sources.Add(associateTwo);
 
             using (var context = new TestDbContext())
             {
-                root = context.UpdateGraph(root, map => map.AssociatedCollection(r => r.Sources));
+                root = context.UpdateGraph(root, map => map.AssociatedCollection(r => r.Sources).AssociatedEntity(r => r.RequiredAssociate));
                 context.SaveChanges();
 
                 Assert.IsTrue(root.Sources.All(s => s.RequiredAssociate.Id == expectedAssociateId));
