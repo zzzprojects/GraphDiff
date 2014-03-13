@@ -124,9 +124,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static object AttachAndReloadAssociatedEntity(DbContext context, object entity)
         {
-            var existing = FindEntityByKey(context, entity);
-            if (existing != null)
-                return existing;
+            var localCopy = FindLocalByKey(context, entity);
+            if (localCopy != null)
+                return localCopy;
 
             if (context.Entry(entity).State == EntityState.Detached)
             {
@@ -144,6 +144,12 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 context.Entry(entity).Reload();
 
             return entity;
+        }
+
+        private static object FindLocalByKey(DbContext context, object entity)
+        {
+            var eType = ObjectContext.GetObjectType(entity.GetType());
+            return context.Set(eType).Local.OfType<object>().FirstOrDefault(local => IsKeyIdentical(context, local, entity));
         }
 
         protected static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
