@@ -24,7 +24,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             // do nothing if the key is already identical
             if (IsKeyIdentical(context, newValue, dbValue))
+            {
                 return;
+            }
 
             newValue = AttachAndReloadAssociatedEntity(context, newValue);
 

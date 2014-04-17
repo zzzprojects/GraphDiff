@@ -39,7 +39,9 @@ namespace RefactorThis.GraphDiff.Internal
 
             // go left to right in the subtree (ignore first argument for now)
             for (int i = 1; i < expression.Arguments.Count; i++)
+            {
                 Visit(expression.Arguments[i]);
+            }
 
             // go back up the tree and continue
             _currentMember = _currentMember.Parent;

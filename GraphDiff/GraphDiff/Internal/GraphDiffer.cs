@@ -34,7 +34,9 @@ namespace RefactorThis.GraphDiff.Internal
                 T persisted = GetOrAddPersistedEntity(context, updating);
 
                 if (context.Entry(updating).State != EntityState.Detached)
+                {
                     throw new InvalidOperationException("GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method");
+                }
 
                 // Perform recursive update
                 _root.Update(context, persisted, updating);
@@ -50,7 +52,9 @@ namespace RefactorThis.GraphDiff.Internal
         private T GetOrAddPersistedEntity(DbContext context, T entity)
         {
             if (entity == null)
+            {
                 throw new ArgumentNullException("entity");
+            }
 
             var persisted = FindEntityMatching(context, entity);
 

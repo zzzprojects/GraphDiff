@@ -36,7 +36,9 @@ namespace RefactorThis.GraphDiff.Internal
                 if (entity.State != previousState)
                 {
                     if (builder.Length > 0)
+                    {
                         builder.AppendLine();
+                    }
 
                     builder.AppendLine(entity.State.ToString());
                     builder.AppendLine("----------");
