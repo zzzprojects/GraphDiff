@@ -44,6 +44,10 @@
       <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="NSubstitute, Version=1.7.2.0, Culture=neutral, PublicKeyToken=92dd2e9066daa5ca, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NSubstitute.1.7.2.0\lib\NET40\NSubstitute.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core">
@@ -59,11 +63,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
+    <Compile Include="Models\AttributeTestModels.cs" />
     <Compile Include="Models\TestModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestDbContext.cs" />
     <Compile Include="TestBase.cs" />
     <Compile Include="Tests\AssociatedCollectionBehaviours.cs" />
+    <Compile Include="Tests\AttributeMappingBehaviours.cs" />
     <Compile Include="Tests\GuidKeyBehaviors.cs" />
     <Compile Include="Tests\OwnedCollectionBehaviours.cs" />
     <Compile Include="Tests\OneMemberBehaviours.cs" />
@@ -76,6 +82,7 @@
     <Compile Include="Tests\ThirdTierBehaviours.cs" />
     <Compile Include="Tests\MiscBehaviours.cs" />
     <Compile Include="Tests\AttachedBehaviours.cs" />
+    <Compile Include="UnitTests\AggregateRegisterTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GraphDiff\GraphDiff.csproj">

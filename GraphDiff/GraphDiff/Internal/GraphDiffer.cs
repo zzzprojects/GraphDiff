@@ -10,7 +10,7 @@ using System.Reflection;
 namespace RefactorThis.GraphDiff.Internal
 {
     /// <summary>
-    /// GraphDiff main access point.
+    /// GraphDiff main entry point.
     /// </summary>
     /// <typeparam name="T">The root agreggate type</typeparam>
     internal class GraphDiffer<T> where T : class, new()

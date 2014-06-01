@@ -62,7 +62,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             else if (context.Entry(updateItem).State == EntityState.Detached)
             {
                 var entityType = ObjectContext.GetObjectType(updateItem.GetType());
-                var instance = CreateEmptyEntityWithKey(context, updateItem);
+                var instance = context.CreateEmptyEntityWithKey(updateItem);
 
                 context.Set(entityType).Add(instance);
                 context.Entry(instance).CurrentValues.SetValues(updateItem);

@@ -6,9 +6,13 @@
 
 using System;
 using System.Data.Entity;
+using System.Linq;
 using System.Linq.Expressions;
 using RefactorThis.GraphDiff.Internal;
 using RefactorThis.GraphDiff.Internal.Graph;
+using RefactorThis.GraphDiff.Attributes;
+using RefactorThis.GraphDiff.Internal.Caching;
+using System.Collections.Generic;
 
 namespace RefactorThis.GraphDiff
 {
@@ -24,11 +28,44 @@ namespace RefactorThis.GraphDiff
         /// <returns>The attached entity graph</returns>
 	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null) where T : class, new()
 	    {
-            var root = mapping == null ? new GraphNode() : new ConfigurationVisitor<T>().GetNodes(mapping);
+            GraphNode root;
+
+            // mapping overrides attributes
+            if (mapping != null)
+            {
+                root = new ConfigurationVisitor<T>().GetNodes(mapping);
+            }
+            else if (typeof(T).GetCustomAttributes(typeof(AggregateRootAttribute), true).Any())
+            {
+                root = new AggregateRegister(new CacheProvider()).GetEntityGraph(typeof(T));
+            }
+            else
+            {
+                root = new GraphNode();
+            }
+            
             var graphDiffer = new GraphDiffer<T>(root);
             return graphDiffer.Merge(context, entity);
 	    }
 
-        // TODO add IEnumerable<T> entities
+        // TODO add IEnumerable<T> entities - requires changes to GraphDiffer to ensure one query.
+
+        public static IQueryable<T> AggregateQuery<T>(this DbContext context) where T : class
+        {
+            var graph = new AggregateRegister(new CacheProvider()).GetEntityGraph(typeof(T));
+            if (graph == null)
+            {
+                throw new NotSupportedException("Type: '" + typeof(T).FullName + "' is not a known aggregate");
+            }
+
+            var query = context.Set<T>().AsQueryable();
+
+            // attach includes to IQueryable
+            var includeStrings = new List<string>();
+            graph.GetIncludeStrings(context, includeStrings);
+            query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+            return query;
+        }
 	}
 }

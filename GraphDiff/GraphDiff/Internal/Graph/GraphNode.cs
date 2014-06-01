@@ -5,6 +5,7 @@ using System.Data.Entity.Core;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
+using RefactorThis.GraphDiff.Internal;
 using System.Linq;
 using System.Reflection;
 
@@ -14,7 +15,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
     {
         #region Fields, Properties Constructors
 
-        public GraphNode Parent { get; private set; }
+        public GraphNode Parent { get; set; }
         public Stack<GraphNode> Members { get; private set; }
         
         protected readonly PropertyInfo Accessor;
@@ -139,7 +140,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             if (context.Entry(entity).State == EntityState.Detached)
             {
                 var entityType = ObjectContext.GetObjectType(entity.GetType());
-                var instance = CreateEmptyEntityWithKey(context, entity);
+                var instance = context.CreateEmptyEntityWithKey(entity);
                 
                 context.Set(entityType).Attach(instance);
                 context.Entry(instance).Reload();
@@ -172,33 +173,11 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
                 if (associatedEntity != null)
                 {
-                    associatedEntity = FindEntityByKey(context, associatedEntity);
+                    associatedEntity = context.FindEntityByKey(associatedEntity);
                 }
 
                 navigationPropertyInfo.SetValue(persisted, associatedEntity, null);
             }
-        }
-
-        private static object FindEntityByKey(DbContext context, object associatedEntity)
-        {
-            var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
-            var keyFields = context.GetPrimaryKeyFieldsFor(associatedEntityType);
-            var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
-            return context.Set(associatedEntityType).Find(keys);
-        }
-
-        protected static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
-        {
-            var instance = Activator.CreateInstance(entity.GetType());
-            CopyPrimaryKeyFields(context, entity, instance);
-            return instance;
-        }
-
-        private static void CopyPrimaryKeyFields(IObjectContextAdapter context, object from, object to)
-        {
-            var keyProperties = context.GetPrimaryKeyFieldsFor(from.GetType()).ToList();
-            foreach (var keyProperty in keyProperties)
-                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
         }
 
         protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)

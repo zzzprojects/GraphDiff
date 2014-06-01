@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
@@ -8,9 +9,9 @@ using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal
 {
-    internal static class Extensions
+    internal static class IObjectContextAdapterExtensions
     {
-        internal static IEnumerable<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter context, Type entityType)
+        public static IEnumerable<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter context, Type entityType)
         {
             var metadata = context.ObjectContext.MetadataWorkspace
                     .GetItems<EntityType>(DataSpace.OSpace)
@@ -24,13 +25,13 @@ namespace RefactorThis.GraphDiff.Internal
             return metadata.KeyMembers.Select(k => entityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)).ToList();
         }
 
-        internal static IEnumerable<NavigationProperty> GetRequiredNavigationPropertiesForType(this IObjectContextAdapter context, Type entityType)
+        public static IEnumerable<NavigationProperty> GetRequiredNavigationPropertiesForType(this IObjectContextAdapter context, Type entityType)
         {
             return context.GetNavigationPropertiesForType(ObjectContext.GetObjectType(entityType))
                     .Where(navigationProperty => navigationProperty.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.One);
         }
 
-        internal static IEnumerable<NavigationProperty> GetNavigationPropertiesForType(this IObjectContextAdapter context, Type entityType)
+        public static IEnumerable<NavigationProperty> GetNavigationPropertiesForType(this IObjectContextAdapter context, Type entityType)
         {
             return context.ObjectContext.MetadataWorkspace
                     .GetItems<EntityType>(DataSpace.OSpace)
@@ -38,7 +39,7 @@ namespace RefactorThis.GraphDiff.Internal
                     .NavigationProperties;
         }
 
-        internal static string GetEntitySetName(this IObjectContextAdapter context, Type entityType)
+        public static string GetEntitySetName(this IObjectContextAdapter context, Type entityType)
         {
             Type type = entityType;
             EntitySetBase set = null;
@@ -54,6 +55,33 @@ namespace RefactorThis.GraphDiff.Internal
             }
 
             return set != null ? set.Name : null;
+        }
+
+        public static object FindEntityByKey(this DbContext context, object associatedEntity)
+        {
+            var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
+            var keyFields = context.GetPrimaryKeyFieldsFor(associatedEntityType);
+            var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
+            return context.Set(associatedEntityType).Find(keys);
+        }
+
+        public static object CreateEmptyEntityWithKey(this IObjectContextAdapter context, object entity)
+        {
+            var instance = Activator.CreateInstance(entity.GetType());
+            context.CopyPrimaryKeyFields(entity, instance);
+            return instance;
+        }
+
+        public static void CopyPrimaryKeyFields(this IObjectContextAdapter context, object from, object to)
+        {
+            var keyProperties = context
+                .GetPrimaryKeyFieldsFor(from.GetType())
+                .ToList();
+
+            foreach (var keyProperty in keyProperties)
+            {
+                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
+            }
         }
     }
 }
