@@ -41,18 +41,24 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     dbHash.Remove(key);
                 }
                 else
+                {
                     updateList[i] = AddElement(context, existing, updateItem, dbCollection);
+                }
             }
 
             // remove obsolete items
             foreach (var dbItem in dbHash.Values)
+            {
                 RemoveElement(context, dbItem, dbCollection);
+            }
         }
 
         private object AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
+            {
                 updateItem = AttachAndReloadAssociatedEntity(context, updateItem);
+            }
             else if (context.Entry(updateItem).State == EntityState.Detached)
             {
                 var entityType = ObjectContext.GetObjectType(updateItem.GetType());
@@ -62,7 +68,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 context.Entry(instance).CurrentValues.SetValues(updateItem);
 
                 foreach (var childMember in Members)
+                {
                     childMember.Update(context, instance, updateItem);
+                }
 
                 updateItem = instance;
             }
@@ -76,15 +84,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
         {
-            if (!_isOwned)
-                return;
+            if (!_isOwned) return;
 
             UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
 
             AttachCyclicNavigationProperty(context, existing, updateItem);
 
             foreach (var childMember in Members)
+            {
                 childMember.Update(context, dbItem, updateItem);
+            }
         }
 
         private void RemoveElement(DbContext context, object dbItem, object dbCollection)
@@ -94,7 +103,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             AttachRequiredNavigationProperties(context, dbItem, dbItem);
 
             if (_isOwned)
+            {
                 context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
+            }
         }
 
         private IEnumerable CreateMissingCollection(object existing, Type elementType)
@@ -108,7 +119,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
         {
             if (_isOwned)
+            {
                 return base.GetRequiredNavigationPropertyIncludes(context);
+            }
 
             return Accessor != null
                     ? GetRequiredNavigationPropertyIncludes(context, GetCollectionElementType(), IncludeString)
@@ -118,10 +131,14 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         private Type GetCollectionElementType()
         {
             if (Accessor.PropertyType.IsArray)
+            {
                 return Accessor.PropertyType.GetElementType();
+            }
 
             if (Accessor.PropertyType.IsGenericType)
+            {
                 return Accessor.PropertyType.GetGenericArguments()[0];
+            }
 
             throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
         }

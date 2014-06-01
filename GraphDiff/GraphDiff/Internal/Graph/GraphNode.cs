@@ -51,7 +51,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             // Foreach branch perform recursive update
             foreach (var member in Members)
+            {
                 member.Update(context, persisted, updating);
+            }
         }
 
         protected T GetValue<T>(object instance)
@@ -67,7 +69,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected static EntityKey CreateEntityKey(IObjectContextAdapter context, object entity)
         {
             if (entity == null)
+            {
                 throw new ArgumentNullException("entity");
+            }
 
             return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(entity.GetType()), entity);
         }
@@ -76,12 +80,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         {
             var ownIncludeString = IncludeString;
             if (!string.IsNullOrEmpty(ownIncludeString))
+            {
                 includeStrings.Add(ownIncludeString);
+            }
 
             includeStrings.AddRange(GetRequiredNavigationPropertyIncludes(context));
 
             foreach (var member in Members)
+            {
                 member.GetIncludeStrings(context, includeStrings);
+            }
         }
 
         protected virtual IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
@@ -97,8 +105,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
         {
-            if (parent == null || child == null)
-                return;
+            if (parent == null || child == null) return;
 
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
@@ -117,7 +124,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
         {
             if (context.Entry(to).State != EntityState.Added)
+            {
                 EnsureConcurrency(context, from, to);
+            }
 
             context.Entry(to).CurrentValues.SetValues(from);
         }
@@ -125,8 +134,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         protected static object AttachAndReloadAssociatedEntity(DbContext context, object entity)
         {
             var localCopy = FindLocalByKey(context, entity);
-            if (localCopy != null)
-                return localCopy;
+            if (localCopy != null) return localCopy;
 
             if (context.Entry(entity).State == EntityState.Detached)
             {
@@ -141,7 +149,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             }
 
             if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
+            {
                 context.Entry(entity).Reload();
+            }
 
             return entity;
         }
@@ -159,9 +169,11 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             {
                 var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name);
                 var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
-                
+
                 if (associatedEntity != null)
+                {
                     associatedEntity = FindEntityByKey(context, associatedEntity);
+                }
 
                 navigationPropertyInfo.SetValue(persisted, associatedEntity, null);
             }
@@ -191,8 +203,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)
         {
-            if (newValue == null || dbValue == null)
-                return false;
+            if (newValue == null || dbValue == null) return false;
 
             return CreateEntityKey(context, newValue) == CreateEntityKey(context, dbValue);
         }
