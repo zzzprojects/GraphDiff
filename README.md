@@ -9,6 +9,11 @@ Please see the initial post @ http://blog.brentmckendrick.com/introducing-graphd
 
 Nuget package is at http://nuget.org/packages/RefactorThis.GraphDiff/
 
+## Realease Notes
+
+2.0.0
+ - Rewrite of graph traversal code and rewrite of tests to cover more scenarios.
+ - multiple bug fixes
 
 ## Collaborators
 
