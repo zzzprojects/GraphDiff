@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>RefactorThis.GraphDiff</id>
-        <version>2.0.0</version>
+        <version>2.0.1</version>
         <title>GraphDiff - Entity Framework graph auto-update</title>
         <authors>brentmckendrick</authors>
         <owners>brentmckendrick</owners>
@@ -15,12 +15,12 @@ GraphDiff - Allows for automatic update of a graph of detached entities using En
 
 If you have ever felt the pain of updating a detached graph with one or more nested collections then this is for you :)</description>
         <summary>MIT (c) Brent McKendrick</summary>
-        <releaseNotes>
-v2.0.0
- - Rewrite of graph traversal code.
- - Whole new testing suite to cover more scenarios
- - Many small bugfixes.
- 
+        <releaseNotes>v2.0.1
+- Rewrite of graph traversal code.
+- Whole new testing suite to cover more scenarios
+- Many small bugfixes.
+
+v1.3.6
  v1.3.6
  - Optimistic concurrency support
  - Abstract base class and inheritance bug fixes and enhacements.
@@ -37,6 +37,7 @@ v1.3.5
         </dependencies>
     </metadata>
     <files>
-        <file src="GraphDiff\bin\Release\RefactorThis.GraphDiff.dll" target="lib\RefactorThis.GraphDiff.dll" />
+        <file src="GraphDiff\bin\Debug\RefactorThis.GraphDiff.dll" target="lib\RefactorThis.GraphDiff.dll" />
+        <file src="GraphDiff\bin\Debug\RefactorThis.GraphDiff.pdb" target="lib\RefactorThis.GraphDiff.pdb" />
     </files>
 </package>
