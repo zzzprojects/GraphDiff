@@ -17,7 +17,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var newValue = GetValue<object>(updating);
 
             if (dbValue == null && newValue == null)
+            {
                 return;
+            }
 
             // Merging options
             // 1. No new value, set value to null. entity will be removed if cascade rules set.
@@ -28,16 +30,22 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 SetValue(persisted, null);
                 return;
             }
-            
+
             if (dbValue != null && IsKeyIdentical(context, newValue, dbValue))
+            {
                 UpdateValuesWithConcurrencyCheck(context, newValue, dbValue);
+            }
             else
+            {
                 dbValue = CreateNewPersistedEntity(context, persisted, newValue);
+            }
 
             AttachCyclicNavigationProperty(context, persisted, newValue);
 
             foreach (var childMember in Members)
+            {
                 childMember.Update(context, dbValue, newValue);
+            }
         }
 
         private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
