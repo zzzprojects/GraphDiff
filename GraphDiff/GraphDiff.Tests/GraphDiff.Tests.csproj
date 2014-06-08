@@ -82,6 +82,7 @@
     <Compile Include="Tests\ThirdTierBehaviours.cs" />
     <Compile Include="Tests\MiscBehaviours.cs" />
     <Compile Include="Tests\AttachedBehaviours.cs" />
+    <Compile Include="UnitTests\AggregateConfigurationTests.cs" />
     <Compile Include="UnitTests\AggregateRegisterTests.cs" />
   </ItemGroup>
   <ItemGroup>

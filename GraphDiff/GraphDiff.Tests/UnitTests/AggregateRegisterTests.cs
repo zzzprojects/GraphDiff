@@ -30,7 +30,7 @@ namespace RefactorThis.GraphDiff.Tests.UnitTests
         [TestMethod]
         public void ShouldReadAggregateAttributesOnSingleModel()
         {
-            var entityGraph = _register.GetEntityGraph(typeof(AttributeTest));
+            var entityGraph = _register.GetEntityGraph<AttributeTest>();
             Assert.IsTrue(entityGraph.Members.Count == 2);
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 0);
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 2);

@@ -13,8 +13,6 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 {
     internal class GraphNode
     {
-        #region Fields, Properties Constructors
-
         public GraphNode Parent { get; set; }
         public Stack<GraphNode> Members { get; private set; }
         
@@ -42,8 +40,6 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             Members = new Stack<GraphNode>();
             Parent = parent;
         }
-
-        #endregion
 
         // overridden by different implementations
         public virtual void Update<T>(DbContext context, T persisted, T updating) where T : class, new()
@@ -119,7 +115,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     .FirstOrDefault();
 
             if (parentNavigationProperty != null)
+            {
                 parentNavigationProperty.SetValue(child, parent, null);
+            }
         }
 
         protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
@@ -182,7 +180,10 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)
         {
-            if (newValue == null || dbValue == null) return false;
+            if (newValue == null || dbValue == null)
+            {
+                return false;
+            }
 
             return CreateEntityKey(context, newValue) == CreateEntityKey(context, dbValue);
         }

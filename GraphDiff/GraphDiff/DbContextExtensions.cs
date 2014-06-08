@@ -4,15 +4,15 @@
  * License MIT (c) Brent McKendrick 2012
  */
 
+using RefactorThis.GraphDiff.Internal;
+using RefactorThis.GraphDiff.Internal.Caching;
+using RefactorThis.GraphDiff.Internal.Graph;
+using RefactorThis.GraphDiff.Internal.GraphBuilders;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
-using RefactorThis.GraphDiff.Internal;
-using RefactorThis.GraphDiff.Internal.Graph;
-using RefactorThis.GraphDiff.Attributes;
-using RefactorThis.GraphDiff.Internal.Caching;
-using System.Collections.Generic;
 
 namespace RefactorThis.GraphDiff
 {
@@ -26,33 +26,55 @@ namespace RefactorThis.GraphDiff
         /// <param name="entity">The root entity.</param>
         /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
         /// <returns>The attached entity graph</returns>
-	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null) where T : class, new()
+	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class, new()
 	    {
-            GraphNode root;
+            return UpdateGraph<T>(context, entity, new UpdateParams<T>
+            {
+                QueryMode = QueryMode.SingleQuery,
+                Mapping = mapping
+            });
+	    }
 
-            // mapping overrides attributes
-            if (mapping != null)
+        public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams<T> updateParams = null) where T : class, new()
+        {
+            GraphNode root;
+            GraphDiffer<T> differ;
+            var register = new AggregateRegister(new CacheProvider());
+
+            if (updateParams == null)
             {
-                root = new ConfigurationVisitor<T>().GetNodes(mapping);
+                differ = new GraphDiffer<T>(context, register.GetEntityGraph<T>());
+                return differ.Merge(entity);
             }
-            else if (typeof(T).GetCustomAttributes(typeof(AggregateRootAttribute), true).Any())
+
+            if (updateParams.Mapping != null)
             {
-                root = new AggregateRegister(new CacheProvider()).GetEntityGraph(typeof(T));
+                // mapping configuration
+                root = register.GetEntityGraph<T>(updateParams.Mapping);
+            }
+            else if (updateParams.MappingScheme != null)
+            {
+                // names scheme
+                root = register.GetEntityGraph<T>(updateParams.MappingScheme);
             }
             else
             {
-                root = new GraphNode();
+                // attributes or null
+                root = register.GetEntityGraph<T>();
             }
-            
-            var graphDiffer = new GraphDiffer<T>(root);
-            return graphDiffer.Merge(context, entity);
-	    }
 
-        // TODO add IEnumerable<T> entities - requires changes to GraphDiffer to ensure one query.
+            differ = new GraphDiffer<T>(context, root);
+            return differ.Merge(entity, updateParams.QueryMode);
+        }
 
-        public static IQueryable<T> AggregateQuery<T>(this DbContext context) where T : class
+        public static IQueryable<T> AggregateQuery<T>(this DbContext context, QueryMode queryMode = QueryMode.SingleQuery) where T : class
         {
-            var graph = new AggregateRegister(new CacheProvider()).GetEntityGraph(typeof(T));
+            if (queryMode == QueryMode.MultipleQuery)
+            {
+                throw new NotImplementedException();
+            }
+
+            var graph = new AggregateRegister(new CacheProvider()).GetEntityGraph<T>();
             if (graph == null)
             {
                 throw new NotSupportedException("Type: '" + typeof(T).FullName + "' is not a known aggregate");

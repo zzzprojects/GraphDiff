@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace RefactorThis.GraphDiff.Internal
+namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 {
     internal class GraphNodeFactory
     {

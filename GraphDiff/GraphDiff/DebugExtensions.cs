@@ -3,10 +3,15 @@ using System.Data.Entity;
 using System.Linq;
 using System.Text;
 
-namespace RefactorThis.GraphDiff.Internal
+namespace RefactorThis.GraphDiff
 {
     public static class DebugExtensions
     {
+        /// <summary>
+        /// Returns an overview of the state of tracked entities in the context
+        /// </summary>
+        /// <param name="context">The EF dbContext</param>
+        /// <returns>string representation of tracked entities</returns>
         public static string DumpTrackedEntities(this DbContext context)
         {
             var trackedEntities = context
