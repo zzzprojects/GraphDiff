@@ -9,9 +9,23 @@ Please see the initial post @ http://blog.brentmckendrick.com/introducing-graphd
 
 Nuget package is at http://nuget.org/packages/RefactorThis.GraphDiff/
 
-## Realease Notes
+## Features
 
-2.0.0
+ - Merge an entire graph of detached entities to the database using DbContext.UpdateGraph<T>();
+ - Ensures concurrency is maintained for all child entities in the graph
+ - Allows for different configuration mappings to ensure that only changes within the defined graph are persisted
+ - Comprehensive testing suite to cover many (un/)common scenarios.
+ 
+## Proposed Features
+
+ - Fluent API style mapping of aggregates on bootstrapping
+ - Retrieve an aggregate from the database without specifying include expressions
+ - Define the aggregate using attributes on the models
+ - Allow for the initial db query to be performed as multiple queries where needed (too many includes, etc)
+
+## Release Notes
+
+2.0.1
  - Rewrite of graph traversal code and rewrite of tests to cover more scenarios.
  - multiple bug fixes
 
