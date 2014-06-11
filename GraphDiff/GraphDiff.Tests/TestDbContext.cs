@@ -27,10 +27,6 @@ namespace RefactorThis.GraphDiff.Tests
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
-            // misc
-
-		    modelBuilder.Entity<InternalKeyModel>().HasKey(i => i.Id);
-
             // second tier mappings
 
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);
@@ -57,6 +53,15 @@ namespace RefactorThis.GraphDiff.Tests
             // Guid mappings
 
             modelBuilder.Entity<GuidTestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent);
+
+            // Internal mappings
+
+            modelBuilder.Entity<InternalKeyModel>().HasKey(i => i.Id);
+            modelBuilder.Entity<InternalKeyAssociate>().HasKey(i => i.Id);
+
+            modelBuilder.Entity<InternalKeyModel>()
+                    .HasMany(ikm => ikm.Associates)
+		            .WithRequired(ikm => ikm.Parent);
 		}
 
 		public TestDbContext() : base("GraphDiff") {}
