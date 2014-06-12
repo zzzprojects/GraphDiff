@@ -1,19 +1,20 @@
-﻿using RefactorThis.GraphDiff.Attributes;
+﻿using RefactorThis.GraphDiff.Internal.Caching;
 using RefactorThis.GraphDiff.Internal.Graph;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Runtime.Caching;
-using RefactorThis.GraphDiff.Internal.Caching;
 using RefactorThis.GraphDiff.Internal.GraphBuilders;
+using System;
 using System.Linq.Expressions;
 
 namespace RefactorThis.GraphDiff.Internal
 {
-    internal class AggregateRegister
+    internal interface IAggregateRegister
+    {
+        void ClearAll();
+        void Register<T>(GraphNode rootNode, string scheme = null);
+        GraphNode GetEntityGraph<T>(string scheme = null);
+        GraphNode GetEntityGraph<T>(Expression<Func<IUpdateConfiguration<T>, object>> expression);
+    }
+
+    internal class AggregateRegister : IAggregateRegister
     {
         private readonly ICacheProvider _cache;
         private readonly IAttributeGraphBuilder _attributeGraphBuilder;
@@ -24,14 +25,19 @@ namespace RefactorThis.GraphDiff.Internal
             _attributeGraphBuilder = new AttributeGraphBuilder();
         }
 
+        public void ClearAll()
+        {
+            _cache.Clear(typeof(AggregateRegister).FullName);
+        }
+
         public void Register<T>(GraphNode rootNode, string scheme = null)
         {
-            _cache.Insert(GenerateCacheKey<T>(scheme), rootNode);
+            _cache.Insert(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(scheme), rootNode);
         }
 
         public GraphNode GetEntityGraph<T>(string scheme = null)
         {
-            return _cache.GetOrAdd<GraphNode>(GenerateCacheKey<T>(scheme), () =>
+            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(scheme), () =>
             {
                 // no cached mapping lets look for attributes
                 if (_attributeGraphBuilder.CanBuild(typeof(T)))
@@ -48,16 +54,16 @@ namespace RefactorThis.GraphDiff.Internal
 
         public GraphNode GetEntityGraph<T>(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
-            // TODO caching not implemented, add code to implement caching of configuration mappings
-            //return _cache.GetOrAdd<GraphNode>(key, () =>
-            //{
+            var key = typeof(T).FullName + "_" + expression.ToString();
+            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, key, () =>
+            {
                 return new ConfigurationVisitor<T>().GetNodes(expression);
-            //});
+            });
         }
 
         private string GenerateCacheKey<T>(string scheme = null)
         {
-            var key = typeof(AggregateRegister).FullName + typeof(T).FullName;
+            var key = typeof(T).FullName;
             if (!String.IsNullOrEmpty(scheme))
             {
                 key += scheme;

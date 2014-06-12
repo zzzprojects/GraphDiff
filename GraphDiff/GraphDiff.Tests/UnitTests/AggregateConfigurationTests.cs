@@ -8,6 +8,12 @@ namespace RefactorThis.GraphDiff.Tests.UnitTests
     [TestClass]
     public class AggregateConfigurationTests
     {
+        [TestInitialize]
+        public void Init()
+        {
+            AggregateConfiguration.Aggregates.ClearAll();
+        }
+
         [TestMethod]
         public void Test()
         {
@@ -19,5 +25,7 @@ namespace RefactorThis.GraphDiff.Tests.UnitTests
                     p.AssociatedCollection(m => m.OneToManyAssociated)
                 );
         }
+
+        // TODO TESTS
     }
 }

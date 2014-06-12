@@ -10,8 +10,5 @@ namespace RefactorThis.GraphDiff.Attributes
     [AttributeUsage(AttributeTargets.Property)]
     public class OwnedAttribute : AggregateDefinitionAttribute
     {
-        public OwnedAttribute()
-        {
-        }
     }
 }

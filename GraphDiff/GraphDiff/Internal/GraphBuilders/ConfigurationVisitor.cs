@@ -54,16 +54,16 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
             switch (_currentMethod)
             {
                 case "OwnedEntity":
-                    newMember = new OwnedEntityGraphNode(_currentMember, accessor);
+                    newMember = GraphNodeFactory.Create(_currentMember, accessor, false, true);
                     break;
                 case "AssociatedEntity":
-                    newMember = new AssociatedEntityGraphNode(_currentMember, accessor);
+                    newMember = GraphNodeFactory.Create(_currentMember, accessor, false, false);
                     break;
                 case "OwnedCollection":
-                    newMember = new CollectionGraphNode(_currentMember, accessor, true);
+                    newMember = GraphNodeFactory.Create(_currentMember, accessor, true, true);
                     break;
                 case "AssociatedCollection":
-                    newMember = new CollectionGraphNode(_currentMember, accessor, false);
+                    newMember = GraphNodeFactory.Create(_currentMember, accessor, true, false);
                     break;
                 default:
                     throw new NotSupportedException("The method used in the update mapping is not supported");

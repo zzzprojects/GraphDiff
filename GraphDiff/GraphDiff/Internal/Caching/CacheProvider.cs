@@ -9,8 +9,9 @@ namespace RefactorThis.GraphDiff.Internal.Caching
 {
     internal interface ICacheProvider
     {
-        void Insert(string key, object value);
-        T GetOrAdd<T>(string key, Func<T> onCacheMissed);
+        void Insert(string register, string key, object value);
+        void Clear(string register);
+        T GetOrAdd<T>(string register, string key, Func<T> onCacheMissed);
     }
 
     internal class CacheProvider : ICacheProvider
@@ -18,21 +19,32 @@ namespace RefactorThis.GraphDiff.Internal.Caching
         private static MemoryCache _cache = MemoryCache.Default;
         private static readonly object cacheLock = new object();
 
-        public void Insert(string key, object value)
+        public void Insert(string register, string key, object value)
         {
             lock (cacheLock)
             {
-                var result = _cache.Get(key);
+                var fullKey = register + ":" + key;
+                var result = _cache.Get(fullKey);
                 if (result == null)
                 {
-                    _cache.Add(key, value, new CacheItemPolicy());
+                    _cache.Add(fullKey, value, new CacheItemPolicy());
                 }
             }
         }
 
-        public T GetOrAdd<T>(string key, Func<T> onCacheMissed)
+        public void Clear(string register)
         {
-            var result = _cache.Get(key);
+            var items = _cache.Where(p => p.Key.Contains(register + ":"));
+            foreach (var item in items)
+            {
+                _cache.Remove(item.Key);
+            }
+        }
+
+        public T GetOrAdd<T>(string register, string key, Func<T> onCacheMissed)
+        {
+            var fullKey = register + ":" + key;
+            var result = _cache.Get(fullKey);
             if (result != null)
             {
                 return (T)result;
@@ -41,14 +53,14 @@ namespace RefactorThis.GraphDiff.Internal.Caching
             lock (cacheLock)
             {
                 // check again after lock.
-                result = _cache.Get(key);
+                result = _cache.Get(fullKey);
                 if (result != null)
                 {
                     return (T)result;
                 }
 
                 result = onCacheMissed();
-                _cache.Add(key, result, new CacheItemPolicy());
+                _cache.Add(fullKey, result, new CacheItemPolicy());
             }
             
             return (T)result;

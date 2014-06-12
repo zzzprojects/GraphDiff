@@ -11,7 +11,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         {
         }
 
-        public override void Update<T>(DbContext context, T persisted, T updating)
+        public override void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating)
         {
             var dbValue = GetValue<object>(persisted);
             var newValue = GetValue<object>(updating);
@@ -31,29 +31,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 return;
             }
 
-            if (dbValue != null && IsKeyIdentical(context, newValue, dbValue))
+            if (dbValue != null && entityManager.AreKeysIdentical(newValue, dbValue))
             {
-                UpdateValuesWithConcurrencyCheck(context, newValue, dbValue);
+                changeTracker.UpdateItem(newValue, dbValue, true);
             }
             else
             {
-                dbValue = CreateNewPersistedEntity(context, persisted, newValue);
+                dbValue = CreateNewPersistedEntity(changeTracker, persisted, newValue);
             }
 
-            AttachCyclicNavigationProperty(context, persisted, newValue);
+            changeTracker.AttachCyclicNavigationProperty(persisted, newValue);
 
             foreach (var childMember in Members)
             {
-                childMember.Update(context, dbValue, newValue);
+                childMember.Update(changeTracker, entityManager, dbValue, newValue);
             }
         }
 
-        private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
+        private object CreateNewPersistedEntity<T>(IChangeTracker changeTracker, T existing, object newValue) where T : class, new()
         {
             var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
-            context.Set(Accessor.PropertyType).Add(instance);
-            UpdateValuesWithConcurrencyCheck(context, newValue, instance);
+            changeTracker.AddItem(instance);
+            changeTracker.UpdateItem(newValue, instance, true);
             return instance;
         }
     }

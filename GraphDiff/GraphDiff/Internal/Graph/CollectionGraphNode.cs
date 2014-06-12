@@ -18,58 +18,57 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             _isOwned = isOwned;
         }
 
-        public override void Update<T>(DbContext context, T existing, T entity)
+        public override void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T existing, T entity)
         {
             var innerElementType = GetCollectionElementType();
             var updateValues = GetValue<IEnumerable>(entity) ?? new List<object>();
             var dbCollection = GetValue<IEnumerable>(existing) ?? CreateMissingCollection(existing, innerElementType);
 
-            var dbHash = dbCollection.Cast<object>().ToDictionary(item => CreateEntityKey(context, item));
+            var dbHash = dbCollection.Cast<object>().ToDictionary(item => entityManager.CreateEntityKey(item));
 
             // Iterate through the elements from the updated graph and try to match them against the db graph
             var updateList = updateValues.OfType<object>().ToList();
             for (int i = 0; i < updateList.Count; i++)
             {
                 var updateItem = updateList[i];
-                var key = CreateEntityKey(context, updateItem);
+                var key = entityManager.CreateEntityKey(updateItem);
 
                 // try to find item with same key in db collection
                 object dbItem;
                 if (dbHash.TryGetValue(key, out dbItem))
                 {
-                    UpdateElement(context, existing, updateItem, dbItem);
+                    UpdateElement(changeTracker, entityManager, existing, updateItem, dbItem);
                     dbHash.Remove(key);
                 }
                 else
                 {
-                    updateList[i] = AddElement(context, existing, updateItem, dbCollection);
+                    updateList[i] = AddElement(changeTracker, entityManager, existing, updateItem, dbCollection);
                 }
             }
 
             // remove obsolete items
             foreach (var dbItem in dbHash.Values)
             {
-                RemoveElement(context, dbItem, dbCollection);
+                RemoveElement(changeTracker, dbItem, dbCollection);
             }
         }
 
-        private object AddElement<T>(DbContext context, T existing, object updateItem, object dbCollection)
+        private object AddElement<T>(IChangeTracker changeTracker, IEntityManager entityManager, T existing, object updateItem, object dbCollection)
         {
             if (!_isOwned)
             {
-                updateItem = AttachAndReloadAssociatedEntity(context, updateItem);
+                updateItem = changeTracker.AttachAndReloadAssociatedEntity(updateItem);
             }
-            else if (context.Entry(updateItem).State == EntityState.Detached)
+            else if (changeTracker.GetItemState(updateItem) == EntityState.Detached)
             {
-                var entityType = ObjectContext.GetObjectType(updateItem.GetType());
-                var instance = context.CreateEmptyEntityWithKey(updateItem);
+                var instance = entityManager.CreateEmptyEntityWithKey(updateItem);
 
-                context.Set(entityType).Add(instance);
-                context.Entry(instance).CurrentValues.SetValues(updateItem);
+                changeTracker.AddItem(instance);
+                changeTracker.UpdateItem(updateItem, instance);
 
                 foreach (var childMember in Members)
                 {
-                    childMember.Update(context, instance, updateItem);
+                    childMember.Update(changeTracker, entityManager, instance, updateItem);
                 }
 
                 updateItem = instance;
@@ -77,34 +76,35 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
-            AttachCyclicNavigationProperty(context, existing, updateItem);
+            changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
 
             return updateItem;
         }
 
-        private void UpdateElement<T>(DbContext context, T existing, object updateItem, object dbItem)
+        private void UpdateElement<T>(IChangeTracker changeTracker, IEntityManager entityManager, T existing, object updateItem, object dbItem)
         {
-            if (!_isOwned) return;
+            if (!_isOwned)
+            {
+                return;
+            }
 
-            UpdateValuesWithConcurrencyCheck(context, updateItem, dbItem);
-
-            AttachCyclicNavigationProperty(context, existing, updateItem);
+            changeTracker.UpdateItem(updateItem, dbItem, true);
+            changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
 
             foreach (var childMember in Members)
             {
-                childMember.Update(context, dbItem, updateItem);
+                childMember.Update(changeTracker, entityManager, dbItem, updateItem);
             }
         }
 
-        private void RemoveElement(DbContext context, object dbItem, object dbCollection)
+        private void RemoveElement(IChangeTracker changeTracker, object dbItem, object dbCollection)
         {
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
-
-            AttachRequiredNavigationProperties(context, dbItem, dbItem);
+            changeTracker.AttachRequiredNavigationProperties(dbItem, dbItem);
 
             if (_isOwned)
             {
-                context.Set(ObjectContext.GetObjectType(dbItem.GetType())).Remove(dbItem);
+                changeTracker.RemoveItem(dbItem);
             }
         }
 
@@ -116,15 +116,15 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             return collection;
         }
 
-        protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        protected override IEnumerable<string> GetRequiredNavigationPropertyIncludes(IEntityManager entityManager)
         {
             if (_isOwned)
             {
-                return base.GetRequiredNavigationPropertyIncludes(context);
+                return base.GetRequiredNavigationPropertyIncludes(entityManager);
             }
 
             return Accessor != null
-                    ? GetRequiredNavigationPropertyIncludes(context, GetCollectionElementType(), IncludeString)
+                    ? GetRequiredNavigationPropertyIncludes(entityManager, GetCollectionElementType(), IncludeString)
                     : new string[0];
         }
 

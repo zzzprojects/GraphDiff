@@ -70,8 +70,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             using (var context = new TestDbContext())
             {
                 var graph = context
-                    .AggregateQuery<AttributeTest>()
-                    .FirstOrDefault();
+                    .LoadAggregate<AttributeTest>(p => p.Id == _graph.Id);
 
                 Assert.IsNotNull(graph);
                 Assert.IsTrue(graph.Title == "Hello1");

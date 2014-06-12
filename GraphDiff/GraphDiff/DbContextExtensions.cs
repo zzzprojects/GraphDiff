@@ -35,15 +35,26 @@ namespace RefactorThis.GraphDiff
             });
 	    }
 
+        /// <summary>
+        /// Merges a graph of entities with the data store.
+        /// </summary>
+        /// <typeparam name="T">The type of the root entity</typeparam>
+        /// <param name="context">The database context to attach / detach.</param>
+        /// <param name="entity">The root entity.</param>
+        /// <param name="updateParams">Configuration options for the merge</param>
+        /// <returns>The attached entity graph</returns>
         public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams<T> updateParams = null) where T : class, new()
         {
             GraphNode root;
             GraphDiffer<T> differ;
-            var register = new AggregateRegister(new CacheProvider());
 
+            var entityManager = new EntityManager(context);
+            var queryLoader = new QueryLoader(context, entityManager);
+            var register = new AggregateRegister(new CacheProvider());
+            
             if (updateParams == null)
             {
-                differ = new GraphDiffer<T>(context, register.GetEntityGraph<T>());
+                differ = new GraphDiffer<T>(context, queryLoader, entityManager, register.GetEntityGraph<T>());
                 return differ.Merge(entity);
             }
 
@@ -63,31 +74,31 @@ namespace RefactorThis.GraphDiff
                 root = register.GetEntityGraph<T>();
             }
 
-            differ = new GraphDiffer<T>(context, root);
+            differ = new GraphDiffer<T>(context, queryLoader, entityManager, root);
             return differ.Merge(entity, updateParams.QueryMode);
         }
 
-        public static IQueryable<T> AggregateQuery<T>(this DbContext context, QueryMode queryMode = QueryMode.SingleQuery) where T : class
+        /// <summary>
+        /// Load an aggregate type from the database (including all related entities)
+        /// </summary>
+        /// <typeparam name="T">Type of the entity</typeparam>
+        /// <param name="context">DbContext</param>
+        /// <param name="keyPredicate">The predicate used to find the aggregate by key</param>
+        /// <param name="queryMode">Load all objects at once, or perform multiple queries</param>
+        /// <returns></returns>
+        public static T LoadAggregate<T>(this DbContext context, Func<T, bool> keyPredicate, QueryMode queryMode = QueryMode.SingleQuery) where T : class
         {
-            if (queryMode == QueryMode.MultipleQuery)
-            {
-                throw new NotImplementedException();
-            }
-
+            var entityManager = new EntityManager(context);
             var graph = new AggregateRegister(new CacheProvider()).GetEntityGraph<T>();
+            var queryLoader = new QueryLoader(context, entityManager);
+
             if (graph == null)
             {
                 throw new NotSupportedException("Type: '" + typeof(T).FullName + "' is not a known aggregate");
             }
 
-            var query = context.Set<T>().AsQueryable();
-
-            // attach includes to IQueryable
-            var includeStrings = new List<string>();
-            graph.GetIncludeStrings(context, includeStrings);
-            query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
-
-            return query;
+            var includeStrings = graph.GetIncludeStrings(entityManager);
+            return queryLoader.LoadEntity(keyPredicate, includeStrings, queryMode);
         }
 	}
 }

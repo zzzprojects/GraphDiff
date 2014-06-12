@@ -20,11 +20,17 @@ namespace RefactorThis.GraphDiff.Aggregates
             }
         }
 
-        private AggregateRegister _register;
+        private IAggregateRegister _register;
 
         private AggregateConfiguration() 
         {
             _register = new AggregateRegister(new CacheProvider());
+        }
+
+        public AggregateConfiguration ClearAll()
+        {
+            _register.ClearAll();
+            return this;
         }
 
         public AggregateConfiguration Register<T>(Expression<Func<IUpdateConfiguration<T>, object>> mapping) where T : class

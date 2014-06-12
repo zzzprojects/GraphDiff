@@ -2,28 +2,31 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal
 {
+    internal interface IGraphDiffer<T> where T : class, new()
+    {
+        T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery);
+    }
+
     /// <summary>
     /// GraphDiff main entry point.
     /// </summary>
     /// <typeparam name="T">The root agreggate type</typeparam>
-    internal class GraphDiffer<T> where T : class, new()
+    internal class GraphDiffer<T> : IGraphDiffer<T> where T : class, new()
     {
         private readonly GraphNode _root;
         private readonly DbContext _dbContext;
         private readonly IQueryLoader _queryLoader;
+        private readonly IEntityManager _entityManager;
 
-        public GraphDiffer(DbContext dbContext, GraphNode root)
+        public GraphDiffer(DbContext dbContext, IQueryLoader queryLoader, IEntityManager entityManager, GraphNode root)
         {
             _root = root;
             _dbContext = dbContext;
-            _queryLoader = new QueryLoader(dbContext);
+            _queryLoader = queryLoader;
+            _entityManager = entityManager;
         }
 
         public T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery)
@@ -36,9 +39,7 @@ namespace RefactorThis.GraphDiff.Internal
                 _dbContext.Configuration.AutoDetectChangesEnabled = false;
 
                 // Get our entity with all includes needed, or add a new entity
-                // TODO this is ugly.
-                List<string> includeStrings = new List<string>();
-                _root.GetIncludeStrings(_dbContext, includeStrings);
+                var includeStrings = _root.GetIncludeStrings(_entityManager);
                 T persisted = _queryLoader.LoadEntity(updating, includeStrings, queryMode);
 
                 if (persisted == null)
@@ -55,7 +56,9 @@ namespace RefactorThis.GraphDiff.Internal
                 }
 
                 // Perform recursive update
-                _root.Update(_dbContext, persisted, updating);
+                var entityManager = new EntityManager(_dbContext);
+                var changeTracker = new ChangeTracker(_dbContext, entityManager);
+                _root.Update(changeTracker, entityManager, persisted, updating);
 
                 return persisted;
             }

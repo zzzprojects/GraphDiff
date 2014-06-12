@@ -5,6 +5,10 @@ using RefactorThis.GraphDiff.Tests.Models;
 using NSubstitute;
 using RefactorThis.GraphDiff.Internal.Caching;
 using RefactorThis.GraphDiff.Internal.Graph;
+using System.Linq.Expressions;
+using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RefactorThis.GraphDiff.Tests.UnitTests
 {
@@ -18,22 +22,25 @@ namespace RefactorThis.GraphDiff.Tests.UnitTests
         public void Initialize()
         {
             _cacheProvider = Substitute.For<ICacheProvider>();
-            _cacheProvider.GetOrAdd<GraphNode>(Arg.Any<string>(), Arg.Any<Func<GraphNode>>())
+            _cacheProvider.GetOrAdd<GraphNode>(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Func<GraphNode>>())
                 .Returns(ci =>
                 {
-                    return ((Func<GraphNode>)ci[1]).Invoke();
+                    return ((Func<GraphNode>)ci[2]).Invoke();
                 });
 
             _register = new AggregateRegister(_cacheProvider);
         }
 
         [TestMethod]
-        public void ShouldReadAggregateAttributesOnSingleModel()
+        public void Register_ShouldReadAggregateAttributesOnSingleModel()
         {
             var entityGraph = _register.GetEntityGraph<AttributeTest>();
             Assert.IsTrue(entityGraph.Members.Count == 2);
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 0);
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 2);
         }
+        
+
+        // TODO MORE TESTS
     }
 }

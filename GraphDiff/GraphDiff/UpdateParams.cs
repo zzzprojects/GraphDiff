@@ -18,8 +18,19 @@ namespace RefactorThis.GraphDiff
     /// <typeparam name="T">Type of entity the update operation is working with</typeparam>
     public class UpdateParams<T>
     {
+        /// <summary>
+        /// Mode of querying
+        /// </summary>
         public QueryMode QueryMode { get; set; }
+
+        /// <summary>
+        /// The defined mapping scheme
+        /// </summary>
         public string MappingScheme { get; set; }
+
+        /// <summary>
+        /// Configuration Mapping (Takes priority over the MappingScheme)
+        /// </summary>
         public Expression<Func<IUpdateConfiguration<T>, object>> Mapping { get; set; }
     }
 }
