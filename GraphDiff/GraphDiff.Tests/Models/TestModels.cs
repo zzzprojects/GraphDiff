@@ -93,6 +93,16 @@ namespace RefactorThis.GraphDiff.Tests.Models
     {
         [Key]
         internal int Id { get; set; }
+
+        internal List<InternalKeyAssociate> Associates { get; set; }
+    }
+
+    public class InternalKeyAssociate
+    {
+        [Key]
+        internal int Id { get; set; }
+
+        internal InternalKeyModel Parent { get; set; }
     }
 
     public class NullableKeyModel

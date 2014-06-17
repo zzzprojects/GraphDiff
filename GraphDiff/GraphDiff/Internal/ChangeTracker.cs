@@ -156,7 +156,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var entityType = ObjectContext.GetObjectType(updating.GetType());
             foreach (var navigationProperty in _entityManager.GetRequiredNavigationPropertiesForType(updating.GetType()))
             {
-                var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name);
+                var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
                 var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
 
                 if (associatedEntity != null)
@@ -187,7 +187,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var conceptualType = metadata.GetItems<EntityType>(DataSpace.CSpace).Single(p => p.FullName == cTypeName);
             var concurrencyProperties = conceptualType.Members
                     .Where(member => member.TypeUsage.Facets.Any(facet => facet.Name == "ConcurrencyMode" && (ConcurrencyMode)facet.Value == ConcurrencyMode.Fixed))
-                    .Select(member => entityType.GetProperty(member.Name))
+                    .Select(member => entityType.GetProperty(member.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .ToList();
 
             // Check if concurrency properties are equal
