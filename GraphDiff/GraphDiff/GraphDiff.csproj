@@ -54,7 +54,6 @@
   <ItemGroup>
     <Compile Include="Aggregates\AggregateConfiguration.cs" />
     <Compile Include="Aggregates\Attributes\AggregateDefinitionAttribute.cs" />
-    <Compile Include="Aggregates\Attributes\AggregateRootAttribute.cs" />
     <Compile Include="Aggregates\Attributes\AssociatedAttribute.cs" />
     <Compile Include="Aggregates\Attributes\OwnedAttribute.cs" />
     <Compile Include="DebugExtensions.cs" />

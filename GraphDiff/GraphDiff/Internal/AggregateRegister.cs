@@ -35,9 +35,9 @@ namespace RefactorThis.GraphDiff.Internal
             _cache.Insert(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(scheme), rootNode);
         }
 
-        public GraphNode GetEntityGraph<T>(string scheme = null)
+        public GraphNode GetEntityGraph<T>()
         {
-            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(scheme), () =>
+            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(), () =>
             {
                 // no cached mapping lets look for attributes
                 if (_attributeGraphBuilder.CanBuild(typeof(T)))
@@ -50,6 +50,19 @@ namespace RefactorThis.GraphDiff.Internal
                     return new GraphNode();
                 }
             });
+        }
+
+        public GraphNode GetEntityGraph<T>(string scheme)
+        {
+            GraphNode node;
+            if (_cache.TryGet(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(scheme), out node))
+            {
+                return node;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("Could not find a mapping scheme with name: '" + scheme + "'");
+            }
         }
 
         public GraphNode GetEntityGraph<T>(Expression<Func<IUpdateConfiguration<T>, object>> expression)

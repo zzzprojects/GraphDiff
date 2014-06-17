@@ -7,5 +7,6 @@ namespace RefactorThis.GraphDiff.Attributes
 {
     public class AggregateDefinitionAttribute : Attribute
     {
+        public Type AggregateType { get; set; }
     }
 }

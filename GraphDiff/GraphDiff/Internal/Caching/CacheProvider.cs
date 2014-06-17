@@ -11,6 +11,7 @@ namespace RefactorThis.GraphDiff.Internal.Caching
     {
         void Insert(string register, string key, object value);
         void Clear(string register);
+        bool TryGet<T>(string register, string key, out T element);
         T GetOrAdd<T>(string register, string key, Func<T> onCacheMissed);
     }
 
@@ -23,7 +24,7 @@ namespace RefactorThis.GraphDiff.Internal.Caching
         {
             lock (cacheLock)
             {
-                var fullKey = register + ":" + key;
+                var fullKey = GenerateKey(register, key);
                 var result = _cache.Get(fullKey);
                 if (result == null)
                 {
@@ -43,7 +44,7 @@ namespace RefactorThis.GraphDiff.Internal.Caching
 
         public T GetOrAdd<T>(string register, string key, Func<T> onCacheMissed)
         {
-            var fullKey = register + ":" + key;
+            var fullKey = GenerateKey(register, key);
             var result = _cache.Get(fullKey);
             if (result != null)
             {
@@ -64,6 +65,24 @@ namespace RefactorThis.GraphDiff.Internal.Caching
             }
             
             return (T)result;
+        }
+
+        public bool TryGet<T>(string register, string key, out T element)
+        {
+            var item = _cache.Get(GenerateKey(register, key));
+            if (item == null)
+            {
+                element = default(T);
+                return false;
+            }
+
+            element = (T)item;
+            return true;
+        }
+
+        private string GenerateKey(string register, string key)
+        {
+            return register + ":" + key;
         }
     }
 }

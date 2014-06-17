@@ -39,8 +39,14 @@ namespace RefactorThis.GraphDiff.Tests.UnitTests
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 0);
             Assert.IsTrue(entityGraph.Members.Pop().Members.Count == 2);
         }
-        
 
-        // TODO MORE TESTS
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void GetEntityGraph_ShouldThrowIfMappingSchemeNotFound()
+        {
+            _register.GetEntityGraph<AttributeTest>("SomeSchemeName");
+        }
+
+        // todo add more tests
     }
 }

@@ -79,10 +79,11 @@
     <Compile Include="Tests\ErrorHandlingBehaviours.cs" />
     <Compile Include="Tests\AssociatedEntityBehaviours.cs" />
     <Compile Include="Tests\AddAggregateBehaviours.cs" />
+    <Compile Include="Tests\QueryLoaderBehaviours.cs" />
     <Compile Include="Tests\ThirdTierBehaviours.cs" />
     <Compile Include="Tests\MiscBehaviours.cs" />
     <Compile Include="Tests\AttachedBehaviours.cs" />
-    <Compile Include="UnitTests\AggregateConfigurationTests.cs" />
+    <Compile Include="Tests\AggregateConfigurationBehaviours.cs" />
     <Compile Include="UnitTests\AggregateRegisterTests.cs" />
   </ItemGroup>
   <ItemGroup>

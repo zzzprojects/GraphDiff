@@ -72,6 +72,20 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             return includeStrings;
         }
 
+        public string GetUniqueKey()
+        {
+            string key = "";
+            if (this.Parent != null && this.Parent.Accessor != null)
+            {
+                key += Parent.Accessor.DeclaringType.FullName + "_" + Parent.Accessor.Name;
+            }
+            else
+            {
+                key += "NoParent";
+            }
+            return key += "_" + this.Accessor.DeclaringType.FullName + "_" + this.Accessor.Name;
+        }
+
         protected T GetValue<T>(object instance)
         {
             return (T)Accessor.GetValue(instance, null);

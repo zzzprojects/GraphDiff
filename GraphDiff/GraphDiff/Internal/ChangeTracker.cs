@@ -131,7 +131,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             if (_context.Entry(entity).State == EntityState.Detached)
             {
                 // TODO look into a possible better way of doing this, I don't particularly like it
-                // will add a key-only object to the change tracker at the moment this is being reloaded,
+                // will add a key-only object to the change tracker. at the moment this is being reloaded,
                 // performing a db query which would impact performance
                 var entityType = ObjectContext.GetObjectType(entity.GetType());
                 var instance = _entityManager.CreateEmptyEntityWithKey(entity);

@@ -1,6 +1,7 @@
 ﻿using System.Data.Entity;
 using RefactorThis.GraphDiff.Tests.Models;
 using RefactorThis.GraphDiff.Tests.Tests;
+using System.Data.Common;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -25,6 +26,10 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
 
         public IDbSet<AttributeTest> Attributes { get; set; }
+        public IDbSet<SharedModelAttributeTest> SharedModelAttributes { get; set; }
+
+        public TestDbContext() : base("GraphDiff") { }
+        public TestDbContext(DbConnection connection) : base(connection, true) { }
 
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
@@ -60,8 +65,9 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<AttributeTest>().HasMany(p => p.OneToManyOwned);
             modelBuilder.Entity<AttributeTestOneToManyOwned>().HasOptional(p => p.AttributeTestOneToManyToOneOwned);
             modelBuilder.Entity<AttributeTestOneToManyOwned>().HasOptional(p => p.AttributeTestOneToManyToOneAssociated);
+            modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyAssociated);
+            modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyOwned);
+            modelBuilder.Entity<CircularAttributeTest>().HasOptional(p => p.Parent);
 		}
-
-		public TestDbContext() : base("GraphDiff") {}
 	}
 }
