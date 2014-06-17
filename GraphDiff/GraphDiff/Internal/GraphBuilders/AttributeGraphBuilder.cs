@@ -10,16 +10,16 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 {
     internal interface IAttributeGraphBuilder
     {
-        bool CanBuild(Type t);
+        bool CanBuild<T>();
         GraphNode BuildGraph<T>();
     }
 
     internal class AttributeGraphBuilder : IAttributeGraphBuilder
     {
-        public bool CanBuild(Type t)
+        public bool CanBuild<T>()
         {
             // any properties have an aggregate definition attribute?
-            return t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+            return typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
                 .SelectMany(p => p.GetCustomAttributes(true))
                 .Where(p => p is OwnedAttribute || p is AssociatedAttribute)
                 .Any();

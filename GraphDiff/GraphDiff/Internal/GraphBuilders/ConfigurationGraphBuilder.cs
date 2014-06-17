@@ -9,12 +9,12 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
     /// Reads an IUpdateConfiguration mapping and produces an GraphNode graph.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class ConfigurationVisitor<T> : ExpressionVisitor
+    internal class ConfigurationGraphBuilder : ExpressionVisitor
     {
         private GraphNode _currentMember;
         private string _currentMethod = "";
 
-        public GraphNode GetNodes(Expression<Func<IUpdateConfiguration<T>, object>> expression)
+        public GraphNode BuildGraph<T>(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
             var initialNode = new GraphNode();
             _currentMember = initialNode;

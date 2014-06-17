@@ -40,7 +40,7 @@ namespace RefactorThis.GraphDiff.Internal
             return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(), () =>
             {
                 // no cached mapping lets look for attributes
-                if (_attributeGraphBuilder.CanBuild(typeof(T)))
+                if (_attributeGraphBuilder.CanBuild<T>())
                 {
                     return _attributeGraphBuilder.BuildGraph<T>();
                 }
@@ -70,7 +70,7 @@ namespace RefactorThis.GraphDiff.Internal
             var key = typeof(T).FullName + "_" + expression.ToString();
             return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, key, () =>
             {
-                return new ConfigurationVisitor<T>().GetNodes(expression);
+                return new ConfigurationGraphBuilder().BuildGraph<T>(expression);
             });
         }
 

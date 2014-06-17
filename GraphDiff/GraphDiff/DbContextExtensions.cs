@@ -53,6 +53,7 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">The database context to attach / detach.</param>
         /// <param name="entity">The root entity.</param>
         /// <param name="updateParams">Update configuration overrides</param>
+        /// <returns>The attached entity graph</returns>
         public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams updateParams = null) where T : class, new()
         {
             return UpdateGraph<T>(context, entity, null, null, updateParams);
@@ -65,7 +66,7 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">DbContext</param>
         /// <param name="keyPredicate">The predicate used to find the aggregate by key</param>
         /// <param name="queryMode">Load all objects at once, or perform multiple queries</param>
-        /// <returns></returns>
+        /// <returns>The aggregate loaded from the database</returns>
         public static T LoadAggregate<T>(this DbContext context, Func<T, bool> keyPredicate, QueryMode queryMode = QueryMode.SingleQuery) where T : class
         {
             var entityManager = new EntityManager(context);

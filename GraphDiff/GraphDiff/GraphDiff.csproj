@@ -69,7 +69,7 @@
     <Compile Include="Internal\Graph\GraphNode.cs" />
     <Compile Include="Internal\Graph\AssociatedEntityGraphNode.cs" />
     <Compile Include="Internal\Graph\OwnedEntityGraphNode.cs" />
-    <Compile Include="Internal\GraphBuilders\ConfigurationVisitor.cs" />
+    <Compile Include="Internal\GraphBuilders\ConfigurationGraphBuilder.cs" />
     <Compile Include="Internal\QueryLoader.cs" />
     <Compile Include="IUpdateConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
