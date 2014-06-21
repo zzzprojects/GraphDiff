@@ -5,7 +5,7 @@ using RefactorThis.GraphDiff.Tests.Models;
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
-    public class AttachedBehaviours
+    public class AttachedBehaviours : TestBase
     {
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]

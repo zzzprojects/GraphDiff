@@ -11,13 +11,15 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         {
         }
 
-        public override void Update<T>(DbContext context, T persisted, T updating)
+        public override void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating)
         {
             var dbValue = GetValue<object>(persisted);
             var newValue = GetValue<object>(updating);
 
             if (dbValue == null && newValue == null)
+            {
                 return;
+            }
 
             // Merging options
             // 1. No new value, set value to null. entity will be removed if cascade rules set.
@@ -28,24 +30,30 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 SetValue(persisted, null);
                 return;
             }
-            
-            if (dbValue != null && IsKeyIdentical(context, newValue, dbValue))
-                UpdateValuesWithConcurrencyCheck(context, newValue, dbValue);
-            else
-                dbValue = CreateNewPersistedEntity(context, persisted, newValue);
 
-            AttachCyclicNavigationProperty(context, persisted, newValue);
+            if (dbValue != null && entityManager.AreKeysIdentical(newValue, dbValue))
+            {
+                changeTracker.UpdateItem(newValue, dbValue, true);
+            }
+            else
+            {
+                dbValue = CreateNewPersistedEntity(changeTracker, persisted, newValue);
+            }
+
+            changeTracker.AttachCyclicNavigationProperty(persisted, newValue);
 
             foreach (var childMember in Members)
-                childMember.Update(context, dbValue, newValue);
+            {
+                childMember.Update(changeTracker, entityManager, dbValue, newValue);
+            }
         }
 
-        private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
+        private object CreateNewPersistedEntity<T>(IChangeTracker changeTracker, T existing, object newValue) where T : class, new()
         {
             var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
-            context.Set(Accessor.PropertyType).Add(instance);
-            UpdateValuesWithConcurrencyCheck(context, newValue, instance);
+            changeTracker.AddItem(instance);
+            changeTracker.UpdateItem(newValue, instance, true);
             return instance;
         }
     }

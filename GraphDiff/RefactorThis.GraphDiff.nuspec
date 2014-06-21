@@ -21,9 +21,10 @@ If you have ever felt the pain of updating a detached graph with one or more nes
 - Many small bugfixes.
 
 v1.3.6
+ v1.3.6
  - Optimistic concurrency support
  - Abstract base class and inheritance bug fixes and enhacements.
-
+ 
 v1.3.5
  - Update to work with EF 6
  - Bug fixes (see GitHub issues)

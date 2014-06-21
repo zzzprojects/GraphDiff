@@ -1,6 +1,7 @@
 ﻿using System.Data.Entity;
 using RefactorThis.GraphDiff.Tests.Models;
 using RefactorThis.GraphDiff.Tests.Tests;
+using System.Data.Common;
 
 namespace RefactorThis.GraphDiff.Tests
 {
@@ -17,7 +18,6 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
 	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
-
         public IDbSet<RootEntity> RootEntities { get; set; }
 
         public IDbSet<RequiredAssociate> RequiredAssociates { get; set; }
@@ -25,10 +25,15 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
         public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
 
+        public IDbSet<AttributeTest> Attributes { get; set; }
+        public IDbSet<SharedModelAttributeTest> SharedModelAttributes { get; set; }
+
+        public TestDbContext() : base("GraphDiff") { }
+        public TestDbContext(DbConnection connection) : base(connection, true) { }
+
 		protected override void OnModelCreating(DbModelBuilder modelBuilder)
 		{
             // second tier mappings
-
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
@@ -37,7 +42,6 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<GroupedTestNode>().HasOptional(g => g.One).WithOptionalDependent(g => g.Two).WillCascadeOnDelete(false);
 
             // third tier mappings
-
             modelBuilder.Entity<OneToManyOwnedModel>().HasOptional(p => p.OneToManyOneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);
             modelBuilder.Entity<OneToManyOwnedModel>().HasMany(p => p.OneToManyOneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<OneToManyOwnedModel>().HasOptional(p => p.OneToManyOneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
@@ -51,7 +55,6 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<RootEntity>().HasOptional(c => c.Target).WithMany(c => c.Sources);
 
             // Guid mappings
-
             modelBuilder.Entity<GuidTestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent);
 
             // Internal mappings
@@ -62,8 +65,15 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<InternalKeyModel>()
                     .HasMany(ikm => ikm.Associates)
 		            .WithRequired(ikm => ikm.Parent);
-		}
 
-		public TestDbContext() : base("GraphDiff") {}
+            // Attributes
+            modelBuilder.Entity<AttributeTest>().HasMany(p => p.OneToManyAssociated);
+            modelBuilder.Entity<AttributeTest>().HasMany(p => p.OneToManyOwned);
+            modelBuilder.Entity<AttributeTestOneToManyOwned>().HasOptional(p => p.AttributeTestOneToManyToOneOwned);
+            modelBuilder.Entity<AttributeTestOneToManyOwned>().HasOptional(p => p.AttributeTestOneToManyToOneAssociated);
+            modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyAssociated);
+            modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyOwned);
+            modelBuilder.Entity<CircularAttributeTest>().HasOptional(p => p.Parent);
+		}
 	}
 }
