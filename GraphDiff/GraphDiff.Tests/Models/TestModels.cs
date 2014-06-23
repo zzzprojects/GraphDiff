@@ -201,4 +201,20 @@ namespace RefactorThis.GraphDiff.Tests.Models
     {
         public OneToOneOwnedModel OneParent { get; set; }
     }
+
+    public class RootModel : Entity
+    {
+        public RootModel()
+        {
+            Children = new HashSet<OneToManyHierarchicalModel>();
+        }
+
+        public ICollection<OneToManyHierarchicalModel> Children { get; set; }
+    }
+
+    public class OneToManyHierarchicalModel : Entity
+    {
+        public OneToManyHierarchicalModel Parent { get; set; }
+        public int? ParentId { get; set; }
+    }
 }
