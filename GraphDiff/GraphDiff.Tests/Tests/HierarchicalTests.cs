@@ -40,8 +40,8 @@
             var topLevel1_sub2 = new OneToManyHierarchicalModel { Parent = topLevel1 };
 
             var topLevel2 = new OneToManyHierarchicalModel();
-            var topLevel2_sub1 = new OneToManyHierarchicalModel { Parent = topLevel1 };
-            var topLevel2_sub2 = new OneToManyHierarchicalModel { Parent = topLevel1 };
+            var topLevel2_sub1 = new OneToManyHierarchicalModel { Parent = topLevel2 };
+            var topLevel2_sub2 = new OneToManyHierarchicalModel { Parent = topLevel2 };
 
             root.Children.Add(topLevel1);
             root.Children.Add(topLevel1_sub1);
