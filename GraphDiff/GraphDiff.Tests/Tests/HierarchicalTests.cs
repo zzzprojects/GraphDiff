@@ -8,6 +8,8 @@
     [TestClass]
     public class HierarchicalTests
     {
+        private static int tempIdGenValue = -1;
+
         [TestMethod]
         public void Proof_That_A_Hierachy_Fails_to_Save()
         {
@@ -35,13 +37,13 @@
 
             var root = new RootModel();
 
-            var topLevel1 = new OneToManyHierarchicalModel();
-            var topLevel1_sub1 = new OneToManyHierarchicalModel { Parent = topLevel1 };
-            var topLevel1_sub2 = new OneToManyHierarchicalModel { Parent = topLevel1 };
+            var topLevel1 = new OneToManyHierarchicalModel { Id = tempIdGenValue-- };
+            var topLevel1_sub1 = new OneToManyHierarchicalModel { Id = tempIdGenValue--, Parent = topLevel1 };
+            var topLevel1_sub2 = new OneToManyHierarchicalModel { Id = tempIdGenValue--, Parent = topLevel1 };
 
-            var topLevel2 = new OneToManyHierarchicalModel();
-            var topLevel2_sub1 = new OneToManyHierarchicalModel { Parent = topLevel2 };
-            var topLevel2_sub2 = new OneToManyHierarchicalModel { Parent = topLevel2 };
+            var topLevel2 = new OneToManyHierarchicalModel { Id = tempIdGenValue-- };
+            var topLevel2_sub1 = new OneToManyHierarchicalModel { Id = tempIdGenValue--, Parent = topLevel2 };
+            var topLevel2_sub2 = new OneToManyHierarchicalModel { Id = tempIdGenValue--, Parent = topLevel2 };
 
             root.Children.Add(topLevel1);
             root.Children.Add(topLevel1_sub1);
