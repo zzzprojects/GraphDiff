@@ -56,7 +56,7 @@ namespace RefactorThis.GraphDiff.Internal
                 }
 
                 // Perform recursive update
-                var entityManager = new EntityManager(_dbContext);
+                var entityManager = new EntityManager(_dbContext, _entityManager.KeysConfiguration);
                 var changeTracker = new ChangeTracker(_dbContext, entityManager);
                 _root.Update(changeTracker, entityManager, persisted, updating);
 
