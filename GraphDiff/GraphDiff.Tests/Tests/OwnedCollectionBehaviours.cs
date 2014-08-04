@@ -4,6 +4,7 @@ using RefactorThis.GraphDiff.Tests.Models;
 using System.Linq;
 using System.Data.Entity;
 using System.Collections.Generic;
+using System;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
@@ -339,6 +340,45 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsTrue(list[1].Title == "A");
                 Assert.IsTrue(list[2].Title == "Test");
                 Assert.IsTrue(list[3].Title == "Finish");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldUpdateItemInOwnedCollectionWithCustomKey()
+        {
+            var node1 = new TestNode
+            {
+                Title = "New Node",
+                OneToManyOwned = new List<OneToManyOwnedModel>
+                {
+                    new OneToManyOwnedModel { Title = "Hello", UniqueId = new Guid("DA6B78FF-BB7F-4FA1-8659-F64AC6457D14") }
+                }
+            };
+
+            int originalOwnedId;
+            using (var context = new TestDbContext())
+            {
+                context.Nodes.Add(node1);
+                context.SaveChanges();
+                originalOwnedId = node1.OneToManyOwned.First().Id;
+            } // Simulate detach
+
+            node1.OneToManyOwned.First().Title = "What's up";
+            node1.OneToManyOwned.First().Id = 0; //We will try to update on Guid
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                context.UpdateGraph(node1, map => map
+                    .OwnedCollection(p => p.OneToManyOwned),
+                    keysConfiguration: new KeysConfiguration()
+                    .ForEntity<OneToManyOwnedModel>(e => e.UniqueId));
+
+                context.SaveChanges();
+                var node2 = context.Nodes.Include(p => p.OneToManyOwned).Single(p => p.Id == node1.Id);
+                Assert.IsNotNull(node2);
+                var owned = node2.OneToManyOwned.First();
+                Assert.IsTrue(owned.OneParent == node2 && owned.Title == "What's up" && owned.Id == originalOwnedId);
             }
         }
     }

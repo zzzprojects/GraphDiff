@@ -68,7 +68,7 @@ namespace RefactorThis.GraphDiff.Internal
         private Func<T, bool> CreateKeyPredicateExpression<T>(IObjectContextAdapter context, T entity)
         {
             // get key properties of T
-            var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
+            var keyProperties = _entityManager.GetKeyFieldsFor(typeof(T)).ToList();
 
             ParameterExpression parameter = Expression.Parameter(typeof(T));
             Expression expression = CreateEqualsExpression(entity, keyProperties[0], parameter);

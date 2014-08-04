@@ -15,6 +15,8 @@ namespace RefactorThis.GraphDiff.Tests.Models
         [Key]
         public int Id { get; set; }
 
+        public Guid UniqueId { get; set; }
+
         [MaxLength(128)]
         public string Title { get; set; }
 

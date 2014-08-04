@@ -16,6 +16,11 @@ namespace RefactorThis.GraphDiff.Internal
     internal interface IEntityManager
     {
         /// <summary>
+        /// Gets custom key mappins for entities
+        /// </summary>
+        KeysConfiguration KeysConfiguration { get; }
+
+        /// <summary>
         /// Creates the unique entity key for an entity
         /// </summary>
         EntityKey CreateEntityKey(object entity);
@@ -31,9 +36,14 @@ namespace RefactorThis.GraphDiff.Internal
         bool AreKeysIdentical(object entity1, object entity2);
 
         /// <summary>
-        /// Returns the primary key fields for a given  entity type
+        /// Returns the key fields (using key configuration if available) for a given entity type
         /// </summary>
-        IEnumerable<PropertyInfo> GetPrimaryKeyFieldsFor(Type entityType);
+        IEnumerable<PropertyInfo> GetKeyFieldsFor(Type entityType);
+
+        /// <summary>
+        /// Copy primary key fields from an entity to another of the same type
+        /// </summary>
+        void CopyPrimaryKeyFields(Type entityType, object from, object to);
 
         /// <summary>
         /// Retrieves the required navigation properties for the given type
@@ -45,18 +55,27 @@ namespace RefactorThis.GraphDiff.Internal
         /// </summary>
         IEnumerable<NavigationProperty> GetNavigationPropertiesForType(Type entityType);
     }
-
+    
     internal class EntityManager : IEntityManager
     {
         private readonly DbContext _context;
+
         private ObjectContext _objectContext
         {
             get { return ((IObjectContextAdapter)_context).ObjectContext; }
         }
 
-        public EntityManager(DbContext context)
+        public KeysConfiguration KeysConfiguration { get; private set; }
+
+        public EntityManager(DbContext context, KeysConfiguration keysConfiguration)
         {
+            if (context == null)
+                throw new ArgumentNullException("context");
+            if (keysConfiguration == null)
+                throw new ArgumentNullException("keysConfiguration");
+
             _context = context;
+            KeysConfiguration = keysConfiguration;
         }
 
         public EntityKey CreateEntityKey(object entity)
@@ -66,7 +85,18 @@ namespace RefactorThis.GraphDiff.Internal
                 throw new ArgumentNullException("entity");
             }
 
-            return _objectContext.CreateEntityKey(GetEntitySetName(entity.GetType()), entity);
+            var entityType = entity.GetType();
+            var entitySetName = GetEntitySetName(entityType);
+            if (KeysConfiguration.HasConfigurationFor(entityType))
+            {
+                var keyMembers = GetKeyFieldsFor(entityType)
+                    .Select(p => new EntityKeyMember(p.Name, p.GetValue(entity, null)));
+                return new EntityKey(_objectContext.DefaultContainerName + "." +  entitySetName, keyMembers);
+            }
+            else
+            {
+                return _objectContext.CreateEntityKey(entitySetName, entity);
+            }
         }
 
         public bool AreKeysIdentical(object newValue, object dbValue)
@@ -81,16 +111,30 @@ namespace RefactorThis.GraphDiff.Internal
 
         public object CreateEmptyEntityWithKey(object entity)
         {
-            var instance = Activator.CreateInstance(entity.GetType());
-            CopyPrimaryKeyFields(entity, instance);
+            var entityType = entity.GetType();
+            var instance = Activator.CreateInstance(entityType);
+            CopyKeyFields(entityType, entity, instance);
             return instance;
+        }
+
+        public IEnumerable<PropertyInfo> GetKeyFieldsFor(Type entityType)
+        {
+            var keyColumns = KeysConfiguration.GetEntityKey(entityType);
+            if (keyColumns != null)
+            {
+                return keyColumns;
+            }
+            else
+            {
+                return GetPrimaryKeyFieldsFor(entityType);
+            }
         }
 
         public IEnumerable<PropertyInfo> GetPrimaryKeyFieldsFor(Type entityType)
         {
             var metadata = _objectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .SingleOrDefault(p => p.FullName == entityType.FullName);
+                .GetItems<EntityType>(DataSpace.OSpace)
+                .SingleOrDefault(p => p.FullName == entityType.FullName);
 
             if (metadata == null)
             {
@@ -134,9 +178,18 @@ namespace RefactorThis.GraphDiff.Internal
             return set != null ? set.Name : null;
         }
 
-        private void CopyPrimaryKeyFields(object from, object to)
+        private void CopyKeyFields(Type entityType, object from, object to)
         {
-            var keyProperties = GetPrimaryKeyFieldsFor(from.GetType());
+            var keyProperties = GetKeyFieldsFor(entityType);
+            foreach (var keyProperty in keyProperties)
+            {
+                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
+            }
+        }
+
+        public void CopyPrimaryKeyFields(Type entityType, object from, object to)
+        {
+            var keyProperties = GetPrimaryKeyFieldsFor(entityType);
             foreach (var keyProperty in keyProperties)
             {
                 keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
