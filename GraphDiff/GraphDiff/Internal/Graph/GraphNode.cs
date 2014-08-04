@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Data.Entity.Core;
-using System.Data.Entity.Core.Metadata.Edm;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity.Infrastructure;
-using RefactorThis.GraphDiff.Internal;
 using System.Linq;
 using System.Reflection;
 
@@ -42,7 +36,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         }
 
         // overridden by different implementations
-        public virtual void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating) where T : class, new()
+        public virtual void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating) where T : class
         {
             changeTracker.UpdateItem(updating, persisted, true);
 
@@ -75,7 +69,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         public string GetUniqueKey()
         {
             string key = "";
-            if (this.Parent != null && this.Parent.Accessor != null)
+            if (Parent != null && Parent.Accessor != null)
             {
                 key += Parent.Accessor.DeclaringType.FullName + "_" + Parent.Accessor.Name;
             }
@@ -83,7 +77,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             {
                 key += "NoParent";
             }
-            return key += "_" + this.Accessor.DeclaringType.FullName + "_" + this.Accessor.Name;
+            return key + "_" + Accessor.DeclaringType.FullName + "_" + Accessor.Name;
         }
 
         protected T GetValue<T>(object instance)

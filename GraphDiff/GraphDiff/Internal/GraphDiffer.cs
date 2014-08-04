@@ -1,11 +1,10 @@
-﻿using RefactorThis.GraphDiff.Internal.Graph;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Data.Entity;
+using RefactorThis.GraphDiff.Internal.Graph;
 
 namespace RefactorThis.GraphDiff.Internal
 {
-    internal interface IGraphDiffer<T> where T : class, new()
+    internal interface IGraphDiffer<T> where T : class
     {
         T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery);
     }
@@ -14,7 +13,7 @@ namespace RefactorThis.GraphDiff.Internal
     /// GraphDiff main entry point.
     /// </summary>
     /// <typeparam name="T">The root agreggate type</typeparam>
-    internal class GraphDiffer<T> : IGraphDiffer<T> where T : class, new()
+    internal class GraphDiffer<T> : IGraphDiffer<T> where T : class
     {
         private readonly GraphNode _root;
         private readonly DbContext _dbContext;
@@ -46,7 +45,7 @@ namespace RefactorThis.GraphDiff.Internal
                 {
                     // we are always working with 2 graphs, simply add a 'persisted' one if none exists,
                     // this ensures that only the changes we make within the bounds of the mapping are attempted.
-                    persisted = new T();
+                    persisted = Activator.CreateInstance<T>();
                     _dbContext.Set<T>().Add(persisted);
                 }
 

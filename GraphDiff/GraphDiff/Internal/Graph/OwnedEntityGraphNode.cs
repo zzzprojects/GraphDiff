@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.Entity;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Graph
@@ -48,7 +47,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             }
         }
 
-        private object CreateNewPersistedEntity<T>(IChangeTracker changeTracker, T existing, object newValue) where T : class, new()
+        private object CreateNewPersistedEntity<T>(IChangeTracker changeTracker, T existing, object newValue) where T : class
         {
             var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
