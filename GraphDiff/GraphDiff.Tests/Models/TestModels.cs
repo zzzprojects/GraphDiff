@@ -36,6 +36,21 @@ namespace RefactorThis.GraphDiff.Tests.Models
         //public ICollection<ManyToManyModel> ManyToManyAssociated { get; set; }
     }
 
+    public class TestNodeWithPrivateConstructor : Entity
+    {
+        private TestNodeWithPrivateConstructor()
+        {
+        }
+
+        public static TestNodeWithPrivateConstructor Create(string title)
+        {
+            return new TestNodeWithPrivateConstructor
+            {
+                Title = title
+            };
+        }
+    }
+
     public class NodeGroup : Entity
     {
         public List<GroupedTestNode> Members { get; set; }

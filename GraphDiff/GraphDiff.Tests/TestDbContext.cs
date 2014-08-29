@@ -8,6 +8,7 @@ namespace RefactorThis.GraphDiff.Tests
 	public class TestDbContext : DbContext
 	{
         public IDbSet<TestNode> Nodes { get; set; }
+        public IDbSet<TestNodeWithPrivateConstructor> NodesWithPrivateConstructor { get; set; }
         public IDbSet<TestNodeWithBaseReference> NodesWithReference { get; set; }
 
         public IDbSet<NodeGroup> NodeGroups { get; set; }

@@ -27,7 +27,7 @@ namespace RefactorThis.GraphDiff
         /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
         /// <param name="updateParams">Update configuration overrides</param>
         /// <returns>The attached entity graph</returns>
-        public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping, UpdateParams updateParams = null) where T : class, new()
+        public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping, UpdateParams updateParams = null) where T : class
 	    {
             return UpdateGraph<T>(context, entity, mapping, null, updateParams);
 	    }
@@ -41,7 +41,7 @@ namespace RefactorThis.GraphDiff
         /// <param name="mappingScheme">Pre-configured mappingScheme</param>
         /// <param name="updateParams">Update configuration overrides</param>
         /// <returns>The attached entity graph</returns>
-        public static T UpdateGraph<T>(this DbContext context, T entity, string mappingScheme, UpdateParams updateParams = null) where T : class, new()
+        public static T UpdateGraph<T>(this DbContext context, T entity, string mappingScheme, UpdateParams updateParams = null) where T : class
         {
             return UpdateGraph<T>(context, entity, null, mappingScheme, updateParams);
         }
@@ -54,7 +54,7 @@ namespace RefactorThis.GraphDiff
         /// <param name="entity">The root entity.</param>
         /// <param name="updateParams">Update configuration overrides</param>
         /// <returns>The attached entity graph</returns>
-        public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams updateParams = null) where T : class, new()
+        public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams updateParams = null) where T : class
         {
             return UpdateGraph<T>(context, entity, null, null, updateParams);
         }
@@ -85,7 +85,7 @@ namespace RefactorThis.GraphDiff
 
         // other methods are convenience wrappers around this.
         private static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping,
-                                                        string mappingScheme, UpdateParams updateParams) where T : class, new()
+                                                        string mappingScheme, UpdateParams updateParams) where T : class
         {
             GraphNode root;
             GraphDiffer<T> differ;
