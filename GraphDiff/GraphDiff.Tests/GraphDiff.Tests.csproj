@@ -79,6 +79,7 @@
     <Compile Include="Tests\ErrorHandlingBehaviours.cs" />
     <Compile Include="Tests\AssociatedEntityBehaviours.cs" />
     <Compile Include="Tests\AddAggregateBehaviours.cs" />
+    <Compile Include="Tests\PrivateConstructorBehaviours.cs" />
     <Compile Include="Tests\QueryLoaderBehaviours.cs" />
     <Compile Include="Tests\ThirdTierBehaviours.cs" />
     <Compile Include="Tests\MiscBehaviours.cs" />
