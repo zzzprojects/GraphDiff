@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
@@ -86,6 +87,12 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             if (doConcurrencyCheck && _context.Entry(to).State != EntityState.Added)
             {
                 EnsureConcurrency(from, to);
+            }
+
+            var keyProperties = GetComplexTypePropertiesForType(from.GetType());
+            foreach (var keyProperty in keyProperties)
+            {
+                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
             }
 
             _context.Entry(to).CurrentValues.SetValues(from);
@@ -225,6 +232,18 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var keyFields = _entityManager.GetPrimaryKeyFieldsFor(associatedEntityType);
             var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
             return _context.Set(associatedEntityType).Find(keys);
+        }
+
+        private IEnumerable<PropertyInfo> GetComplexTypePropertiesForType(Type entityType)
+        {
+            var meta = _objectContext.MetadataWorkspace
+                .GetItems<EntityType>(DataSpace.OSpace)
+                .Single(p => p.FullName == entityType.FullName);
+
+            return meta.Properties
+                .Where(p => p.IsComplexType)
+                .Select(k => entityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .ToList();
         }
 
     }
