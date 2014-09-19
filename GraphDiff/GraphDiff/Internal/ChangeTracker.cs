@@ -83,9 +83,24 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         public void UpdateItem(object from, object to, bool doConcurrencyCheck = false)
         {
-            if (doConcurrencyCheck && _context.Entry(to).State != EntityState.Added)
+            Type entityType = from.GetType();
+            var toEntry = _context.Entry(to);
+
+            if (doConcurrencyCheck && toEntry.State != EntityState.Added)
             {
-                EnsureConcurrency(from, to);
+                EnsureConcurrency(entityType, from, to);
+            }
+
+            var metadata = _objectContext.MetadataWorkspace
+                .GetItems<EntityType>(DataSpace.OSpace)
+                .SingleOrDefault(p => p.FullName == entityType.FullName);
+
+            // When a custom key is specified the primary key in the from object is ignored.
+            // We must set it to the actual value from database so it won't try to change the primary key
+            if (_entityManager.KeysConfiguration.HasConfigurationFor(entityType))
+            {
+                // Copy inverted for primary key : from context entity to detached entity
+                _entityManager.CopyPrimaryKeyFields(entityType, from: to, to: from);
             }
 
             _context.Entry(to).CurrentValues.SetValues(from);
@@ -171,10 +186,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         // Privates
 
-        private void EnsureConcurrency(object entity1, object entity2)
+        private void EnsureConcurrency(Type entityType, object entity1, object entity2)
         {
             // get concurrency properties of T
-            var entityType = ObjectContext.GetObjectType(entity1.GetType());
             var metadata = _objectContext.MetadataWorkspace;
 
             var objType = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
@@ -222,7 +236,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         private object FindEntityByKey(object associatedEntity)
         {
             var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
-            var keyFields = _entityManager.GetPrimaryKeyFieldsFor(associatedEntityType);
+            var keyFields = _entityManager.GetKeyFieldsFor(associatedEntityType);
             var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
             return _context.Set(associatedEntityType).Find(keys);
         }
