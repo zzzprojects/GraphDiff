@@ -236,13 +236,15 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private IEnumerable<PropertyInfo> GetComplexTypePropertiesForType(Type entityType)
         {
+            var trueEntityType = ObjectContext.GetObjectType(entityType);
+
             var meta = _objectContext.MetadataWorkspace
                 .GetItems<EntityType>(DataSpace.OSpace)
-                .Single(p => p.FullName == entityType.FullName);
+                .Single(p => p.FullName == trueEntityType.FullName);
 
             return meta.Properties
                 .Where(p => p.IsComplexType)
-                .Select(k => entityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .Select(k => trueEntityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                 .ToList();
         }
 
