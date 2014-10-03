@@ -71,6 +71,7 @@
     <Compile Include="Tests\AssociatedCollectionBehaviours.cs" />
     <Compile Include="Tests\AttributeMappingBehaviours.cs" />
     <Compile Include="Tests\GuidKeyBehaviors.cs" />
+    <Compile Include="Tests\HierarchicalTests.cs" />
     <Compile Include="Tests\OwnedCollectionBehaviours.cs" />
     <Compile Include="Tests\OneMemberBehaviours.cs" />
     <Compile Include="Tests\OwnedEntityBehaviours.cs" />

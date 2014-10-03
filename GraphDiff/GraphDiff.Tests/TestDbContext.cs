@@ -28,6 +28,9 @@ namespace RefactorThis.GraphDiff.Tests
 
         public IDbSet<AttributeTest> Attributes { get; set; }
         public IDbSet<SharedModelAttributeTest> SharedModelAttributes { get; set; }
+        
+        public IDbSet<RootModel> RootModels { get; set; }
+        public IDbSet<OneToManyHierarchicalModel> OneToManyHierarchicalModels { get; set; }
 
         public TestDbContext() : base("GraphDiff") { }
         public TestDbContext(DbConnection connection) : base(connection, true) { }
