@@ -14,7 +14,7 @@ namespace RefactorThis.GraphDiff.Internal
     internal interface IQueryLoader
     {
         T LoadEntity<T>(T entity, List<string> includeStrings, QueryMode queryMode) where T : class;
-        T LoadEntity<T>(Func<T, bool> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class;
+        T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class;
     }
 
     internal class QueryLoader : IQueryLoader
@@ -39,7 +39,7 @@ namespace RefactorThis.GraphDiff.Internal
             return LoadEntity<T>(keyPredicate, includeStrings, queryMode);
         }
 
-        public T LoadEntity<T>(Func<T, bool> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class
+        public T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class
         {
             if (queryMode == QueryMode.SingleQuery)
             {
@@ -57,7 +57,7 @@ namespace RefactorThis.GraphDiff.Internal
                     query.SingleOrDefault(keyPredicate);
                 }
 
-                return _context.Set<T>().Local.SingleOrDefault(keyPredicate);
+                return _context.Set<T>().Local.AsQueryable().SingleOrDefault(keyPredicate);
             }
             else
             {
@@ -65,7 +65,7 @@ namespace RefactorThis.GraphDiff.Internal
             }
         }
 
-        private Func<T, bool> CreateKeyPredicateExpression<T>(IObjectContextAdapter context, T entity)
+        private Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(IObjectContextAdapter context, T entity)
         {
             // get key properties of T
             var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
@@ -77,7 +77,7 @@ namespace RefactorThis.GraphDiff.Internal
                 expression = Expression.And(expression, CreateEqualsExpression(entity, keyProperties[i], parameter));
             }
 
-            return Expression.Lambda<Func<T, bool>>(expression, parameter).Compile();
+            return Expression.Lambda<Func<T, bool>>(expression, parameter);
         }
 
         private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
