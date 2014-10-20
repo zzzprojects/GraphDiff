@@ -51,7 +51,9 @@ namespace RefactorThis.GraphDiff.Internal
 
                 if (_dbContext.Entry(updating).State != EntityState.Detached)
                 {
-                    throw new InvalidOperationException("GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method");
+                    throw new InvalidOperationException(
+                            String.Format("Entity of type '{0}' is already in an attached state. GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method.",
+                                          typeof (T).FullName));
                 }
 
                 // Perform recursive update
