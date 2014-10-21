@@ -45,7 +45,8 @@ namespace RefactorThis.GraphDiff.Internal
                 {
                     // we are always working with 2 graphs, simply add a 'persisted' one if none exists,
                     // this ensures that only the changes we make within the bounds of the mapping are attempted.
-                    persisted = _dbContext.Set<T>().Create();
+                    persisted = (T)_dbContext.Set(updating.GetType()).Create();
+
                     _dbContext.Set<T>().Add(persisted);
                 }
 

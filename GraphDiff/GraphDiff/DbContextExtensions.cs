@@ -4,19 +4,16 @@
  * License MIT (c) Brent McKendrick 2012
  */
 
+using System;
+using System.Data.Entity;
+using System.Linq.Expressions;
 using RefactorThis.GraphDiff.Internal;
 using RefactorThis.GraphDiff.Internal.Caching;
 using RefactorThis.GraphDiff.Internal.Graph;
-using RefactorThis.GraphDiff.Internal.GraphBuilders;
-using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace RefactorThis.GraphDiff
 {
-	public static class DbContextExtensions
+    public static class DbContextExtensions
 	{
         /// <summary>
         /// Merges a graph of entities with the data store.
@@ -29,7 +26,7 @@ namespace RefactorThis.GraphDiff
         /// <returns>The attached entity graph</returns>
         public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping, UpdateParams updateParams = null) where T : class
 	    {
-            return UpdateGraph<T>(context, entity, mapping, null, updateParams);
+            return UpdateGraph(context, entity, mapping, null, updateParams);
 	    }
 
         /// <summary>
@@ -43,7 +40,7 @@ namespace RefactorThis.GraphDiff
         /// <returns>The attached entity graph</returns>
         public static T UpdateGraph<T>(this DbContext context, T entity, string mappingScheme, UpdateParams updateParams = null) where T : class
         {
-            return UpdateGraph<T>(context, entity, null, mappingScheme, updateParams);
+            return UpdateGraph(context, entity, null, mappingScheme, updateParams);
         }
 
         /// <summary>
@@ -56,7 +53,7 @@ namespace RefactorThis.GraphDiff
         /// <returns>The attached entity graph</returns>
         public static T UpdateGraph<T>(this DbContext context, T entity, UpdateParams updateParams = null) where T : class
         {
-            return UpdateGraph<T>(context, entity, null, null, updateParams);
+            return UpdateGraph(context, entity, null, null, updateParams);
         }
 
         /// <summary>
@@ -82,42 +79,43 @@ namespace RefactorThis.GraphDiff
             return queryLoader.LoadEntity(keyPredicate, includeStrings, queryMode);
         }
 
-
         // other methods are convenience wrappers around this.
         private static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping,
-                                                        string mappingScheme, UpdateParams updateParams) where T : class
+                                        string mappingScheme, UpdateParams updateParams) where T : class
         {
-            GraphNode root;
-            GraphDiffer<T> differ;
+            if (entity == null)
+                throw new ArgumentNullException("entity");
 
             var entityManager = new EntityManager(context);
             var queryLoader = new QueryLoader(context, entityManager);
             var register = new AggregateRegister(new CacheProvider());
 
-            if (updateParams == null)
-            {
-                updateParams = new UpdateParams { QueryMode = QueryMode.SingleQuery };
-            }
+            var root = GetRootNode(mapping, mappingScheme, register);
+            var differ = new GraphDiffer<T>(context, queryLoader, entityManager, root);
 
-            if (mapping != null)
-            {
-                // mapping configuration
-                root = register.GetEntityGraph<T>(mapping);
-            }
-            else if (mappingScheme != null)
-            {
-                // names scheme
-                root = register.GetEntityGraph<T>(mappingScheme);
-            }
-            else
-            {
-                // attributes or null
-                root = register.GetEntityGraph<T>();
-            }
-
-            differ = new GraphDiffer<T>(context, queryLoader, entityManager, root);
-            return differ.Merge(entity, updateParams.QueryMode);
+            var queryMode = updateParams != null ? updateParams.QueryMode : QueryMode.SingleQuery;
+            return differ.Merge(entity, queryMode);
         }
 
+        private static GraphNode GetRootNode<T>(Expression<Func<IUpdateConfiguration<T>, object>> mapping, string mappingScheme, AggregateRegister register) where T : class
+	    {
+	        GraphNode root;
+	        if (mapping != null)
+	        {
+	            // mapping configuration
+	            root = register.GetEntityGraph(mapping);
+	        }
+	        else if (mappingScheme != null)
+	        {
+	            // names scheme
+	            root = register.GetEntityGraph<T>(mappingScheme);
+	        }
+	        else
+	        {
+	            // attributes or null
+	            root = register.GetEntityGraph<T>();
+	        }
+	        return root;
+	    }
 	}
 }
