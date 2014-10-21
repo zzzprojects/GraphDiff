@@ -53,6 +53,21 @@ namespace RefactorThis.GraphDiff.Tests.Tests
         }
 
         [TestMethod]
+        public void ShouldAddNewAggregateRootOfChildTypeToBaseTypeSet()
+        {
+            TestNode node1 = new TestChildNode {Title = "Root"};
+
+            using (var context = new TestDbContext())
+            {
+                // Setup mapping
+                node1 = context.UpdateGraph(node1);
+                context.SaveChanges();
+
+                Assert.IsNotNull(context.Nodes.SingleOrDefault(p => p.Id == node1.Id));
+            }
+        }
+
+        [TestMethod]
         public void ShouldAddNewAggregateRoot_Attached()
         {
             var associated = new OneToOneAssociatedModel { Title = "Associated" };
