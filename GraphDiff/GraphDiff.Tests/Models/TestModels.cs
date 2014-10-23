@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RefactorThis.GraphDiff.Tests.Models
 {
-
     // ====================================
     // First tier models
     // ====================================
@@ -30,10 +29,9 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public ICollection<OneToManyOwnedModel> OneToManyOwned { get; set; }
         public ICollection<OneToManyAssociatedModel> OneToManyAssociated { get; set; }
 
-        //public ManyToOneModel ManyToOneOwned { get; set; }
-        //public ManyToOneModel ManyToOneAssociated { get; set; }
+        public ManyToOneModel ManyToOneAssociated { get; set; }
 
-        //public ICollection<ManyToManyModel> ManyToManyAssociated { get; set; }
+        public ICollection<ManyToManyModel> ManyToManyAssociated { get; set; }
     }
 
     public class TestNodeWithPrivateConstructor : Entity
@@ -161,7 +159,6 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public OneToManyOneToOneAssociatedModel OneToManyOneToOneAssociated { get; set; }
     }
 
-    /*
     public class ManyToOneModel : Entity
     {
         public ICollection<TestNode> ManyParents { get; set; }
@@ -171,7 +168,6 @@ namespace RefactorThis.GraphDiff.Tests.Models
     {
         public ICollection<TestNode> ManyParents { get; set; }
     }
-     * */
 
     // ====================================
     // Third tier models

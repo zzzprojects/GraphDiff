@@ -18,7 +18,10 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyAssociatedModel> OneToManyAssociatedModels { get; set; }
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
-	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
+        public IDbSet<ManyToOneModel> ManyToOneModels { get; set; }
+        public IDbSet<ManyToManyModel> ManyToManyModels { get; set; }
+
+        public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
         public IDbSet<RootEntity> RootEntities { get; set; }
 
         public IDbSet<RequiredAssociate> RequiredAssociates { get; set; }
@@ -39,6 +42,9 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyAssociated).WithOptional(p => p.OneParent);
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
+
+		    modelBuilder.Entity<TestNode>().HasOptional(p => p.ManyToOneAssociated).WithMany(p => p.ManyParents);
+            modelBuilder.Entity<TestNode>().HasMany(p => p.ManyToManyAssociated).WithMany(p => p.ManyParents);
 
             modelBuilder.Entity<GroupedTestNode>().HasOptional(g => g.One).WithOptionalDependent(g => g.Two).WillCascadeOnDelete(false);
 
