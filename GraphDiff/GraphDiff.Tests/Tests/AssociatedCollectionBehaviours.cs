@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Collections.ObjectModel;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -297,6 +298,99 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 var targetReloaded = context.RootEntities.Include("Sources").FirstOrDefault(c => c.Id == expectedTargetId);
                 Assert.IsNotNull(targetReloaded);
                 Assert.AreEqual(0, targetReloaded.Sources.Count);
+            }
+        }
+
+        [TestMethod]
+        public void ShouldAddAssociateManyToMany()
+        {
+            var firstAssociate = new ManyToManyModel { Title = "TheOne" };
+            var secondAssociate = new ManyToManyModel { Title = "TheOne" };
+            var firstParent = new TestNode { ManyToManyAssociated = new Collection<ManyToManyModel> {firstAssociate, secondAssociate} };
+
+            using (var context = new TestDbContext())
+            {
+                context.ManyToManyModels.Add(firstAssociate);
+                context.ManyToManyModels.Add(secondAssociate);
+                context.Nodes.Add(firstParent);
+                context.SaveChanges();
+            } // Simulate detach
+
+            var secondParent = new TestNode { ManyToManyAssociated = new Collection<ManyToManyModel> { firstAssociate, secondAssociate } };
+
+            using (var context = new TestDbContext())
+            {
+                secondParent = context.UpdateGraph(secondParent, map => map.AssociatedCollection(e => e.ManyToManyAssociated));
+                context.SaveChanges();
+
+                Assert.AreEqual(2, secondParent.ManyToManyAssociated.Count());
+                Assert.IsNotNull(secondParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == firstAssociate.Id));
+                Assert.IsNotNull(secondParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == secondAssociate.Id));
+
+                Assert.AreEqual(2, context.ManyToManyModels.Count());
+                
+                Assert.AreEqual(2, context.ManyToManyModels.Where(a => a.Id == firstAssociate.Id).SelectMany(a => a.ManyParents).Count());
+                Assert.AreEqual(2, context.ManyToManyModels.Where(a => a.Id == secondAssociate.Id).SelectMany(a => a.ManyParents).Count());
+
+                Assert.AreEqual(2, context.Nodes.Where(n => n.Id == firstParent.Id).SelectMany(n => n.ManyToManyAssociated).Count());
+            }
+        }
+
+        [TestMethod]
+        public void ShouldRemoveAssociateManyToMany()
+        {
+            var firstAssociate = new ManyToManyModel { Title = "TheOne" };
+            var secondAssociate = new ManyToManyModel { Title = "TheOne" };
+            var firstParent = new TestNode { ManyToManyAssociated = new Collection<ManyToManyModel> { firstAssociate, secondAssociate } };
+            var secondParent = new TestNode { ManyToManyAssociated = new Collection<ManyToManyModel> { firstAssociate, secondAssociate } };
+
+            using (var context = new TestDbContext())
+            {
+                context.ManyToManyModels.Add(firstAssociate);
+                context.ManyToManyModels.Add(secondAssociate);
+                context.Nodes.Add(firstParent);
+                context.Nodes.Add(secondParent);
+                context.SaveChanges();
+            } // Simulate detach
+
+            firstParent.ManyToManyAssociated.Remove(firstAssociate);
+
+            using (var context = new TestDbContext())
+            {
+                firstParent = context.UpdateGraph(firstParent, map => map.AssociatedCollection(e => e.ManyToManyAssociated));
+                context.SaveChanges();
+
+                Assert.AreEqual(1, firstParent.ManyToManyAssociated.Count());
+                Assert.IsNull(firstParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == firstAssociate.Id));
+                Assert.IsNotNull(firstParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == secondAssociate.Id));
+
+                Assert.AreEqual(2, context.ManyToManyModels.Count());
+
+                Assert.AreEqual(1, context.ManyToManyModels.Where(a => a.Id == firstAssociate.Id).SelectMany(a => a.ManyParents).Count());
+                Assert.AreEqual(2, context.ManyToManyModels.Where(a => a.Id == secondAssociate.Id).SelectMany(a => a.ManyParents).Count());
+
+                Assert.AreEqual(1, context.Nodes.Where(n => n.Id == firstParent.Id).SelectMany(n => n.ManyToManyAssociated).Count());
+                Assert.AreEqual(2, context.Nodes.Where(n => n.Id == secondParent.Id).SelectMany(n => n.ManyToManyAssociated).Count());
+            }
+
+            firstParent.ManyToManyAssociated.Remove(firstParent.ManyToManyAssociated.Single());
+
+            using (var context = new TestDbContext())
+            {
+                firstParent = context.UpdateGraph(firstParent, map => map.AssociatedCollection(e => e.ManyToManyAssociated));
+                context.SaveChanges();
+
+                Assert.AreEqual(0, firstParent.ManyToManyAssociated.Count());
+                Assert.IsNull(firstParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == firstAssociate.Id));
+                Assert.IsNull(firstParent.ManyToManyAssociated.SingleOrDefault(a => a.Id == secondAssociate.Id));
+
+                Assert.AreEqual(2, context.ManyToManyModels.Count());
+
+                Assert.AreEqual(1, context.ManyToManyModels.Where(a => a.Id == firstAssociate.Id).SelectMany(a => a.ManyParents).Count());
+                Assert.AreEqual(1, context.ManyToManyModels.Where(a => a.Id == secondAssociate.Id).SelectMany(a => a.ManyParents).Count());
+
+                Assert.AreEqual(0, context.Nodes.Where(n => n.Id == firstParent.Id).SelectMany(n => n.ManyToManyAssociated).Count());
+                Assert.AreEqual(2, context.Nodes.Where(n => n.Id == secondParent.Id).SelectMany(n => n.ManyToManyAssociated).Count());
             }
         }
 
