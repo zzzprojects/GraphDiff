@@ -49,6 +49,28 @@ namespace RefactorThis.GraphDiff.Tests.Models
         }
     }
 
+    public class TestNodeWithComplexType : Entity
+    {
+        public ComplexValue ComplexValue { get; set; }
+    }
+
+    public class TestNodeWithChildWithComplexValue : Entity
+    {
+        public TestNodeWithComplexType ChildWithComplexValue { get; set; }
+    }
+
+    public class TestNodeWithChildrenWithComplexValue : Entity
+    {
+        public ICollection<TestNodeWithComplexType> ChildrenWithComplexValue { get; set; }
+        public ComplexValue ComplexValue { get; set; }
+    }
+
+    public class ComplexValue
+    {
+        public string Title { get; set; }
+        public int Value { get; set; }
+    }
+
     public class NodeGroup : Entity
     {
         public List<GroupedTestNode> Members { get; set; }
