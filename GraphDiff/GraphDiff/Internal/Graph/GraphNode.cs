@@ -101,5 +101,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 .GetRequiredNavigationPropertiesForType(entityType)
                 .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
         }
+
+        protected static void ThrowIfCollectionType(PropertyInfo accessor, string mappingType)
+        {
+            if (IsCollectionType(accessor.PropertyType))
+                throw new ArgumentException(string.Format("Collection '{0}' can not be mapped as {1} entity. Please map it as {1} collection.", accessor.Name, mappingType));
+        }
+
+        private static bool IsCollectionType(Type propertyType)
+        {
+            return propertyType.IsArray || propertyType.GetInterface(typeof (IEnumerable<>).FullName) != null;
+        }
     }
 }
