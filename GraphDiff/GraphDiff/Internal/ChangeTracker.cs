@@ -89,7 +89,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 EnsureConcurrency(from, to);
             }
 
-            var keyProperties = GetComplexTypePropertiesForType(from.GetType());
+            var keyProperties = GetComplexTypePropertiesForType(ObjectContext.GetObjectType(from.GetType()));
             foreach (var keyProperty in keyProperties)
             {
                 keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
@@ -236,17 +236,12 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private IEnumerable<PropertyInfo> GetComplexTypePropertiesForType(Type entityType)
         {
-            var trueEntityType = ObjectContext.GetObjectType(entityType);
-
-            var meta = _objectContext.MetadataWorkspace
-                .GetItems<EntityType>(DataSpace.OSpace)
-                .Single(p => p.FullName == trueEntityType.FullName);
-
-            return meta.Properties
-                .Where(p => p.IsComplexType)
-                .Select(k => trueEntityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                .ToList();
+            return _objectContext.MetadataWorkspace
+                    .GetItems<EntityType>(DataSpace.OSpace)
+                    .Single(p => p.FullName == entityType.FullName).Properties
+                    .Where(p => p.IsComplexType)
+                    .Select(k => entityType.GetProperty(k.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                    .ToList();
         }
-
     }
 }
