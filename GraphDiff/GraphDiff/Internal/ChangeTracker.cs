@@ -109,11 +109,15 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             var navigationProperties = _entityManager.GetNavigationPropertiesForType(childType);
 
-            var parentNavigationProperty = navigationProperties
+            var parentNavigationProperties = navigationProperties
                     .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
                     .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .FirstOrDefault();
+                    .ToList();
 
+            if (parentNavigationProperties.Count > 1)
+                throw new NotSupportedException("Unexpectedly found more than one parent navigation property of the same type.");
+
+            var parentNavigationProperty = parentNavigationProperties.FirstOrDefault();
             if (parentNavigationProperty != null)
             {
                 parentNavigationProperty.SetValue(child, parent, null);

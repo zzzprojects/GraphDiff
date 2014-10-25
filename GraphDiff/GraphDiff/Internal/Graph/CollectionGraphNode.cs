@@ -75,7 +75,8 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
-            changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
+            if (_isOwned)
+                changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
 
             return updateItem;
         }
