@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RefactorThis.GraphDiff.Tests.Models;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
@@ -16,6 +17,41 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             {
                 context.UpdateGraph(new UnknownType());
                 context.SaveChanges();
+            }
+        }
+
+        [TestMethod]
+        public void ShouldThrowIfCollectionIsMappedAsEntity()
+        {
+            using (var context = new TestDbContext())
+            {
+                ArgumentException argumentException = null;
+                try
+                {
+                    context.UpdateGraph(new TestNode(), map => map.OwnedEntity(n => n.OneToManyAssociated));
+                }
+                catch (ArgumentException exception)
+                {
+                    argumentException = exception;
+                }
+
+                Assert.IsNotNull(argumentException);
+                Assert.IsTrue(argumentException.Message.Contains("OneToManyAssociated"));
+                Assert.IsTrue(argumentException.Message.Contains("owned"));
+                argumentException = null;
+
+                try
+                {
+                    context.UpdateGraph(new TestNode(), map => map.AssociatedEntity(n => n.OneToManyAssociated));
+                }
+                catch (ArgumentException exception)
+                {
+                    argumentException = exception;
+                }
+
+                Assert.IsNotNull(argumentException);
+                Assert.IsTrue(argumentException.Message.Contains("OneToManyAssociated"));
+                Assert.IsTrue(argumentException.Message.Contains("associated"));
             }
         }
     }

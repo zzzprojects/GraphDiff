@@ -8,6 +8,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         internal OwnedEntityGraphNode(GraphNode parent, PropertyInfo accessor)
                 : base(parent, accessor)
         {
+            ThrowIfCollectionType(accessor, "owned");
         }
 
         public override void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating)

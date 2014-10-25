@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data.Entity;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Graph
@@ -9,6 +8,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         internal AssociatedEntityGraphNode(GraphNode parent, PropertyInfo accessor)
                 : base(parent, accessor)
         {
+            ThrowIfCollectionType(accessor, "associated");
         }
 
         public override void Update<T>(IChangeTracker changeTracker, IEntityManager entityManager, T persisted, T updating)
