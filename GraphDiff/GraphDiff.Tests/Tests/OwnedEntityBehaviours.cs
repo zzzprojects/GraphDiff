@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Data.Entity;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
-using System.Linq;
-using System.Data.Entity;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {

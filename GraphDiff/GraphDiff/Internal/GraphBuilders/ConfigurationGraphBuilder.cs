@@ -5,10 +5,7 @@ using RefactorThis.GraphDiff.Internal.Graph;
 
 namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 {
-    /// <summary>
-    /// Reads an IUpdateConfiguration mapping and produces an GraphNode graph.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <summary>Reads an IUpdateConfiguration mapping and produces an GraphNode graph.</summary>
     internal class ConfigurationGraphBuilder : ExpressionVisitor
     {
         private GraphNode _currentMember;

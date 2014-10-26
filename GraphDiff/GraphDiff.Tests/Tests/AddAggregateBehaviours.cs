@@ -144,7 +144,6 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsNotNull(reload.OneToOneOwned.OneToOneOneToManyOwned);
                 Assert.AreEqual(3, reload.OneToOneOwned.OneToOneOneToManyOwned.Count);
                 Assert.AreEqual(node1.OneToOneOwned.OneToOneOneToManyOwned.First().Id, node1.OneToOneOwned.OneToOneOneToManyOwned.First().Id);
-
             }
         }
     }

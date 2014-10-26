@@ -1,13 +1,7 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NSubstitute;
-using RefactorThis.GraphDiff.Internal;
-using RefactorThis.GraphDiff.Tests.Models;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RefactorThis.GraphDiff.Tests.Models;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {
@@ -66,10 +60,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                         .AssociatedEntity(p => p.OneToOneOneToOneAssociated)
                         .OwnedCollection(p => p.OneToOneOneToManyOwned)
                         .AssociatedCollection(p => p.OneToOneOneToManyAssociated)),
-                    new UpdateParams
-                    {
-                        QueryMode = GraphDiff.QueryMode.SingleQuery
-                    });
+                    new UpdateParams { QueryMode = QueryMode.SingleQuery });
             }
 
             // TODO how do I test number of queries..
@@ -99,10 +90,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                         .AssociatedEntity(p => p.OneToOneOneToOneAssociated)
                         .OwnedCollection(p => p.OneToOneOneToManyOwned)
                         .AssociatedCollection(p => p.OneToOneOneToManyAssociated)),
-                    updateParams: new UpdateParams
-                    {
-                        QueryMode = GraphDiff.QueryMode.MultipleQuery
-                    });
+                    updateParams: new UpdateParams { QueryMode = QueryMode.MultipleQuery });
             }
 
             // TODO how do I test number of queries..

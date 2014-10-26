@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RefactorThis.GraphDiff.Internal.Caching
 {
@@ -17,51 +14,51 @@ namespace RefactorThis.GraphDiff.Internal.Caching
 
     internal class CacheProvider : ICacheProvider
     {
-        private static MemoryCache _cache = MemoryCache.Default;
-        private static readonly object cacheLock = new object();
+        private static readonly MemoryCache Cache = MemoryCache.Default;
+        private static readonly object CacheLock = new object();
 
         public void Insert(string register, string key, object value)
         {
-            lock (cacheLock)
+            lock (CacheLock)
             {
                 var fullKey = GenerateKey(register, key);
-                var result = _cache.Get(fullKey);
+                var result = Cache.Get(fullKey);
                 if (result == null)
                 {
-                    _cache.Add(fullKey, value, new CacheItemPolicy());
+                    Cache.Add(fullKey, value, new CacheItemPolicy());
                 }
             }
         }
 
         public void Clear(string register)
         {
-            var items = _cache.Where(p => p.Key.Contains(register + ":"));
+            var items = Cache.Where(p => p.Key.Contains(register + ":"));
             foreach (var item in items)
             {
-                _cache.Remove(item.Key);
+                Cache.Remove(item.Key);
             }
         }
 
         public T GetOrAdd<T>(string register, string key, Func<T> onCacheMissed)
         {
             var fullKey = GenerateKey(register, key);
-            var result = _cache.Get(fullKey);
+            var result = Cache.Get(fullKey);
             if (result != null)
             {
                 return (T)result;
             }
 
-            lock (cacheLock)
+            lock (CacheLock)
             {
                 // check again after lock.
-                result = _cache.Get(fullKey);
+                result = Cache.Get(fullKey);
                 if (result != null)
                 {
                     return (T)result;
                 }
 
                 result = onCacheMissed();
-                _cache.Add(fullKey, result, new CacheItemPolicy());
+                Cache.Add(fullKey, result, new CacheItemPolicy());
             }
             
             return (T)result;
@@ -69,7 +66,7 @@ namespace RefactorThis.GraphDiff.Internal.Caching
 
         public bool TryGet<T>(string register, string key, out T element)
         {
-            var item = _cache.Get(GenerateKey(register, key));
+            var item = Cache.Get(GenerateKey(register, key));
             if (item == null)
             {
                 element = default(T);
@@ -80,7 +77,7 @@ namespace RefactorThis.GraphDiff.Internal.Caching
             return true;
         }
 
-        private string GenerateKey(string register, string key)
+        private static string GenerateKey(string register, string key)
         {
             return register + ":" + key;
         }

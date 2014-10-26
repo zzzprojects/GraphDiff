@@ -1,5 +1,5 @@
-﻿using RefactorThis.GraphDiff.Attributes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using RefactorThis.GraphDiff.Aggregates.Attributes;
 
 namespace RefactorThis.GraphDiff.Tests.Models
 {

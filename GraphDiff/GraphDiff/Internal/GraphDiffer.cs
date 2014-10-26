@@ -9,9 +9,7 @@ namespace RefactorThis.GraphDiff.Internal
         T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery);
     }
 
-    /// <summary>
-    /// GraphDiff main entry point.
-    /// </summary>
+    /// <summary>GraphDiff main entry point.</summary>
     /// <typeparam name="T">The root agreggate type</typeparam>
     internal class GraphDiffer<T> : IGraphDiffer<T> where T : class
     {

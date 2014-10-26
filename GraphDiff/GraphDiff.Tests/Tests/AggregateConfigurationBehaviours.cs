@@ -1,14 +1,11 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Aggregates;
 using RefactorThis.GraphDiff.Tests.Models;
-using RefactorThis.GraphDiff.Internal;
-using RefactorThis.GraphDiff.Internal.Caching;
-using System.Data.Entity;
-using System.Collections.Generic;
 
-namespace RefactorThis.GraphDiff.Tests.UnitTests
+namespace RefactorThis.GraphDiff.Tests.Tests
 {
     [TestClass]
     public class AggregateConfigurationBahaviours : TestBase
