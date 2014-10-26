@@ -145,6 +145,18 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public OneToOneOneToOneAssociatedModel OneToOneOneToOneAssociated { get; set; }
     }
 
+    public class OneToOneOwnedParentModel : Entity
+    {
+        public OneToOneOwnedMultipleParentsModel OneToOneOwnedMultipleParentsModel { get; set; }
+    }
+
+    public class OneToOneOwnedMultipleParentsModel : Entity
+    {
+        public OneToOneOwnedParentModel FirstParent { get; set; }
+
+        public OneToOneOwnedParentModel SecondParent { get; set; }
+    }
+
     public class OneToManyAssociatedModel : Entity
     {
         public TestNode OneParent { get; set; }

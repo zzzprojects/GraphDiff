@@ -32,6 +32,7 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<AttributeTest> Attributes { get; set; }
         public IDbSet<SharedModelAttributeTest> SharedModelAttributes { get; set; }
 
+        public DbSet<OneToOneOwnedParentModel> OneToOneOwnedParentModels { get; set; }
         public DbSet<OneToManyOwnedParentModel> OneToManyOwnedParentModels { get; set; }
 
         public TestDbContext() : base("GraphDiff") { }
@@ -45,7 +46,13 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyOwned).WithRequired(p => p.OneParent).WillCascadeOnDelete();
 
-		    modelBuilder.Entity<TestNode>().HasOptional(p => p.ManyToOneAssociated).WithMany(p => p.ManyParents);
+            modelBuilder.Entity<OneToOneOwnedParentModel>().HasOptional(x => x.OneToOneOwnedMultipleParentsModel).WithRequired(x => x.FirstParent).WillCascadeOnDelete(false);
+            modelBuilder.Entity<OneToOneOwnedMultipleParentsModel>().HasRequired(x => x.SecondParent).WithMany();
+
+            modelBuilder.Entity<OneToManyOwnedParentModel>().HasMany(x => x.OneToManyOwnedMultipleParentsModels).WithRequired(x => x.FirstParent).WillCascadeOnDelete(false);
+            modelBuilder.Entity<OneToManyOwnedMultipleParentsModel>().HasRequired(x => x.SecondParent).WithMany();
+
+            modelBuilder.Entity<TestNode>().HasOptional(p => p.ManyToOneAssociated).WithMany(p => p.ManyParents);
             modelBuilder.Entity<TestNode>().HasMany(p => p.ManyToManyAssociated).WithMany(p => p.ManyParents);
 
             modelBuilder.Entity<GroupedTestNode>().HasOptional(g => g.One).WithOptionalDependent(g => g.Two).WillCascadeOnDelete(false);
@@ -83,9 +90,6 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyAssociated);
             modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyOwned);
             modelBuilder.Entity<CircularAttributeTest>().HasOptional(p => p.Parent);
-
-            modelBuilder.Entity<OneToManyOwnedParentModel>().HasMany(x => x.OneToManyOwnedMultipleParentsModels).WithRequired(x => x.FirstParent).WillCascadeOnDelete(false);
-            modelBuilder.Entity<OneToManyOwnedMultipleParentsModel>().HasRequired(x => x.SecondParent).WithMany();
         }
     }
 }
