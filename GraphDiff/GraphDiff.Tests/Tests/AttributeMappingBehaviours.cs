@@ -1,10 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
-using System.Linq;
-using System.Data.Entity;
-using System.Collections.Generic;
-using System;
 
 namespace RefactorThis.GraphDiff.Tests.Tests
 {

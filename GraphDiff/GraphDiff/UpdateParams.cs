@@ -4,22 +4,12 @@
  * License MIT (c) Brent McKendrick 2012
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-
 namespace RefactorThis.GraphDiff
 {
-    /// <summary>
-    /// Configuration settings for a single update query. These will override any global defaults.
-    /// </summary>
+    /// <summary>Configuration settings for a single update query. These will override any global defaults.</summary>
     public class UpdateParams
     {
-        /// <summary>
-        /// Mode of querying
-        /// </summary>
+        /// <summary>Mode of querying</summary>
         public QueryMode QueryMode { get; set; }
     }
 }

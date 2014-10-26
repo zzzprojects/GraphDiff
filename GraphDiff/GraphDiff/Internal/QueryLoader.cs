@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal
 {
-    /// <summary>
-    /// Db load queries
-    /// </summary>
+    /// <summary>Db load queries</summary>
     internal interface IQueryLoader
     {
-        T LoadEntity<T>(T entity, List<string> includeStrings, QueryMode queryMode) where T : class;
-        T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class;
+        T LoadEntity<T>(T entity, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
+        T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
     }
 
     internal class QueryLoader : IQueryLoader
@@ -28,18 +25,18 @@ namespace RefactorThis.GraphDiff.Internal
             _context = context;
         }
 
-        public T LoadEntity<T>(T entity, List<string> includeStrings, QueryMode queryMode) where T : class
+        public T LoadEntity<T>(T entity, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
         {
             if (entity == null)
             {
                 throw new ArgumentNullException("entity");
             }
 
-            var keyPredicate = CreateKeyPredicateExpression(_context, entity);
-            return LoadEntity<T>(keyPredicate, includeStrings, queryMode);
+            var keyPredicate = CreateKeyPredicateExpression(entity);
+            return LoadEntity(keyPredicate, includeStrings, queryMode);
         }
 
-        public T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, List<string> includeStrings, QueryMode queryMode) where T : class
+        public T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
         {
             if (queryMode == QueryMode.SingleQuery)
             {
@@ -47,7 +44,8 @@ namespace RefactorThis.GraphDiff.Internal
                 query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
                 return query.SingleOrDefault(keyPredicate);
             }
-            else if (queryMode == QueryMode.MultipleQuery)
+
+            if (queryMode == QueryMode.MultipleQuery)
             {
                 // This is experimental - needs some testing. 
                 foreach (var include in includeStrings)
@@ -59,13 +57,11 @@ namespace RefactorThis.GraphDiff.Internal
 
                 return _context.Set<T>().Local.AsQueryable().SingleOrDefault(keyPredicate);
             }
-            else
-            {
-                throw new ArgumentOutOfRangeException("Unknown QueryMode");
-            }
+
+            throw new ArgumentOutOfRangeException("queryMode", "Unknown QueryMode");
         }
 
-        private Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(IObjectContextAdapter context, T entity)
+        private Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(T entity)
         {
             // get key properties of T
             var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToList();

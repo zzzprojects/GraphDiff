@@ -1,13 +1,9 @@
-﻿using RefactorThis.GraphDiff.Internal.Graph;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
+using RefactorThis.GraphDiff.Internal.Graph;
 
 namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 {
-    internal class GraphNodeFactory
+    internal static class GraphNodeFactory
     {
         public static GraphNode Create(GraphNode parent, PropertyInfo accessor, bool isCollection, bool isOwned)
         {

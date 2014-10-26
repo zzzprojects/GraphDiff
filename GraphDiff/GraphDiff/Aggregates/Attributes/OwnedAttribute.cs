@@ -1,15 +1,8 @@
-﻿using RefactorThis.GraphDiff.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System;
 
-namespace RefactorThis.GraphDiff.Attributes
+namespace RefactorThis.GraphDiff.Aggregates.Attributes
 {
-    /// <summary>
-    /// Marks this property as owned by the parent type or by the chosen AggregateType
-    /// </summary>
+    /// <summary>Marks this property as owned by the parent type or by the chosen AggregateType</summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class OwnedAttribute : AggregateDefinitionAttribute
     {

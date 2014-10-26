@@ -1,10 +1,9 @@
-﻿using RefactorThis.GraphDiff.Attributes;
-using RefactorThis.GraphDiff.Internal.Graph;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
+using RefactorThis.GraphDiff.Aggregates.Attributes;
+using RefactorThis.GraphDiff.Internal.Graph;
 
 namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 {
@@ -19,10 +18,9 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
         public bool CanBuild<T>()
         {
             // any properties have an aggregate definition attribute?
-            return typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .SelectMany(p => p.GetCustomAttributes(true))
-                .Where(p => p is OwnedAttribute || p is AssociatedAttribute)
-                .Any();
+            return typeof (T).GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .SelectMany(p => p.GetCustomAttributes(true))
+                    .Any(p => p is OwnedAttribute || p is AssociatedAttribute);
         }
 
         public GraphNode BuildGraph<T>()
@@ -33,7 +31,7 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
             return node;
         }
 
-        private void BuildEntityGraph<AggregateT>(GraphNode parent, Type type, Dictionary<string, bool> visited)
+        private static void BuildEntityGraph<TAggregate>(GraphNode parent, Type type, Dictionary<string, bool> visited)
         {
             var properties = type.GetProperties()
                 .Select(p => new
@@ -41,12 +39,10 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
                     Accessor = p,
                     IsOwned = p.GetCustomAttributes(typeof(OwnedAttribute), true)
                         .Cast<OwnedAttribute>()
-                        .Where(attr => attr.AggregateType == null || attr.AggregateType == typeof(AggregateT))
-                        .Any(),
+                        .Any(attr => attr.AggregateType == null || attr.AggregateType == typeof(TAggregate)),
                     IsAssociated = p.GetCustomAttributes(typeof(AssociatedAttribute), true)
                         .Cast<AssociatedAttribute>()
-                        .Where(attr => attr.AggregateType == null || attr.AggregateType == typeof(AggregateT))
-                        .Any()
+                        .Any(attr => attr.AggregateType == null || attr.AggregateType == typeof(TAggregate))
                 })
                 .Where(p => p.IsOwned || p.IsAssociated);
 
@@ -83,7 +79,7 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
                         throw new NotSupportedException("Attribute mapping does not support circular graphs");
                     }
                     SetVisited(visited, node);
-                    BuildEntityGraph<AggregateT>(node, propertyType, visited);
+                    BuildEntityGraph<TAggregate>(node, propertyType, visited);
                 }
             }
         }
@@ -95,7 +91,7 @@ namespace RefactorThis.GraphDiff.Internal.GraphBuilders
 
         private static bool IsVisited(Dictionary<string, bool> visited, GraphNode node)
         {
-            bool val = false;
+            bool val;
             visited.TryGetValue(node.GetUniqueKey(), out val);
             return val;
         }

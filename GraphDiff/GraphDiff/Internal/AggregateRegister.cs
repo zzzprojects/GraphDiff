@@ -37,19 +37,8 @@ namespace RefactorThis.GraphDiff.Internal
 
         public GraphNode GetEntityGraph<T>()
         {
-            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, GenerateCacheKey<T>(), () =>
-            {
-                // no cached mapping lets look for attributes
-                if (_attributeGraphBuilder.CanBuild<T>())
-                {
-                    return _attributeGraphBuilder.BuildGraph<T>();
-                }
-                else
-                {
-                    // no mapping by default
-                    return new GraphNode();
-                }
-            });
+            return _cache.GetOrAdd(typeof (AggregateRegister).FullName, GenerateCacheKey<T>(),
+                                   () => _attributeGraphBuilder.CanBuild<T>() ? _attributeGraphBuilder.BuildGraph<T>() : new GraphNode());
         }
 
         public GraphNode GetEntityGraph<T>(string scheme)
@@ -59,22 +48,17 @@ namespace RefactorThis.GraphDiff.Internal
             {
                 return node;
             }
-            else
-            {
-                throw new ArgumentOutOfRangeException("Could not find a mapping scheme with name: '" + scheme + "'");
-            }
+
+            throw new ArgumentOutOfRangeException("Could not find a mapping scheme with name: '" + scheme + "'");
         }
 
         public GraphNode GetEntityGraph<T>(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
-            var key = typeof(T).FullName + "_" + expression.ToString();
-            return _cache.GetOrAdd<GraphNode>(typeof(AggregateRegister).FullName, key, () =>
-            {
-                return new ConfigurationGraphBuilder().BuildGraph<T>(expression);
-            });
+            var key = typeof(T).FullName + "_" + expression;
+            return _cache.GetOrAdd(typeof(AggregateRegister).FullName, key, () => new ConfigurationGraphBuilder().BuildGraph(expression));
         }
 
-        private string GenerateCacheKey<T>(string scheme = null)
+        private static string GenerateCacheKey<T>(string scheme = null)
         {
             var key = typeof(T).FullName;
             if (!String.IsNullOrEmpty(scheme))

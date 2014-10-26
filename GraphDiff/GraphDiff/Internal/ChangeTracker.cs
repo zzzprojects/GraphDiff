@@ -7,51 +7,35 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Graph
+namespace RefactorThis.GraphDiff.Internal
 {
-    /// <summary>
-    /// Change tracker abstraction
-    /// </summary>
+    /// <summary>Change tracker abstraction</summary>
     internal interface IChangeTracker
     {
-        /// <summary>
-        /// Adds a new entity to the change tracker
-        /// </summary>
+        /// <summary>Adds a new entity to the change tracker</summary>
         /// <param name="entity">The new entity</param>
         void AddItem(object entity);
 
-        /// <summary>
-        /// Updates the values of an existing tracked entity
-        /// </summary>
+        /// <summary>Updates the values of an existing tracked entity</summary>
         /// <param name="from">The old item</param>
         /// <param name="to">The new item values to apply</param>
         /// <param name="doConcurrencyCheck">Perform a concurrency check when updating</param>
         void UpdateItem(object from, object to, bool doConcurrencyCheck = false);
 
-        /// <summary>
-        /// Marks an entity as requiring removal from the database
-        /// </summary>
+        /// <summary>Marks an entity as requiring removal from the database</summary>
         /// <param name="entity">The entity to be removed</param>
         void RemoveItem(object entity);
 
-        /// <summary>
-        /// Returns the current state of an entity (detached, attached, etc)
-        /// </summary>
+        /// <summary>Returns the current state of an entity (detached, attached, etc)</summary>
         EntityState GetItemState(object entity);
 
-        /// <summary>
-        /// Attach the associated entity to the change tracker and reload the entity.
-        /// </summary>
+        /// <summary>Attach the associated entity to the change tracker and reload the entity.</summary>
         object AttachAndReloadAssociatedEntity(object entity);
 
-        /// <summary>
-        /// Ensure references back to the parent from the child are kept in sync
-        /// </summary>
+        /// <summary>Ensure references back to the parent from the child are kept in sync</summary>
         void AttachCyclicNavigationProperty(object parent, object child, List<string> mappedNavigationProperties);
 
-        /// <summary>
-        /// Ensures all required navigation properties are attached
-        /// </summary>
+        /// <summary>Ensures all required navigation properties are attached</summary>
         void AttachRequiredNavigationProperties(object updating, object persisted);
     }
 
@@ -60,7 +44,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         private readonly DbContext _context;
         private readonly IEntityManager _entityManager;
 
-        private ObjectContext _objectContext
+        private ObjectContext ObjectContext
         {
             get { return ((IObjectContextAdapter)_context).ObjectContext; }
         }
@@ -188,13 +172,11 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             }
         }
 
-        // Privates
-
         private void EnsureConcurrency(object entity1, object entity2)
         {
             // get concurrency properties of T
             var entityType = ObjectContext.GetObjectType(entity1.GetType());
-            var metadata = _objectContext.MetadataWorkspace;
+            var metadata = ObjectContext.MetadataWorkspace;
 
             var objType = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
 
@@ -248,7 +230,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private IEnumerable<PropertyInfo> GetComplexTypePropertiesForType(Type entityType)
         {
-            return _objectContext.MetadataWorkspace
+            return ObjectContext.MetadataWorkspace
                     .GetItems<EntityType>(DataSpace.OSpace)
                     .Single(p => p.FullName == entityType.FullName).Properties
                     .Where(p => p.IsComplexType)
