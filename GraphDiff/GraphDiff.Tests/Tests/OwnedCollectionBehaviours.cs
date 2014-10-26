@@ -342,35 +342,78 @@ namespace RefactorThis.GraphDiff.Tests.Tests
             }
         }
 
-#warning cleanup, this shouldn't be named like this!
         [TestMethod]
-        public void RecipeTest()
+        public void ShouldAddOwnedCollectionElementWithTwoParents()
         {
-            var componentRecipe = new Recipe();
+            var secondParent = new OneToManyOwnedParentModel {Title = "Second Parent"};
 
             using (var context = new TestDbContext())
             {
-                context.Recipes.Add(componentRecipe);
+                context.OneToManyOwnedParentModels.Add(secondParent);
                 context.SaveChanges();
             }
 
-            // I pass a Recipe Object into the repository which has 1 recipe line 
-            // with the Recipe object on the line pointing back to the parent 
-            // and the ComponentRecipe object pointing to a different recipe.
-
-            var recipe = new Recipe();
-            var recipeLine = new RecipeLine { RecipePN = recipe, ComponentRecipePN = componentRecipe};
-            recipe.RecipeLines = new [] {recipeLine};
+            var firstParent = new OneToManyOwnedParentModel { Title = "First Parent" };
+            var child = new OneToManyOwnedMultipleParentsModel { FirstParent = firstParent, SecondParent = secondParent, Title = "Child"};
+            firstParent.OneToManyOwnedMultipleParentsModels = new List<OneToManyOwnedMultipleParentsModel> {child};
 
             using (var context = new TestDbContext())
             {
-                var attachedItem = context.UpdateGraph(recipe, a => a.OwnedCollection(b => b.RecipeLines, c => c.AssociatedEntity(d => d.ComponentRecipePN)));
+                var attachedItem = context.UpdateGraph(firstParent,
+                                                       a => a.OwnedCollection(b => b.OneToManyOwnedMultipleParentsModels,
+                                                                              with => with.AssociatedEntity(d => d.SecondParent)));
                 context.SaveChanges();
-            }
 
-#warning assert stuff here!
+                Assert.AreEqual(1, attachedItem.OneToManyOwnedMultipleParentsModels.Count);
+
+                var attachedChild = attachedItem.OneToManyOwnedMultipleParentsModels.Single();
+                Assert.IsNotNull(attachedChild.FirstParent);
+                Assert.AreEqual(attachedItem.Id, attachedChild.FirstParent.Id);
+
+                Assert.IsNotNull(attachedChild.SecondParent);
+                Assert.AreEqual(secondParent.Id, attachedChild.SecondParent.Id);
+            }
         }
 
-#warning add some more tests?
+        [TestMethod]
+        public void ShouldUpdateOwnedCollectionElementWithTwoParents()
+        {
+            var firstParent = new OneToManyOwnedParentModel { Title = "First Parent" };
+            var secondParent = new OneToManyOwnedParentModel { Title = "Second Parent" };
+            var child = new OneToManyOwnedMultipleParentsModel { FirstParent = firstParent, SecondParent = secondParent, Title = "Child" };
+            firstParent.OneToManyOwnedMultipleParentsModels = new List<OneToManyOwnedMultipleParentsModel> { child };
+
+            using (var context = new TestDbContext())
+            {
+                context.OneToManyOwnedParentModels.Add(firstParent);
+                context.OneToManyOwnedParentModels.Add(secondParent);
+                context.SaveChanges();
+
+                firstParent = context.OneToManyOwnedParentModels
+                        .Include(o => o.OneToManyOwnedMultipleParentsModels)
+                        .Single(o => o.Id == firstParent.Id);
+            }
+
+            const string updatedChildTitle = "Updated Child";
+            firstParent.OneToManyOwnedMultipleParentsModels.Single().Title = updatedChildTitle;
+
+            using (var context = new TestDbContext())
+            {
+                var attachedItem = context.UpdateGraph(firstParent,
+                                                       a => a.OwnedCollection(b => b.OneToManyOwnedMultipleParentsModels,
+                                                                              with => with.AssociatedEntity(d => d.SecondParent)));
+                context.SaveChanges();
+
+                Assert.AreEqual(1, attachedItem.OneToManyOwnedMultipleParentsModels.Count);
+
+                var attachedChild = attachedItem.OneToManyOwnedMultipleParentsModels.Single();
+                Assert.AreEqual(updatedChildTitle, attachedChild.Title);
+                Assert.IsNotNull(attachedChild.FirstParent);
+                Assert.AreEqual(attachedItem.Id, attachedChild.FirstParent.Id);
+
+                Assert.IsNotNull(attachedChild.SecondParent);
+                Assert.AreEqual(secondParent.Id, attachedChild.SecondParent.Id);
+            }
+        }
     }
 }

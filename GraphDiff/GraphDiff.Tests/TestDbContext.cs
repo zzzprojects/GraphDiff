@@ -32,8 +32,7 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<AttributeTest> Attributes { get; set; }
         public IDbSet<SharedModelAttributeTest> SharedModelAttributes { get; set; }
 
-#warning clean this up
-        public DbSet<Recipe> Recipes { get; set; }
+        public DbSet<OneToManyOwnedParentModel> OneToManyOwnedParentModels { get; set; }
 
         public TestDbContext() : base("GraphDiff") { }
         public TestDbContext(DbConnection connection) : base(connection, true) { }
@@ -85,9 +84,8 @@ namespace RefactorThis.GraphDiff.Tests
             modelBuilder.Entity<SharedModelAttributeTest>().HasMany(p => p.OneToManyOwned);
             modelBuilder.Entity<CircularAttributeTest>().HasOptional(p => p.Parent);
 
-#warning clean this up
-            modelBuilder.Entity<Recipe>().HasMany(x => x.RecipeLines).WithRequired(x => x.RecipePN).WillCascadeOnDelete(false); // .HasForeignKey(x => x.RecipePNId)
-            modelBuilder.Entity<RecipeLine>().HasRequired(x => x.ComponentRecipePN).WithMany();
+            modelBuilder.Entity<OneToManyOwnedParentModel>().HasMany(x => x.OneToManyOwnedMultipleParentsModels).WithRequired(x => x.FirstParent).WillCascadeOnDelete(false);
+            modelBuilder.Entity<OneToManyOwnedMultipleParentsModel>().HasRequired(x => x.SecondParent).WithMany();
         }
     }
 }

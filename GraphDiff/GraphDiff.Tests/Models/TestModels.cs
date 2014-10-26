@@ -159,6 +159,18 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public OneToManyOneToOneAssociatedModel OneToManyOneToOneAssociated { get; set; }
     }
 
+    public class OneToManyOwnedParentModel : Entity
+    {
+        public List<OneToManyOwnedMultipleParentsModel> OneToManyOwnedMultipleParentsModels { get; set; }
+    }
+
+    public class OneToManyOwnedMultipleParentsModel : Entity
+    {
+        public OneToManyOwnedParentModel FirstParent { get; set; }
+
+        public OneToManyOwnedParentModel SecondParent { get; set; }
+    }
+
     public class ManyToOneModel : Entity
     {
         public ICollection<TestNode> ManyParents { get; set; }
@@ -211,19 +223,5 @@ namespace RefactorThis.GraphDiff.Tests.Models
     public class OneToOneOneToManyAssociatedModel : Entity
     {
         public OneToOneOwnedModel OneParent { get; set; }
-    }
-
-#warning clean this up!
-
-    public class Recipe : Entity
-    {
-        public IList<RecipeLine> RecipeLines { get; set; }
-    }
-
-    public class RecipeLine : Entity
-    {
-        public Recipe RecipePN { get; set; }
-
-        public Recipe ComponentRecipePN { get; set; }
     }
 }
