@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Collections.Generic;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 using System.Linq;
 using System.Data.Entity;
@@ -103,6 +104,77 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 var node2 = context.Nodes.Include(p => p.OneToOneOwned).Single(p => p.Id == node1.Id);
                 Assert.IsNotNull(node2);
                 Assert.IsNull(context.OneToOneOwnedModels.SingleOrDefault(p => p.Id == oneToOne.Id));
+            }
+        }
+
+        [TestMethod]
+        public void ShouldAddOwnedEntityWithTwoParents()
+        {
+            var secondParent = new OneToOneOwnedParentModel { Title = "Second Parent" };
+
+            using (var context = new TestDbContext())
+            {
+                context.OneToOneOwnedParentModels.Add(secondParent);
+                context.SaveChanges();
+            }
+
+            var firstParent = new OneToOneOwnedParentModel { Title = "First Parent" };
+            firstParent.OneToOneOwnedMultipleParentsModel = new OneToOneOwnedMultipleParentsModel { FirstParent = firstParent, SecondParent = secondParent, Title = "Child" };
+
+            using (var context = new TestDbContext())
+            {
+                var attachedItem = context.UpdateGraph(firstParent,
+                                                       a => a.OwnedEntity(b => b.OneToOneOwnedMultipleParentsModel,
+                                                                              with => with.AssociatedEntity(d => d.SecondParent)));
+                context.SaveChanges();
+
+                var attachedChild = attachedItem.OneToOneOwnedMultipleParentsModel;
+                Assert.IsNotNull(attachedChild);
+                Assert.IsNotNull(attachedChild.FirstParent);
+                Assert.AreEqual(attachedItem.Id, attachedChild.FirstParent.Id);
+
+                Assert.IsNotNull(attachedChild.SecondParent);
+                Assert.AreEqual(secondParent.Id, attachedChild.SecondParent.Id);
+            }
+        }
+
+        [TestMethod]
+        public void ShouldUpdateOwnedEntityWithTwoParents()
+        {
+            var firstParent = new OneToOneOwnedParentModel { Title = "First Parent" };
+            var secondParent = new OneToOneOwnedParentModel { Title = "Second Parent" };
+            firstParent.OneToOneOwnedMultipleParentsModel = new OneToOneOwnedMultipleParentsModel { FirstParent = firstParent, SecondParent = secondParent, Title = "Child" };
+
+            using (var context = new TestDbContext())
+            {
+                context.OneToOneOwnedParentModels.Add(firstParent);
+                context.OneToOneOwnedParentModels.Add(secondParent);
+                context.SaveChanges();
+
+                firstParent = context.OneToOneOwnedParentModels
+                        .Include(o => o.OneToOneOwnedMultipleParentsModel)
+                        .Single(o => o.Id == firstParent.Id);
+            }
+
+            const string updatedChildTitle = "Updated Child";
+            firstParent.OneToOneOwnedMultipleParentsModel.Title = updatedChildTitle;
+
+            using (var context = new TestDbContext())
+            {
+                var attachedItem = context.UpdateGraph(firstParent,
+                                                       a => a.OwnedEntity(b => b.OneToOneOwnedMultipleParentsModel,
+                                                                              with => with.AssociatedEntity(d => d.SecondParent)));
+                context.SaveChanges();
+
+                var attachedChild = attachedItem.OneToOneOwnedMultipleParentsModel;
+                Assert.IsNotNull(attachedChild);
+
+                Assert.AreEqual(updatedChildTitle, attachedChild.Title);
+                Assert.IsNotNull(attachedChild.FirstParent);
+                Assert.AreEqual(attachedItem.Id, attachedChild.FirstParent.Id);
+
+                Assert.IsNotNull(attachedChild.SecondParent);
+                Assert.AreEqual(secondParent.Id, attachedChild.SecondParent.Id);
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 
@@ -52,6 +54,20 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsNotNull(argumentException);
                 Assert.IsTrue(argumentException.Message.Contains("OneToManyAssociated"));
                 Assert.IsTrue(argumentException.Message.Contains("associated"));
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
+        public void ShouldThrowBecauseOfAmbiguousUnmappedParentRelation()
+        {
+            var firstParent = new OneToManyOwnedParentModel { Title = "First Parent" };
+            var child = new OneToManyOwnedMultipleParentsModel { FirstParent = firstParent, Title = "Child" };
+            firstParent.OneToManyOwnedMultipleParentsModels = new List<OneToManyOwnedMultipleParentsModel> { child };
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(firstParent, a => a.OwnedCollection(b => b.OneToManyOwnedMultipleParentsModels));
             }
         }
     }

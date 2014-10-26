@@ -40,7 +40,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 dbValue = CreateNewPersistedEntity(changeTracker, persisted, newValue);
             }
 
-            changeTracker.AttachCyclicNavigationProperty(persisted, newValue);
+            changeTracker.AttachCyclicNavigationProperty(persisted, newValue, GetMappedNaviationProperties());
 
             foreach (var childMember in Members)
             {

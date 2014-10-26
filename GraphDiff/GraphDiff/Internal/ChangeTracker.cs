@@ -47,7 +47,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         /// <summary>
         /// Ensure references back to the parent from the child are kept in sync
         /// </summary>
-        void AttachCyclicNavigationProperty(object parent, object child);
+        void AttachCyclicNavigationProperty(object parent, object child, List<string> mappedNavigationProperties);
 
         /// <summary>
         /// Ensures all required navigation properties are attached
@@ -104,7 +104,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             _context.Set(type).Remove(item);
         }
 
-        public void AttachCyclicNavigationProperty(object parent, object child)
+        public void AttachCyclicNavigationProperty(object parent, object child, List<string> mappedNavigationProperties)
         {
             if (parent == null || child == null)
             {
@@ -114,17 +114,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var navigationProperties = _entityManager.GetNavigationPropertiesForType(childType);
-
-            var parentNavigationProperty = navigationProperties
-                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
+            var parentNavigationProperties = _entityManager
+                    .GetNavigationPropertiesForType(childType)
+                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name && !mappedNavigationProperties.Contains(navigation.Name))
                     .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .FirstOrDefault();
+                    .ToList();
 
+            if (parentNavigationProperties.Count > 1)
+            {
+                throw new NotSupportedException(
+                        string.Format("Found ambiguous parent navigation property of type '{0}'. Map one of the parents ({1}) as an associate to disambiguate.",
+                                      parentType, GetConcatenatedPropertyNames(parentNavigationProperties)));
+            }
+
+            var parentNavigationProperty = parentNavigationProperties.FirstOrDefault();
             if (parentNavigationProperty != null)
             {
                 parentNavigationProperty.SetValue(child, parent, null);
             }
+        }
+
+        private static string GetConcatenatedPropertyNames(IEnumerable<PropertyInfo> properties)
+        {
+            return properties.Aggregate("", (current, parentProperty) => current + string.Format("'{0}', ", parentProperty.Name)).TrimEnd(',', ' ');
         }
 
         public object AttachAndReloadAssociatedEntity(object entity)
