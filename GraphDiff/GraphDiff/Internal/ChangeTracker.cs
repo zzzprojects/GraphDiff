@@ -114,16 +114,23 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .ToList();
 
-#warning include the names of the navigation properties here!
-#warning add a test for this behavior and the error message
             if (parentNavigationProperties.Count > 1)
-                throw new NotSupportedException("Unexpectedly found more than one parent navigation property of the same type. Please map one of the parents as an associate to disambiguate.");
+            {
+                throw new NotSupportedException(
+                        string.Format("Found ambiguous parent navigation property of type '{0}'. Map one of the parents ({1}) as an associate to disambiguate.",
+                                      parentType, GetConcatenatedPropertyNames(parentNavigationProperties)));
+            }
 
             var parentNavigationProperty = parentNavigationProperties.FirstOrDefault();
             if (parentNavigationProperty != null)
             {
                 parentNavigationProperty.SetValue(child, parent, null);
             }
+        }
+
+        private static string GetConcatenatedPropertyNames(IEnumerable<PropertyInfo> properties)
+        {
+            return properties.Aggregate("", (current, parentProperty) => current + string.Format("'{0}', ", parentProperty.Name)).TrimEnd(',', ' ');
         }
 
         public object AttachAndReloadAssociatedEntity(object entity)
