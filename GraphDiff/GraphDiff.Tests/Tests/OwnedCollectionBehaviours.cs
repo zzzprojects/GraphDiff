@@ -341,5 +341,36 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsTrue(list[3].Title == "Finish");
             }
         }
+
+#warning cleanup, this shouldn't be named like this!
+        [TestMethod]
+        public void RecipeTest()
+        {
+            var componentRecipe = new Recipe();
+
+            using (var context = new TestDbContext())
+            {
+                context.Recipes.Add(componentRecipe);
+                context.SaveChanges();
+            }
+
+            // I pass a Recipe Object into the repository which has 1 recipe line 
+            // with the Recipe object on the line pointing back to the parent 
+            // and the ComponentRecipe object pointing to a different recipe.
+
+            var recipe = new Recipe();
+            var recipeLine = new RecipeLine { RecipePN = recipe, ComponentRecipePN = componentRecipe};
+            recipe.RecipeLines = new [] {recipeLine};
+
+            using (var context = new TestDbContext())
+            {
+                var attachedItem = context.UpdateGraph(recipe, a => a.OwnedCollection(b => b.RecipeLines, c => c.AssociatedEntity(d => d.ComponentRecipePN)));
+                context.SaveChanges();
+            }
+
+#warning assert stuff here!
+        }
+
+#warning add some more tests?
     }
 }

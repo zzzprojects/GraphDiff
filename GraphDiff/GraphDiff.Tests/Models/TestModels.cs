@@ -212,4 +212,18 @@ namespace RefactorThis.GraphDiff.Tests.Models
     {
         public OneToOneOwnedModel OneParent { get; set; }
     }
+
+#warning clean this up!
+
+    public class Recipe : Entity
+    {
+        public IList<RecipeLine> RecipeLines { get; set; }
+    }
+
+    public class RecipeLine : Entity
+    {
+        public Recipe RecipePN { get; set; }
+
+        public Recipe ComponentRecipePN { get; set; }
+    }
 }

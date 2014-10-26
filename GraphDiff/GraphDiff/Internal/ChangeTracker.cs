@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
@@ -46,7 +47,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         /// <summary>
         /// Ensure references back to the parent from the child are kept in sync
         /// </summary>
-        void AttachCyclicNavigationProperty(object parent, object child);
+        void AttachCyclicNavigationProperty(object parent, object child, List<string> mappedNavigationProperties);
 
         /// <summary>
         /// Ensures all required navigation properties are attached
@@ -97,7 +98,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             _context.Set(type).Remove(item);
         }
 
-        public void AttachCyclicNavigationProperty(object parent, object child)
+        public void AttachCyclicNavigationProperty(object parent, object child, List<string> mappedNavigationProperties)
         {
             if (parent == null || child == null)
             {
@@ -107,15 +108,16 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var parentType = ObjectContext.GetObjectType(parent.GetType());
             var childType = ObjectContext.GetObjectType(child.GetType());
 
-            var navigationProperties = _entityManager.GetNavigationPropertiesForType(childType);
-
-            var parentNavigationProperties = navigationProperties
-                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
+            var parentNavigationProperties = _entityManager
+                    .GetNavigationPropertiesForType(childType)
+                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name && !mappedNavigationProperties.Contains(navigation.Name))
                     .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .ToList();
 
+#warning include the names of the navigation properties here!
+#warning add a test for this behavior and the error message
             if (parentNavigationProperties.Count > 1)
-                throw new NotSupportedException("Unexpectedly found more than one parent navigation property of the same type.");
+                throw new NotSupportedException("Unexpectedly found more than one parent navigation property of the same type. Please map one of the parents as an associate to disambiguate.");
 
             var parentNavigationProperty = parentNavigationProperties.FirstOrDefault();
             if (parentNavigationProperty != null)

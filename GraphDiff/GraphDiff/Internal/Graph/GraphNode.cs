@@ -95,6 +95,11 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             return new string[0];
         }
 
+        protected List<string> GetMappedNaviationProperties()
+        {
+            return Members.Select(m => m.Accessor.Name).ToList();
+        }
+
         protected static IEnumerable<string> GetRequiredNavigationPropertyIncludes(IEntityManager entityManager, Type entityType, string ownIncludeString)
         {
             return entityManager

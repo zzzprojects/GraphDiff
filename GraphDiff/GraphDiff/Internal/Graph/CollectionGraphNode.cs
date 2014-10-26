@@ -76,7 +76,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
 
             if (_isOwned)
-                changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
+            {
+                changeTracker.AttachCyclicNavigationProperty(existing, updateItem, GetMappedNaviationProperties());
+            }
 
             return updateItem;
         }
@@ -89,7 +91,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             }
 
             changeTracker.UpdateItem(updateItem, dbItem, true);
-            changeTracker.AttachCyclicNavigationProperty(existing, updateItem);
+            changeTracker.AttachCyclicNavigationProperty(existing, updateItem, GetMappedNaviationProperties());
 
             foreach (var childMember in Members)
             {
