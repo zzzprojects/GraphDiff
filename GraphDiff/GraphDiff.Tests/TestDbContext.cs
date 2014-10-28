@@ -35,8 +35,8 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<TestNodeWithChildWithComplexValue> NodesWithChildWithComplexType { get; set; }
         public IDbSet<TestNodeWithChildrenWithComplexValue> NodesWithChildrenWithComplexType { get; set; }
 
-        public DbSet<OneToOneOwnedParentModel> OneToOneOwnedParentModels { get; set; }
-        public DbSet<OneToManyOwnedParentModel> OneToManyOwnedParentModels { get; set; }
+        public IDbSet<OneToOneOwnedParentModel> OneToOneOwnedParentModels { get; set; }
+        public IDbSet<OneToManyOwnedParentModel> OneToManyOwnedParentModels { get; set; }
 
         public TestDbContext() : base("GraphDiff") { }
         public TestDbContext(DbConnection connection) : base(connection, true) { }
