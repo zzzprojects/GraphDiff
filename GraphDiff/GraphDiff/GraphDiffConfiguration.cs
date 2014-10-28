@@ -16,5 +16,11 @@ namespace RefactorThis.GraphDiff
         /// to ensure the EF local cache has the latest state.
         /// </summary>
         public static bool ReloadAssociatedEntitiesWhenAttached { get; set; }
+
+        /// <summary>
+        /// If GraphDiff encounters an entity in a database collection that is no longer part of the graph it is 
+        /// currently attaching, it will remove that element from the database as well unless this flag is set.
+        /// </summary>
+        public static bool NeverRemoveFromCollections { get; set; }
     }
 }
