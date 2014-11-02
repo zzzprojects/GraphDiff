@@ -51,7 +51,7 @@ namespace RefactorThis.GraphDiff.Internal
                 foreach (var include in includeStrings)
                 {
                     var query = _context.Set<T>().AsQueryable();
-                    query.Include(include);
+                    query = query.Include(include);
                     query.SingleOrDefault(keyPredicate);
                 }
 
