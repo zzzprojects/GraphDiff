@@ -50,7 +50,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private object CreateNewPersistedEntity<T>(IChangeTracker changeTracker, T existing, object newValue) where T : class
         {
-            var instance = Activator.CreateInstance(newValue.GetType());
+            var instance = Activator.CreateInstance(newValue.GetType(), true);
             SetValue(existing, instance);
             changeTracker.AddItem(instance);
             changeTracker.UpdateItem(newValue, instance, true);

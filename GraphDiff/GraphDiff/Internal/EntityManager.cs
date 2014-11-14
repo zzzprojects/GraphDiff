@@ -67,7 +67,7 @@ namespace RefactorThis.GraphDiff.Internal
 
         public object CreateEmptyEntityWithKey(object entity)
         {
-            var instance = Activator.CreateInstance(entity.GetType());
+            var instance = Activator.CreateInstance(entity.GetType(), true);
             CopyPrimaryKeyFields(entity, instance);
             return instance;
         }
