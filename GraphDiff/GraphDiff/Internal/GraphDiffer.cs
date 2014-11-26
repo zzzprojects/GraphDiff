@@ -6,7 +6,7 @@ namespace RefactorThis.GraphDiff.Internal
 {
     internal interface IGraphDiffer<T> where T : class
     {
-        T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery);
+        T Merge(T updating, T persisted, QueryMode queryMode = QueryMode.SingleQuery);
     }
 
     /// <summary>GraphDiff main entry point.</summary>
@@ -26,7 +26,7 @@ namespace RefactorThis.GraphDiff.Internal
             _entityManager = entityManager;
         }
 
-        public T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery)
+        public T Merge(T updating, T persisted, QueryMode queryMode = QueryMode.SingleQuery)
         {
             // todo query mode
             bool isAutoDetectEnabled = _dbContext.Configuration.AutoDetectChangesEnabled;
@@ -37,7 +37,11 @@ namespace RefactorThis.GraphDiff.Internal
 
                 // Get our entity with all includes needed, or add a new entity
                 var includeStrings = _root.GetIncludeStrings(_entityManager);
-                T persisted = _queryLoader.LoadEntity(updating, includeStrings, queryMode);
+
+                if (persisted == null)
+                {
+                    persisted = _queryLoader.LoadEntity(updating, includeStrings, queryMode);
+                }
 
                 if (persisted == null)
                 {
@@ -52,7 +56,7 @@ namespace RefactorThis.GraphDiff.Internal
                 {
                     throw new InvalidOperationException(
                             String.Format("Entity of type '{0}' is already in an attached state. GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method.",
-                                          typeof (T).FullName));
+                                          typeof(T).FullName));
                 }
 
                 // Perform recursive update
