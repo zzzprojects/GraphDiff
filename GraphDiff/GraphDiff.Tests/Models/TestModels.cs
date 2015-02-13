@@ -112,6 +112,24 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public Guid? Id { get; set; }
     }
 
+    public class PKFKModelPrimary
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? Id { get; set; }
+
+        public PKFKModelSecondary Secondary { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class PKFKModelSecondary
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public int? Id { get; set; }
+        public string Name { get; set; }
+    }
+
     // ====================================
     // Second tier models
     // ====================================
