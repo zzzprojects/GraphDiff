@@ -76,7 +76,7 @@ namespace RefactorThis.GraphDiff.Internal
         {
             var metadata = ObjectContext.MetadataWorkspace
                     .GetItems<EntityType>(DataSpace.OSpace)
-                    .SingleOrDefault(p => p.FullName == entityType.FullName);
+                    .SingleOrDefault(p => p.FullName == ObjectContext.GetObjectType(entityType).FullName);
 
             if (metadata == null)
             {
