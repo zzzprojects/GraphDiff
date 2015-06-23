@@ -4,8 +4,8 @@ using RefactorThis.GraphDiff.Tests.Tests;
 
 namespace RefactorThis.GraphDiff.Tests
 {
-	public class TestDbContext : DbContext
-	{
+    public class TestDbContext : DbContext
+    {
         public IDbSet<TestNode> Nodes { get; set; }
         public IDbSet<TestNodeWithBaseReference> NodesWithReference { get; set; }
 
@@ -16,7 +16,7 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToManyAssociatedModel> OneToManyAssociatedModels { get; set; }
         public IDbSet<OneToManyOwnedModel> OneToManyOwnedModels { get; set; }
 
-	    public IDbSet<MultiKeyModel>  MultiKeyModels { get; set; }
+        public IDbSet<MultiKeyModel> MultiKeyModels { get; set; }
 
         public IDbSet<RootEntity> RootEntities { get; set; }
 
@@ -25,9 +25,15 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<InternalKeyModel> InternalKeyModels { get; set; }
         public IDbSet<NullableKeyModel> NullableKeyModels { get; set; }
 
-		protected override void OnModelCreating(DbModelBuilder modelBuilder)
-		{
+        public IDbSet<TestNodeForIListMultiAddition> TestNodesForIListMultiAddition { get; set; }
+        public IDbSet<TestSubNodeForIListMultiAddition> TestSubNodesForIListMultiAddition { get; set; }
+
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+
             // second tier mappings
+            modelBuilder.Entity<TestNodeForIListMultiAddition>().HasMany(p => p.SubNodes).WithRequired().HasForeignKey(s => s.TestNodeForIListMultiAdditionId).WillCascadeOnDelete(true);
 
             modelBuilder.Entity<TestNode>().HasOptional(p => p.OneToOneAssociated).WithOptionalPrincipal(p => p.OneParent);
             modelBuilder.Entity<TestNode>().HasMany(p => p.OneToManyAssociated).WithOptional(p => p.OneParent);
@@ -61,9 +67,9 @@ namespace RefactorThis.GraphDiff.Tests
 
             modelBuilder.Entity<InternalKeyModel>()
                     .HasMany(ikm => ikm.Associates)
-		            .WithRequired(ikm => ikm.Parent);
-		}
+                           .WithRequired(ikm => ikm.Parent);
+        }
 
-		public TestDbContext() : base("GraphDiff") {}
-	}
+        public TestDbContext() : base("GraphDiff") { }
+    }
 }

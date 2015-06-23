@@ -112,6 +112,26 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public Guid? Id { get; set; }
     }
 
+    public class TestNodeForIListMultiAddition : Entity
+    {
+        // If you change this to ICollection, then test TestIListOwnedCollectionAdditionDoesNotMultiAdd will pass
+        public IList<TestSubNodeForIListMultiAddition> SubNodes { get; set; }
+    }
+
+    public class TestSubNodeForIListMultiAddition
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [Column(Order = 1)]
+        public int TestNodeForIListMultiAdditionId { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [Column(Order = 2)]
+        public int OtherKeyId { get; set; }
+
+        public string Title { get; set; }
+    }
+
     // ====================================
     // Second tier models
     // ====================================
