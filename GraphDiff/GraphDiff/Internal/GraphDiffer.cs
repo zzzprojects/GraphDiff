@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
+using System.Linq;
 using RefactorThis.GraphDiff.Internal.Graph;
 
 namespace RefactorThis.GraphDiff.Internal
 {
     internal interface IGraphDiffer<T> where T : class
     {
-        T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery);
+        IEnumerable<T> Merge(IEnumerable<T> updatingItems, QueryMode queryMode = QueryMode.SingleQuery);
     }
 
     /// <summary>GraphDiff main entry point.</summary>
@@ -26,7 +28,7 @@ namespace RefactorThis.GraphDiff.Internal
             _entityManager = entityManager;
         }
 
-        public T Merge(T updating, QueryMode queryMode = QueryMode.SingleQuery)
+        public IEnumerable<T> Merge(IEnumerable<T> updatingItems, QueryMode queryMode = QueryMode.SingleQuery)
         {
             // todo query mode
             bool isAutoDetectEnabled = _dbContext.Configuration.AutoDetectChangesEnabled;
@@ -37,30 +39,47 @@ namespace RefactorThis.GraphDiff.Internal
 
                 // Get our entity with all includes needed, or add a new entity
                 var includeStrings = _root.GetIncludeStrings(_entityManager);
-                T persisted = _queryLoader.LoadEntity(updating, includeStrings, queryMode);
 
-                if (persisted == null)
-                {
-                    // we are always working with 2 graphs, simply add a 'persisted' one if none exists,
-                    // this ensures that only the changes we make within the bounds of the mapping are attempted.
-                    persisted = (T)_dbContext.Set(updating.GetType()).Create();
-
-                    _dbContext.Set<T>().Add(persisted);
-                }
-
-                if (_dbContext.Entry(updating).State != EntityState.Detached)
-                {
-                    throw new InvalidOperationException(
-                            String.Format("Entity of type '{0}' is already in an attached state. GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method.",
-                                          typeof (T).FullName));
-                }
-
-                // Perform recursive update
                 var entityManager = new EntityManager(_dbContext);
                 var changeTracker = new ChangeTracker(_dbContext, entityManager);
-                _root.Update(changeTracker, entityManager, persisted, updating);
+                var persistedItems = _queryLoader
+                    .LoadEntities(updatingItems, includeStrings, queryMode)
+                    .ToArray();
+                var index = 0;
 
-                return persisted;
+                foreach (var updating in updatingItems)
+                {
+                    // try to get persisted entity
+                    if (index > persistedItems.Length - 1)
+                    {
+                        throw new InvalidOperationException(
+                            String.Format("Could not load all persisted entities of type '{0}'.",
+                            typeof(T).FullName));
+                    }
+
+                    if (persistedItems[index] == null)
+                    {
+                        // we are always working with 2 graphs, simply add a 'persisted' one if none exists,
+                        // this ensures that only the changes we make within the bounds of the mapping are attempted.
+                        persistedItems[index] = (T)_dbContext.Set(updating.GetType()).Create();
+
+                        _dbContext.Set<T>().Add(persistedItems[index]);
+                    }
+
+                    if (_dbContext.Entry(updating).State != EntityState.Detached)
+                    {
+                        throw new InvalidOperationException(
+                            String.Format("Entity of type '{0}' is already in an attached state. GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method.",
+                            typeof (T).FullName));
+                    }
+
+                    // Perform recursive update
+                    _root.Update(changeTracker, entityManager, persistedItems[index], updating);
+
+                    index++;
+                }
+
+                return persistedItems;
             }
             finally
             {

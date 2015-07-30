@@ -10,8 +10,8 @@ namespace RefactorThis.GraphDiff.Internal
     /// <summary>Db load queries</summary>
     internal interface IQueryLoader
     {
-        T LoadEntity<T>(T entity, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
-        T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
+        IEnumerable<T> LoadEntities<T>(IEnumerable<T> entities, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
+        IEnumerable<T> LoadEntities<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class;
     }
 
     internal class QueryLoader : IQueryLoader
@@ -25,29 +25,60 @@ namespace RefactorThis.GraphDiff.Internal
             _context = context;
         }
 
-        public T LoadEntity<T>(T entity, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
+        public IEnumerable<T> LoadEntities<T>(IEnumerable<T> entities, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
         {
-            if (entity == null)
+            if (entities == null)
             {
-                throw new ArgumentNullException("entity");
+                throw new ArgumentNullException("entities");
             }
 
-            var keyPredicate = CreateKeyPredicateExpression(entity);
+            var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToArray();
+            var keyValues = entities.Select(e => keyProperties.Select(x => x.GetValue(e, null)).ToArray()).ToArray();
+            var keyPredicate = CreateKeyPredicateExpression(entities, keyProperties, keyValues);
+            var entityCount = keyValues.Length;
 
             // skip loading of entities with empty integral key propeties (new entitites)
             if (keyPredicate == null)
-                return null;
+                return new T[entityCount];
 
-            return LoadEntity(keyPredicate, includeStrings, queryMode);
+            // load presisted entities
+            var loadedEntities = LoadEntities(keyPredicate, includeStrings, queryMode);
+
+            // skip sort for single entities
+            if (entityCount == 1)
+                return new[] { loadedEntities.FirstOrDefault() };
+
+            // restore order of loaded entities
+            var orderedEntities = new List<T>(entityCount);
+            foreach (var entity in entities)
+            {
+                var entityKeyValues = keyValues[orderedEntities.Count];
+                orderedEntities.Add(loadedEntities.FirstOrDefault(x =>
+                {
+                    // find matching item by key values
+                    for (var i = 0; i < entityKeyValues.Length; i++)
+                        if (!Equals(entityKeyValues[i], keyProperties[i].GetValue(x, null)))
+                            return false;
+                    return true;
+                }));
+            }
+
+            // validate count
+            if (orderedEntities.Count != entityCount)
+                throw new InvalidOperationException(
+                    String.Format("Could not load all {0} persisted items of type '{1}'.",
+                    entityCount, typeof(T).FullName));
+
+            return orderedEntities;
         }
 
-        public T LoadEntity<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
+        public IEnumerable<T> LoadEntities<T>(Expression<Func<T, bool>> keyPredicate, IEnumerable<string> includeStrings, QueryMode queryMode) where T : class
         {
             if (queryMode == QueryMode.SingleQuery)
             {
                 var query = _context.Set<T>().AsQueryable();
                 query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
-                return query.SingleOrDefault(keyPredicate);
+                return query.Where(keyPredicate).ToArray();
             }
 
             if (queryMode == QueryMode.MultipleQuery)
@@ -60,30 +91,45 @@ namespace RefactorThis.GraphDiff.Internal
                     query.SingleOrDefault(keyPredicate);
                 }
 
-                return _context.Set<T>().Local.AsQueryable().SingleOrDefault(keyPredicate);
+                return _context.Set<T>().Local.AsQueryable().Where(keyPredicate).ToArray();
             }
 
             throw new ArgumentOutOfRangeException("queryMode", "Unknown QueryMode");
         }
 
-        private Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(T entity)
+        private Expression<Func<T, bool>> CreateKeyPredicateExpression<T>(IEnumerable<T> entities, IList<PropertyInfo> keyProperties, IEnumerable<IList<object>> keyValues)
         {
             // get key properties of T
-            var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
-            var keyValues = keyProperties.Select(x => x.GetValue(entity, null)).ToArray();
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            Expression resultExpression = null;
+            var keyValuesEnumerator = keyValues.GetEnumerator();
 
-            // prevent key predicate with empty values
-            if (AllIntegralKeysEmpty(keyProperties, keyValues))
-                return null;
-
-            var parameter = Expression.Parameter(typeof(T));
-            var expression = CreateEqualsExpression(keyValues[0], keyProperties[0], parameter);
-            for (int i = 1; i < keyProperties.Count; i++)
+            foreach (var entity in entities)
             {
-                expression = Expression.And(expression, CreateEqualsExpression(keyValues[i], keyProperties[i], parameter));
+                if (!keyValuesEnumerator.MoveNext())
+                    throw new InvalidOperationException(
+                        String.Format("Number of key values does not match number of entities with type '{0}'.",
+                        typeof(T).FullName));
+
+                // prevent key predicate with empty values
+                if (AllIntegralKeysEmpty(keyProperties, keyValuesEnumerator.Current))
+                    continue;
+
+                // create predicate for entity
+                var itemExpression = CreateEqualsExpression(keyValuesEnumerator.Current[0], keyProperties[0], parameter);
+                for (int i = 1; i < keyProperties.Count; i++)
+                    itemExpression = Expression.AndAlso(itemExpression,
+                        CreateEqualsExpression(keyValuesEnumerator.Current[i], keyProperties[i], parameter));
+
+                // compose all entity predicates
+                resultExpression = resultExpression != null
+                    ? Expression.OrElse(resultExpression, itemExpression)
+                    : itemExpression;
             }
 
-            return Expression.Lambda<Func<T, bool>>(expression, parameter);
+            return resultExpression != null
+                ? Expression.Lambda<Func<T, bool>>(resultExpression, parameter)
+                : null;
         }
 
         private static Expression CreateEqualsExpression(object keyValue, PropertyInfo keyProperty, Expression parameter)
