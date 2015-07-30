@@ -33,6 +33,11 @@ namespace RefactorThis.GraphDiff.Internal
             }
 
             var keyPredicate = CreateKeyPredicateExpression(entity);
+
+            // skip loading of entities with empty integral key propeties (new entitites)
+            if (keyPredicate == null)
+                return null;
+
             return LoadEntity(keyPredicate, includeStrings, queryMode);
         }
 
@@ -47,7 +52,7 @@ namespace RefactorThis.GraphDiff.Internal
 
             if (queryMode == QueryMode.MultipleQuery)
             {
-                // This is experimental - needs some testing. 
+                // This is experimental - needs some testing.
                 foreach (var include in includeStrings)
                 {
                     var query = _context.Set<T>().AsQueryable();
@@ -65,20 +70,58 @@ namespace RefactorThis.GraphDiff.Internal
         {
             // get key properties of T
             var keyProperties = _entityManager.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
+            var keyValues = keyProperties.Select(x => x.GetValue(entity, null)).ToArray();
 
-            ParameterExpression parameter = Expression.Parameter(typeof(T));
-            Expression expression = CreateEqualsExpression(entity, keyProperties[0], parameter);
+            // prevent key predicate with empty values
+            if (AllIntegralKeysEmpty(keyProperties, keyValues))
+                return null;
+
+            var parameter = Expression.Parameter(typeof(T));
+            var expression = CreateEqualsExpression(keyValues[0], keyProperties[0], parameter);
             for (int i = 1; i < keyProperties.Count; i++)
             {
-                expression = Expression.And(expression, CreateEqualsExpression(entity, keyProperties[i], parameter));
+                expression = Expression.And(expression, CreateEqualsExpression(keyValues[i], keyProperties[i], parameter));
             }
 
             return Expression.Lambda<Func<T, bool>>(expression, parameter);
         }
 
-        private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
+        private static Expression CreateEqualsExpression(object keyValue, PropertyInfo keyProperty, Expression parameter)
         {
-            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null), keyProperty.PropertyType));
+            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyValue, keyProperty.PropertyType));
+        }
+
+        private static bool AllIntegralKeysEmpty(IList<PropertyInfo> properties, IList<object> values)
+        {
+            for (var i = 0; i < properties.Count; i++)
+            {
+                // detect empty numeric key properties (new entity)
+                if (properties[i].PropertyType == typeof(int))
+                {
+                    if ((int)values[i] == 0)
+                        continue;
+                }
+                else if (properties[i].PropertyType == typeof(uint))
+                {
+                    if ((uint)values[i] == 0)
+                        continue;
+                }
+                else if (properties[i].PropertyType == typeof(long))
+                {
+                    if ((long)values[i] == 0)
+                        continue;
+                }
+                else if (properties[i].PropertyType == typeof(ulong))
+                {
+                    if ((ulong)values[i] == 0)
+                        continue;
+                }
+
+                // skip this optimization for other types
+                return false;
+            }
+
+            return true;
         }
     }
 }
