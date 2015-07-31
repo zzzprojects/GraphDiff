@@ -112,7 +112,8 @@ namespace RefactorThis.GraphDiff.Internal
                         typeof(T).FullName));
 
                 // prevent key predicate with empty values
-                if (AllIntegralKeysEmpty(keyProperties, keyValuesEnumerator.Current))
+                if (GraphDiffConfiguration.SkipLoadingOfNewEntities &&
+                    AllIntegralKeysEmpty(keyProperties, keyValuesEnumerator.Current))
                     continue;
 
                 // create predicate for entity
