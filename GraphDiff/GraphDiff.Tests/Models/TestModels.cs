@@ -147,6 +147,25 @@ namespace RefactorThis.GraphDiff.Tests.Models
         public Guid? Id { get; set; }
     }
 
+    // Generic Collection models:
+    public class SimpleTitleModel
+    {
+        [Key]
+        public string Title { get; set; }
+    }
+
+    public class CollectionFromListModel : List<SimpleTitleModel>
+    {
+
+    }
+
+    public class CollectionFromListEntity : Entity
+    {
+        public CollectionFromListModel CollectionItems { get; set; }
+
+        public List<SimpleTitleModel> SimpleTitleItems { get; set; }
+    }
+
     // ====================================
     // Second tier models
     // ====================================

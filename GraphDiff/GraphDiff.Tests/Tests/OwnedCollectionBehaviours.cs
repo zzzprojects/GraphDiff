@@ -415,5 +415,44 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.AreEqual(secondParent.Id, attachedChild.SecondParent.Id);
             }
         }
+
+        [TestMethod]
+        public void ShouldWorkWithListEntities()
+        {
+            var source = new CollectionFromListEntity()
+            {
+                CollectionItems = new CollectionFromListModel()
+                {
+                    new SimpleTitleModel() { Title = "Test" }
+                },
+                SimpleTitleItems = new List<SimpleTitleModel>()
+                {
+                    new SimpleTitleModel() { Title = "Old" }
+                }
+            };
+            using (var context = new TestDbContext())
+            {
+                context.CollectionFromListEntities.Add(source);
+                context.SaveChanges();
+            }
+
+            var newExpectedCollectionValue = "New Collection Value";
+            var newExpectedSimpleValue = "New Simple Value";
+            source.CollectionItems[0].Title = newExpectedCollectionValue;
+            source.SimpleTitleItems[0].Title = newExpectedSimpleValue;
+
+            using (var context = new TestDbContext())
+            {
+                context.UpdateGraph(source, map => map.OwnedCollection(c => c.CollectionItems).OwnedCollection(c => c.SimpleTitleItems));
+                context.SaveChanges();
+
+                var reloaded = context.CollectionFromListEntities
+                    .Include(x => x.CollectionItems)
+                    .Include(x => x.SimpleTitleItems).FirstOrDefault(c => c.Id == source.Id);
+
+                Assert.AreEqual(newExpectedCollectionValue, reloaded.CollectionItems[0].Title);
+                Assert.AreEqual(newExpectedSimpleValue, reloaded.SimpleTitleItems[0].Title);
+            }
+        }
     }
 }

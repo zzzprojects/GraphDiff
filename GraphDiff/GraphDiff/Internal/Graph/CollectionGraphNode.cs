@@ -142,7 +142,13 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 return Accessor.PropertyType.GetGenericArguments()[0];
             }
 
-            throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
+            var baseType = Accessor.PropertyType.BaseType;
+            if (baseType != null && baseType.IsGenericType)
+            {
+                return baseType.GetGenericArguments()[0];
+            }
+
+            throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[] or derived from GenericType");
         }
     }
 }

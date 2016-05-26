@@ -38,6 +38,8 @@ namespace RefactorThis.GraphDiff.Tests
         public IDbSet<OneToOneOwnedParentModel> OneToOneOwnedParentModels { get; set; }
         public IDbSet<OneToManyOwnedParentModel> OneToManyOwnedParentModels { get; set; }
 
+        public IDbSet<CollectionFromListEntity> CollectionFromListEntities { get; set; }
+
         public TestDbContext() : base("GraphDiff") { }
         public TestDbContext(DbConnection connection) : base(connection, true) { }
 
