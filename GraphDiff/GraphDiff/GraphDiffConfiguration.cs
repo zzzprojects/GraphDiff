@@ -16,5 +16,13 @@ namespace RefactorThis.GraphDiff
         /// to ensure the EF local cache has the latest state.
         /// </summary>
         public static bool ReloadAssociatedEntitiesWhenAttached { get; set; }
+
+        /// <summary>
+        /// If an entity has integer primary keys (int, uint, long, ulong) with
+        /// empty values, it is considered to be new and not persisted.
+        /// In this case the loading of a persisted version of this entity can
+        /// be skipped to increase the performance of inserts.
+        /// </summary>
+        public static bool SkipLoadingOfNewEntities { get; set; }
     }
 }

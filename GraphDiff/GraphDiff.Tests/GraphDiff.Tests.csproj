@@ -72,6 +72,7 @@
     <Compile Include="Tests\AttributeMappingBehaviours.cs" />
     <Compile Include="Tests\ComplexTypeBehaviours.cs" />
     <Compile Include="Tests\GuidKeyBehaviors.cs" />
+    <Compile Include="Tests\UpdateCollectionBehaviours.cs" />
     <Compile Include="Tests\OwnedCollectionBehaviours.cs" />
     <Compile Include="Tests\OneMemberBehaviours.cs" />
     <Compile Include="Tests\OwnedEntityBehaviours.cs" />
