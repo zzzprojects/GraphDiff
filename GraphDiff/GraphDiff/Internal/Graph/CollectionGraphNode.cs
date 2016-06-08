@@ -101,6 +101,9 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private void RemoveElement(IChangeTracker changeTracker, object dbItem, object dbCollection)
         {
+            if (GraphDiffConfiguration.NeverRemoveFromCollections)
+                return;
+
             dbCollection.GetType().GetMethod("Remove").Invoke(dbCollection, new[] { dbItem });
             changeTracker.AttachRequiredNavigationProperties(dbItem, dbItem);
 
