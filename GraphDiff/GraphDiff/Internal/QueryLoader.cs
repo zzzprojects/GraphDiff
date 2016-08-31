@@ -78,7 +78,31 @@ namespace RefactorThis.GraphDiff.Internal
 
         private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
         {
-            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null), keyProperty.PropertyType));
+            return Expression.Equal(Expression.Property(parameter, keyProperty), 
+                ExpressionParameterHelper.GetParameter(keyProperty.GetValue(entity, null), 
+                keyProperty.PropertyType));
         }
     }
+
+    internal class ExpressionParameterHelper
+    {
+        public static MemberExpression GetParameter(object value, Type type)
+        {
+            MethodInfo method = typeof(ExpressionParameterHelper).GetMethod("GetParameterInternal", BindingFlags.Static | BindingFlags.NonPublic);
+            MethodInfo genericMethod = method.MakeGenericMethod(type);
+            return (MemberExpression)genericMethod.Invoke(null, new object[] { value });
+        }
+
+        private static MemberExpression GetParameterInternal<TValue>(TValue value)
+        {
+            var closure = new ExpressionParameterField<TValue> { Value = value };
+            return Expression.Field(Expression.Constant(closure), "Value");
+        }
+
+        private class ExpressionParameterField<T>
+        {
+            public T Value;
+        }
+    }
+
 }
