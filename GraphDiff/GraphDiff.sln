@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphDiff.Tests", "GraphDiff.Tests\GraphDiff.Tests.csproj", "{36762487-8275-440B-8E19-AADA325652E4}"
 EndProject
@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{3AB2ED
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z.Lab", "Z.Lab\Z.Lab.csproj", "{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,8 +30,15 @@ Global
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A90EC142-D07B-4BCA-8356-62A163BADB19}
 	EndGlobalSection
 EndGlobal
