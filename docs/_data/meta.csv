@@ -1,0 +1,20 @@
+permalink,title,meta-description,meta-keywords,h1,h2,nagivation,template
+index,Learn how to use GraphDiff with Tutorials & Examples using C# syntax.,Learn how to use GraphDiff with Tutorials & Examples using C# syntax.,,,,,full
+/404.html,Page Moved,Page Moved,,Page Moved,,,container-h1
+download,Download,Download,,Download,,no,full-h1
+contact-us,Contact Us,Contact Us,,Contact Us,,no,full-h1
+tutorials,Tutorials,Tutorials,,Tutorials,,,container-h1
+overview,Overview,Overview,,Overview,,,
+requirements,Requirements,Requirements,,Requirements,,,
+installing,Installing,Installing,,Installing,,,
+upgrading,Upgrading,Upgrading,,Upgrading,,,
+detach-owned-entity,Detach Owned Entity,Detach Owned Entity,,Detach Owned Entity,,,
+detach-single-entity,Detach Single Entity,Detach Single Entity,,Detach Single Entity,,,
+detach-aggregated-entity,Detach Aggregated Entity,Detach Aggregated Entity,,Detach Aggregated Entity,,,
+detach-associated-entity,Detach Associated Entity,Detach Associated Entity,,Detach Associated Entity,,,
+api,API,API,,API,,,
+faq,FAQ,FAQ,,FAQ,,,
+issue-tracker,Issue Tracker,Issue Tracker,,Issue Tracker,,,
+faq-general,FAQ - General,FAQ - General,,FAQ - General,,,
+faq-installation,FAQ - Installation,FAQ - Installation,,FAQ - Installation,,,
+problems,Problems,Problems,,Problems,,,
