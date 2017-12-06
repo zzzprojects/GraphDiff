@@ -2,7 +2,7 @@
 permalink: installing
 ---
 
-**EntityFramework Dynamic Filters** can be installed through NuGet.
+**GraphDiff** can be installed through NuGet.
 
 <div class="row">
 	<div class="col-lg-6">
