@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
@@ -11,10 +11,9 @@ namespace RefactorThis.GraphDiff.Internal
     internal static class Extensions
     {
         internal static IEnumerable<PropertyInfo> GetPrimaryKeyFieldsFor(this IObjectContextAdapter context, Type entityType)
-        {
+        { 
             var metadata = context.ObjectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .SingleOrDefault(p => p.FullName == entityType.FullName);
+                    .GetEntityTypeByType(entityType);
 
             if (metadata == null)
             {
@@ -32,10 +31,8 @@ namespace RefactorThis.GraphDiff.Internal
 
         internal static IEnumerable<NavigationProperty> GetNavigationPropertiesForType(this IObjectContextAdapter context, Type entityType)
         {
-            return context.ObjectContext.MetadataWorkspace
-                    .GetItems<EntityType>(DataSpace.OSpace)
-                    .Single(p => p.FullName == entityType.FullName)
-                    .NavigationProperties;
+
+            return context.ObjectContext.MetadataWorkspace.GetEntityTypeByType(entityType).NavigationProperties;
         }
 
         internal static string GetEntitySetName(this IObjectContextAdapter context, Type entityType)
@@ -54,6 +51,26 @@ namespace RefactorThis.GraphDiff.Internal
             }
 
             return set != null ? set.Name : null;
+        }
+
+        /// <summary>A MetadataWorkspace extension method that gets entity type by type.</summary>
+        /// <param name="metadataWorkspace">The metadataWorkspace to act on.</param>
+        /// <param name="entityType">Type of the entity.</param>
+        /// <returns>The entity type by type.</returns>
+        /// not support class in generic class
+        internal static EntityType GetEntityTypeByType(this MetadataWorkspace metadataWorkspace, Type entityType)
+        {
+            string name = entityType.FullName.Replace("+", ".");
+            var lenght = name.IndexOf("`");
+
+            if (lenght != -1)
+            {
+                name = name.Substring(0, lenght);
+            }
+
+            return metadataWorkspace
+                .GetItems<EntityType>(DataSpace.OSpace)
+                .SingleOrDefault(p => p.FullName == name);
         }
     }
 }
