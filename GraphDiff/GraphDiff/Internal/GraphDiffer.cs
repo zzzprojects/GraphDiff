@@ -1,4 +1,4 @@
-﻿using RefactorThis.GraphDiff.Internal.Graph;
+using RefactorThis.GraphDiff.Internal.Graph;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
