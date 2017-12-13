@@ -1,251 +1,103 @@
+using RefactorThis.GraphDiff.Internal.Graph;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Core;
-using System.Data.Entity.Core.Metadata.Edm;
-using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
-namespace RefactorThis.GraphDiff.Internal.Graph
+namespace RefactorThis.GraphDiff.Internal
 {
-    internal class GraphNode
+    /// <summary>
+    /// GraphDiff main access point.
+    /// </summary>
+    /// <typeparam name="T">The root agreggate type</typeparam>
+    internal class GraphDiffer<T> where T : class, new()
     {
-        #region Fields, Properties Constructors
+        private readonly GraphNode _root;
 
-        public GraphNode Parent { get; private set; }
-        public Stack<GraphNode> Members { get; private set; }
-        
-        protected readonly PropertyInfo Accessor;
-
-        protected string IncludeString
+        public GraphDiffer(GraphNode root)
         {
-            get
+            _root = root;
+        }
+
+        public T Merge(DbContext context, T updating)
+        {
+            bool isAutoDetectEnabled = context.Configuration.AutoDetectChangesEnabled;
+            try
             {
-                var ownIncludeString = Accessor != null ? Accessor.Name : null;
-                return Parent != null && Parent.IncludeString != null
-                        ? Parent.IncludeString + "." + ownIncludeString
-                        : ownIncludeString;
+                // performance improvement for large graphs
+                context.Configuration.AutoDetectChangesEnabled = false;
+
+                // Get our entity with all includes needed, or add
+                T persisted = GetOrAddPersistedEntity(context, updating);
+
+                if (context.Entry(updating).State != EntityState.Detached)
+                {
+                    throw new InvalidOperationException("GraphDiff supports detached entities only at this time. Please try AsNoTracking() or detach your entites before calling the UpdateGraph method");
+                }
+
+                // Perform recursive update
+                _root.Update(context, persisted, updating);
+
+                return persisted;
+            }
+            finally
+            {
+                context.Configuration.AutoDetectChangesEnabled = isAutoDetectEnabled;
             }
         }
 
-        public GraphNode()
-        {
-            Members = new Stack<GraphNode>();
-        }
-
-        protected GraphNode(GraphNode parent, PropertyInfo accessor)
-        {
-            Accessor = accessor;
-            Members = new Stack<GraphNode>();
-            Parent = parent;
-        }
-
-        #endregion
-
-        // overridden by different implementations
-        public virtual void Update<T>(DbContext context, T persisted, T updating) where T : class, new()
-        {
-            UpdateValuesWithConcurrencyCheck(context, updating, persisted);
-
-            // Foreach branch perform recursive update
-            foreach (var member in Members)
-            {
-                member.Update(context, persisted, updating);
-            }
-        }
-
-        protected T GetValue<T>(object instance)
-        {
-            return (T)Accessor.GetValue(instance, null);
-        }
-
-        protected void SetValue(object instance, object value)
-        {
-            Accessor.SetValue(instance, value, null);
-        }
-
-        protected static EntityKey CreateEntityKey(IObjectContextAdapter context, object entity)
+        private T GetOrAddPersistedEntity(DbContext context, T entity)
         {
             if (entity == null)
             {
                 throw new ArgumentNullException("entity");
             }
 
-            return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(entity.GetType()), entity);
-        }
+            var persisted = FindEntityMatching(context, entity);
 
-        internal void GetIncludeStrings(DbContext context, List<string> includeStrings)
-        {
-            var ownIncludeString = IncludeString;
-            if (!string.IsNullOrEmpty(ownIncludeString))
+            if (persisted == null)
             {
-                includeStrings.Add(ownIncludeString);
+                // we are always working with 2 graphs, simply add a 'persisted' one if none exists,
+                // this ensures that only the changes we make within the bounds of the mapping are attempted.
+                persisted = new T();
+                context.Set<T>().Add(persisted);
             }
 
-            includeStrings.AddRange(GetRequiredNavigationPropertyIncludes(context));
-
-            foreach (var member in Members)
-            {
-                member.GetIncludeStrings(context, includeStrings);
-            }
+            return persisted;
         }
 
-        protected virtual IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context)
+        private T FindEntityMatching(DbContext context, T entity)
         {
-            return new string[0];
+            var includeStrings = new List<string>();
+            _root.GetIncludeStrings(context, includeStrings);
+
+            // attach includes to IQueryable
+            var query = context.Set<T>().AsQueryable();
+            query = includeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+            // Run the find operation
+            return query.SingleOrDefault(CreateKeyPredicateExpression(context, entity));
         }
 
-        protected static IEnumerable<string> GetRequiredNavigationPropertyIncludes(DbContext context, Type entityType, string ownIncludeString)
+        private static Expression<Func<T, bool>> CreateKeyPredicateExpression(IObjectContextAdapter context, T entity)
         {
-            return context.GetRequiredNavigationPropertiesForType(entityType)
-                    .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
+            // get key properties of T
+            var keyProperties = context.GetPrimaryKeyFieldsFor(typeof(T)).ToList();
+
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            Expression expression = CreateEqualsExpression(entity, keyProperties[0], parameter);
+            for (int i = 1; i < keyProperties.Count; i++)
+                expression = Expression.And(expression, CreateEqualsExpression(entity, keyProperties[i], parameter));
+
+            return Expression.Lambda<Func<T, bool>>(expression, parameter);
         }
 
-        protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
+        private static Expression CreateEqualsExpression(object entity, PropertyInfo keyProperty, Expression parameter)
         {
-            if (parent == null || child == null) return;
-
-            var parentType = ObjectContext.GetObjectType(parent.GetType());
-            var childType = ObjectContext.GetObjectType(child.GetType());
-
-            var navigationProperties = context.GetNavigationPropertiesForType(childType);
-
-            var parentNavigationProperty = navigationProperties
-                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
-                    .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .FirstOrDefault();
-
-            if (parentNavigationProperty != null)
-                parentNavigationProperty.SetValue(child, parent, null);
-        }
-
-        protected static void UpdateValuesWithConcurrencyCheck<T>(DbContext context, T from, T to) where T : class
-        {
-            if (context.Entry(to).State != EntityState.Added)
-            {
-                EnsureConcurrency(context, from, to);
-            }
-
-            context.Entry(to).CurrentValues.SetValues(from);
-        }
-
-        protected static object AttachAndReloadAssociatedEntity(DbContext context, object entity)
-        {
-            var localCopy = FindLocalByKey(context, entity);
-            if (localCopy != null) return localCopy;
-
-            if (context.Entry(entity).State == EntityState.Detached)
-            {
-                var entityType = ObjectContext.GetObjectType(entity.GetType());
-                var instance = CreateEmptyEntityWithKey(context, entity);
-                
-                context.Set(entityType).Attach(instance);
-                context.Entry(instance).Reload();
-
-                AttachRequiredNavigationProperties(context, entity, instance);
-                return instance;
-            }
-
-            if (GraphDiffConfiguration.ReloadAssociatedEntitiesWhenAttached)
-            {
-                context.Entry(entity).Reload();
-            }
-
-            return entity;
-        }
-
-        private static object FindLocalByKey(DbContext context, object entity)
-        {
-            var eType = ObjectContext.GetObjectType(entity.GetType());
-            return context.Set(eType).Local.OfType<object>().FirstOrDefault(local => IsKeyIdentical(context, local, entity));
-        }
-
-        protected static void AttachRequiredNavigationProperties(DbContext context, object updating, object persisted)
-        {
-            var entityType = ObjectContext.GetObjectType(updating.GetType());
-            foreach (var navigationProperty in context.GetRequiredNavigationPropertiesForType(updating.GetType()))
-            {
-                var navigationPropertyInfo = entityType.GetProperty(navigationProperty.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-                var associatedEntity = navigationPropertyInfo.GetValue(updating, null);
-                if (associatedEntity != null)
-                {
-                    associatedEntity = FindEntityByKey(context, associatedEntity);
-                }
-
-                navigationPropertyInfo.SetValue(persisted, associatedEntity, null);
-            }
-        }
-
-        private static object FindEntityByKey(DbContext context, object associatedEntity)
-        {
-            var associatedEntityType = ObjectContext.GetObjectType(associatedEntity.GetType());
-            var keyFields = context.GetPrimaryKeyFieldsFor(associatedEntityType);
-            var keys = keyFields.Select(key => key.GetValue(associatedEntity, null)).ToArray();
-            return context.Set(associatedEntityType).Find(keys);
-        }
-
-        protected static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
-        {
-            var instance = Activator.CreateInstance(entity.GetType());
-            CopyPrimaryKeyFields(context, entity, instance);
-            return instance;
-        }
-
-        private static void CopyPrimaryKeyFields(IObjectContextAdapter context, object from, object to)
-        {
-            var keyProperties = context.GetPrimaryKeyFieldsFor(from.GetType()).ToList();
-            foreach (var keyProperty in keyProperties)
-                keyProperty.SetValue(to, keyProperty.GetValue(from, null), null);
-        }
-
-        protected static bool IsKeyIdentical(DbContext context, object newValue, object dbValue)
-        {
-            if (newValue == null || dbValue == null) return false;
-
-            return CreateEntityKey(context, newValue) == CreateEntityKey(context, dbValue);
-        }
-
-        private static void EnsureConcurrency<T>(IObjectContextAdapter db, T entity1, T entity2)
-        {
-            // get concurrency properties of T
-            var entityType = ObjectContext.GetObjectType(entity1.GetType());
-            var metadata = db.ObjectContext.MetadataWorkspace;
-
-            var objType = metadata.GetEntityTypeByType(entityType);
-
-            // need internal string, code smells bad.. any better way to do this?
-            var cTypeName = (string)objType.GetType()
-                    .GetProperty("CSpaceTypeName", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .GetValue(objType, null);
-
-            var conceptualType = metadata.GetItems<EntityType>(DataSpace.CSpace).Single(p => p.FullName == cTypeName);
-            var concurrencyProperties = conceptualType.Members
-                    .Where(member => member.TypeUsage.Facets.Any(facet => facet.Name == "ConcurrencyMode" && (ConcurrencyMode)facet.Value == ConcurrencyMode.Fixed))
-                    .Select(member => entityType.GetProperty(member.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .ToList();
-
-            // Check if concurrency properties are equal
-            // TODO EF should do this automatically should it not?
-            foreach (var concurrencyProp in concurrencyProperties)
-            {
-                // if is byte[] use array comparison, else equals().
-
-                var type = concurrencyProp.PropertyType;
-                var obj1 = concurrencyProp.GetValue(entity1, null);
-                var obj2 = concurrencyProp.GetValue(entity2, null);
-
-                if (
-                    (obj1 == null || obj2 == null) ||
-                    (type == typeof (byte[]) && !((byte[]) obj1).SequenceEqual((byte[]) obj2)) ||
-                    (type != typeof (byte[]) && !obj1.Equals(obj2))
-                    )
-                {
-                    throw new DbUpdateConcurrencyException(String.Format("{0} failed optimistic concurrency", concurrencyProp.Name));
-                }
-            }
+            return Expression.Equal(Expression.Property(parameter, keyProperty), Expression.Constant(keyProperty.GetValue(entity, null), keyProperty.PropertyType));
         }
     }
 }
