@@ -2,14 +2,14 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>RefactorThis.GraphDiff</id>
-        <version>2.0.1</version>
+        <version>3.0.5</version>
         <title>GraphDiff - Entity Framework graph auto-update</title>
         <authors>brentmckendrick</authors>
         <owners>brentmckendrick</owners>
         <projectUrl>https://github.com/refactorthis/GraphDiff</projectUrl>
         <iconUrl>http://s8.postimg.org/r3f1stx69/Graph_Diff.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>This is the official GraphDiff package.
+        <description>This is the fork of GraphDiff package.
 
 GraphDiff - Allows for automatic update of a graph of detached entities using Entity Framework v6+.
 

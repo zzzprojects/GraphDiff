@@ -64,18 +64,22 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 var entityType = ObjectContext.GetObjectType(updateItem.GetType());
                 var instance = CreateEmptyEntityWithKey(context, updateItem);
 
-                context.Set(entityType).Add(instance);
-                context.Entry(instance).CurrentValues.SetValues(updateItem);
-
-                foreach (var childMember in Members)
+                if (!(bool) dbCollection.GetType().GetMethod("Contains").Invoke(dbCollection, new[] {updateItem}))
                 {
-                    childMember.Update(context, instance, updateItem);
+                    context.Set(entityType).Add(instance);
+                    context.Entry(instance).CurrentValues.SetValues(updateItem);
+
+                    foreach (var childMember in Members)
+                    {
+                        childMember.Update(context, instance, updateItem);
+                    }
                 }
 
                 updateItem = instance;
             }
 
-            dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] {updateItem});
+            var contains = (bool)dbCollection.GetType().GetMethod("Contains").Invoke(dbCollection, new[] { updateItem });
+            if (!contains) dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { updateItem });
 
             AttachCyclicNavigationProperty(context, existing, updateItem);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.Entity;
+using System.Linq;
 using System.Reflection;
 
 namespace RefactorThis.GraphDiff.Internal.Graph
@@ -36,14 +37,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             AttachCyclicNavigationProperty(context, persisted, newValue);
 
-            foreach (var childMember in Members)
-                childMember.Update(context, dbValue, newValue);
+            if (dbValue != null)
+            {
+                foreach (var childMember in Members)
+                    childMember.Update(context, dbValue, newValue);
+            }
         }
 
         private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
         {
+            var local = context.Set(Accessor.PropertyType).Local;
+            foreach (var entity in local)
+            {
+                if (entity.Equals(newValue))
+                {
+                    SetValue(existing, entity);
+                    return entity;
+                }
+            }
+            
             var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
+            
+            
             context.Set(Accessor.PropertyType).Add(instance);
             UpdateValuesWithConcurrencyCheck(context, newValue, instance);
             return instance;
