@@ -21,12 +21,14 @@ namespace RefactorThis.GraphDiff
         /// <param name="context">The database context to attach / detach.</param>
         /// <param name="entity">The root entity.</param>
         /// <param name="mapping">The mapping configuration to define the bounds of the graph</param>
+	/// <param name="allowDelete">NEED TEXTE!!!!</param>
         /// <returns>The attached entity graph</returns>
-	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null) where T : class, new()
+	    public static T UpdateGraph<T>(this DbContext context, T entity, Expression<Func<IUpdateConfiguration<T>, object>> mapping = null, bool allowDelete = true) where T : class, new()
 	    {
-            var root = mapping == null ? new GraphNode() : new ConfigurationVisitor<T>().GetNodes(mapping);
-            var graphDiffer = new GraphDiffer<T>(root);
-            return graphDiffer.Merge(context, entity);
+           	var root = mapping == null ? new GraphNode() : new ConfigurationVisitor<T>().GetNodes(mapping);
+		root.AllowDelete = allowDelete;
+          	var graphDiffer = new GraphDiffer<T>(root);
+          	return graphDiffer.Merge(context, entity);
 	    }
 
         // TODO add IEnumerable<T> entities
