@@ -46,10 +46,29 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 }
             }
 
-            // remove obsolete items
-            foreach (var dbItem in dbHash.Values)
+            if (CheckAllowDelete(this))
             {
-                RemoveElement(context, dbItem, dbCollection);
+                // remove obsolete items
+                foreach (var dbItem in dbHash.Values)
+                {
+                    RemoveElement(context, dbItem, dbCollection);
+                }
+            }
+        }
+        
+        private static bool CheckAllowDelete(GraphNode node)
+        {
+            if (node.AllowDelete != null)
+            {
+                return (bool)node.AllowDelete;
+            }
+            else if (node.Parent != null)
+            {
+                return CheckAllowDelete(node.Parent);
+            }
+            else
+            {
+                return true;
             }
         }
 
