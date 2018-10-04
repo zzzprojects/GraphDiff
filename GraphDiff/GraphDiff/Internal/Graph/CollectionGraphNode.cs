@@ -58,11 +58,11 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         
         private static bool CheckAllowDelete(GraphNode node)
         {
-            if (node.AllowDelete != null)
+            if (node.AllowDelete.HasValue)
             {
-                return (bool)node.AllowDelete;
+                return node.AllowDelete.Value;
             }
-            else if (node.Parent != null)
+            else if (node.Parent.HasValue)
             {
                 return CheckAllowDelete(node.Parent);
             }
