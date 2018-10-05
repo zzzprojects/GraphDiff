@@ -62,7 +62,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             {
                 return node.AllowDelete.Value;
             }
-            else if (node.Parent.HasValue)
+            else if (node.Parent != null)
             {
                 return CheckAllowDelete(node.Parent);
             }
