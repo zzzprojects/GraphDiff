@@ -16,6 +16,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         public GraphNode Parent { get; private set; }
         public Stack<GraphNode> Members { get; private set; }
+        public bool? AllowDelete { get; set; }
         
         protected readonly PropertyInfo Accessor;
 
