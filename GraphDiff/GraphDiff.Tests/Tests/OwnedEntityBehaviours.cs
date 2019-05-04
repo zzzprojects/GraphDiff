@@ -105,5 +105,31 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 Assert.IsNull(context.OneToOneOwnedModels.SingleOrDefault(p => p.Id == oneToOne.Id));
             }
         }
+
+        [TestMethod]
+        public void ShouldCreateEntityWhenParentCreated_NullablePkFk()
+        {
+            var primary = new PKFKModelPrimary()
+            {
+                Name = "Primary",
+                Secondary = new PKFKModelSecondary()
+                {
+                    Name = "Secondary"
+                }
+            };
+
+            PKFKModelPrimary persisted = null;
+
+            using (var context = new TestDbContext())
+            {
+                persisted = context.UpdateGraph<PKFKModelPrimary>(primary, mapping => mapping.OwnedEntity(p => p.Secondary));
+                context.SaveChanges();
+            }
+
+            Assert.IsNotNull(persisted);
+            Assert.AreEqual(persisted.Id, persisted.Secondary.Id);
+            Assert.AreEqual(primary.Name, persisted.Name);
+            Assert.AreEqual(primary.Secondary.Name, persisted.Secondary.Name);
+        }
     }
 }
