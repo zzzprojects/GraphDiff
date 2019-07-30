@@ -64,6 +64,6 @@ namespace RefactorThis.GraphDiff.Tests
 		            .WithRequired(ikm => ikm.Parent);
 		}
 
-		public TestDbContext() : base("GraphDiff") {}
+		public TestDbContext() : base("Server=localhost;Initial Catalog=GraphDiff;Integrated Security=true;Connection Timeout = 300;Persist Security Info=True;") {}
 	}
 }
