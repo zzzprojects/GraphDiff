@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>c97b2c2c-b005-438b-8d0c-ee3557d03041</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GraphDiff.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DbContextExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GraphDiffConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\ConfigurationVisitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\DebugExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Extensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\GraphDiffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Graph\AssociatedEntityGraphNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Graph\CollectionGraphNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Graph\GraphNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Graph\OwnedEntityGraphNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IUpdateConfiguration.cs" />
+  </ItemGroup>
+</Project>

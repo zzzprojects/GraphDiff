@@ -1,7 +1,6 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphDiff.Tests", "GraphDiff.Tests\GraphDiff.Tests.csproj", "{36762487-8275-440B-8E19-AADA325652E4}"
 EndProject
@@ -14,9 +13,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{3AB2ED
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z.Lab", "Z.Lab\Z.Lab.csproj", "{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GraphDiff.Shared", "GraphDiff.Shared\GraphDiff.Shared.shproj", "{C97B2C2C-B005-438B-8D0C-EE3557D03041}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphDiff.NetStandard21", "GraphDiff.NetStandard21\GraphDiff.NetStandard21.csproj", "{13FCA06A-1CB3-4584-8421-F15730D0A0F7}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GraphDiff.Tests.Shared", "GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.shproj", "{F49226DD-5BF7-482D-B2A3-88CBE41D018B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphDiff.Tests.NetStandard21", "GraphDiff.Tests.NetStandard21\GraphDiff.Tests.NetStandard21.csproj", "{082C0151-CBE3-476B-B40C-0D909E83D198}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.projitems*{36762487-8275-440b-8e19-aada325652e4}*SharedItemsImports = 4
+		GraphDiff.Shared\GraphDiff.Shared.projitems*{c97b2c2c-b005-438b-8d0c-ee3557d03041}*SharedItemsImports = 13
+		GraphDiff.Shared\GraphDiff.Shared.projitems*{d9725b00-669c-409d-9ab8-c674710c8e5d}*SharedItemsImports = 4
+		GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.projitems*{f49226dd-5bf7-482d-b2a3-88cbe41d018b}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -30,10 +41,14 @@ Global
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9725B00-669C-409D-9AB8-C674710C8E5D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BB103C62-0A60-4DB7-BFA8-E9BEFA047DA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13FCA06A-1CB3-4584-8421-F15730D0A0F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13FCA06A-1CB3-4584-8421-F15730D0A0F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13FCA06A-1CB3-4584-8421-F15730D0A0F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13FCA06A-1CB3-4584-8421-F15730D0A0F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{082C0151-CBE3-476B-B40C-0D909E83D198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{082C0151-CBE3-476B-B40C-0D909E83D198}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{082C0151-CBE3-476B-B40C-0D909E83D198}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{082C0151-CBE3-476B-B40C-0D909E83D198}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core;
@@ -16,6 +16,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         public GraphNode Parent { get; private set; }
         public Stack<GraphNode> Members { get; private set; }
+        public bool? AllowDelete { get; set; }
         
         protected readonly PropertyInfo Accessor;
 
@@ -214,7 +215,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
             var entityType = ObjectContext.GetObjectType(entity1.GetType());
             var metadata = db.ObjectContext.MetadataWorkspace;
 
-            var objType = metadata.GetItems<EntityType>(DataSpace.OSpace).Single(p => p.FullName == entityType.FullName);
+            var objType = metadata.GetEntityTypeByType(entityType);
 
             // need internal string, code smells bad.. any better way to do this?
             var cTypeName = (string)objType.GetType()

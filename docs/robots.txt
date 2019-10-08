@@ -3,4 +3,4 @@
 # Allow crawling of all content
 User-agent: *
 Disallow:
-Sitemap: http://graph-diff.net/sitemap.xml
+Sitemap: http://entityframework-graphdiff.net/sitemap.xml

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>f49226dd-5bf7-482d-b2a3-88cbe41d018b</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GraphDiff.Tests.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Bootstrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\TestModels.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestDbContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\AddAggregateBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\AssociatedCollectionBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\AssociatedEntityBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\AttachedBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\ConfigurationVisitorBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\ErrorHandlingBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\GuidKeyBehaviors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\MiscBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\OneMemberBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\OptimisticConcurrencyBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\OwnedCollectionBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\OwnedEntityBehaviours.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tests\ThirdTierBehaviours.cs" />
+  </ItemGroup>
+</Project>
