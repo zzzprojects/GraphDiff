@@ -60,7 +60,7 @@ namespace RefactorThis.GraphDiff.Internal
         /// not support class in generic class
         internal static EntityType GetEntityTypeByType(this MetadataWorkspace metadataWorkspace, Type entityType)
         { 
-            string name = ObjectContext.GetObjectType(entityType).FullName.Replace("+", ".");//entityType.FullName.Replace("+", ".");//
+            string name = ObjectContext.GetObjectType(entityType).FullName.Replace("+", ".");
             var lenght = name.IndexOf("`");
 
             if (lenght != -1)
