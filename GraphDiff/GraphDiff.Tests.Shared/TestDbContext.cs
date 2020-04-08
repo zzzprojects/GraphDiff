@@ -6,6 +6,7 @@ namespace RefactorThis.GraphDiff.Tests
 {
 	public class TestDbContext : DbContext
 	{
+		public IDbSet<CollectionFromListEntity> CollectionFromListEntities { get; set; }
         public IDbSet<TestNode> Nodes { get; set; }
         public IDbSet<TestNodeWithBaseReference> NodesWithReference { get; set; }
 
@@ -61,9 +62,9 @@ namespace RefactorThis.GraphDiff.Tests
 
             modelBuilder.Entity<InternalKeyModel>()
                     .HasMany(ikm => ikm.Associates)
-		            .WithRequired(ikm => ikm.Parent);
-		}
+		            .WithRequired(ikm => ikm.Parent); 
+        }
 
-		public TestDbContext() : base("Server=localhost;Initial Catalog=GraphDiff;Integrated Security=true;Connection Timeout = 300;Persist Security Info=True;") {}
+        public TestDbContext() : base("Server=localhost;Initial Catalog=GraphDiff;Integrated Security=true;Connection Timeout = 300;Persist Security Info=True;") {}
 	}
 }

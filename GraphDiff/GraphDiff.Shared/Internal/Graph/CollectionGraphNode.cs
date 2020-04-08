@@ -149,17 +149,26 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         private Type GetCollectionElementType()
         {
-            if (Accessor.PropertyType.IsArray)
-            {
-                return Accessor.PropertyType.GetElementType();
-            }
+	        return GetCollectionElementType(Accessor.PropertyType);   
+        }
 
-            if (Accessor.PropertyType.IsGenericType)
-            {
-                return Accessor.PropertyType.GetGenericArguments()[0];
-            }
+        // Z.EntityFramework.Plus\shared\Z.EF.Plus.QueryIncludeOptimized.Shared\QueryIncludeOptimizedNullCollection.cs + Keep Array logique.
+        private static Type GetCollectionElementType(Type propertyType)
+        {
+	        if (propertyType.IsArray)
+	        {
+		        return propertyType.GetElementType();
+	        }
+	        else if (propertyType.GetGenericArguments().Length == 1 && typeof(IEnumerable).IsAssignableFrom(propertyType))
+	        {
+		        return propertyType.GetGenericArguments()[0];
+	        }
+	        else if (propertyType.BaseType != null && propertyType.BaseType != typeof(object))
+	        {
+		        return GetCollectionElementType(propertyType.BaseType);
+	        }
 
-            throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
+	        throw new InvalidOperationException("GraphDiff requires the collection to be either IEnumerable<T> or T[]");
         }
     }
 }
