@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphDiff.NetStandard21", "
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GraphDiff.Tests.Shared", "GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.shproj", "{F49226DD-5BF7-482D-B2A3-88CBE41D018B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphDiff.Tests.NetStandard21", "GraphDiff.Tests.NetStandard21\GraphDiff.Tests.NetStandard21.csproj", "{082C0151-CBE3-476B-B40C-0D909E83D198}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphDiff.Tests.NetStandard21", "GraphDiff.Tests.NetStandard21\GraphDiff.Tests.NetStandard21.csproj", "{082C0151-CBE3-476B-B40C-0D909E83D198}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z.EntityFrameworkGraphDiff.labEF6", "Z.EntityFrameworkGraphDiff.labEF6\Z.EntityFrameworkGraphDiff.labEF6.csproj", "{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -49,6 +51,10 @@ Global
 		{082C0151-CBE3-476B-B40C-0D909E83D198}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{082C0151-CBE3-476B-B40C-0D909E83D198}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{082C0151-CBE3-476B-B40C-0D909E83D198}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
