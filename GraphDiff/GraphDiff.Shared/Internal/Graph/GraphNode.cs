@@ -74,7 +74,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 throw new ArgumentNullException("entity");
             }
 
-            return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(entity.GetType()), entity);
+            return context.ObjectContext.CreateEntityKey(context.GetEntitySetName(ObjectContext.GetObjectType(entity.GetType())), entity);
         }
 
         internal void GetIncludeStrings(DbContext context, List<string> includeStrings)
@@ -190,7 +190,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
         protected static object CreateEmptyEntityWithKey(IObjectContextAdapter context, object entity)
         {
-            var instance = Activator.CreateInstance(entity.GetType());
+            var instance = Activator.CreateInstance(ObjectContext.GetObjectType(entity.GetType()));
             CopyPrimaryKeyFields(context, entity, instance);
             return instance;
         }
