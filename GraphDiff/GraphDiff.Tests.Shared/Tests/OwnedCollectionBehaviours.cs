@@ -11,6 +11,35 @@ namespace RefactorThis.GraphDiff.Tests.Tests
     public class OwnedCollectionBehaviours : TestBase
     {
         [TestMethod]
+        public void TestIListOwnedCollectionAdditionDoesNotMultiAdd()
+        {
+            TestNodeForIListMultiAddition rootNode = new TestNodeForIListMultiAddition()
+            {
+                Title = "rootnode",
+                SubNodes = new List<TestSubNodeForIListMultiAddition>()
+            };
+
+
+            using (TestDbContext context = new TestDbContext())
+            {
+                context.TestNodesForIListMultiAddition.Add(rootNode);
+                context.SaveChanges();
+            }
+
+            rootNode.SubNodes.Add(new TestSubNodeForIListMultiAddition() { TestNodeForIListMultiAdditionId = rootNode.Id, OtherKeyId = 1, Title = "sub1" });
+            rootNode.SubNodes.Add(new TestSubNodeForIListMultiAddition() { TestNodeForIListMultiAdditionId = rootNode.Id, OtherKeyId = 2, Title = "sub2" });
+
+            using (TestDbContext context = new TestDbContext())
+            {
+                var result = context.UpdateGraph(rootNode, mapping => mapping.OwnedCollection(p => p.SubNodes));
+
+                Assert.AreEqual(2, result.SubNodes.Count);
+                Assert.AreEqual(1, result.SubNodes.Count(s => s.Title.Equals("sub1")));
+                Assert.AreEqual(1, result.SubNodes.Count(s => s.Title.Equals("sub2")));
+            }
+        }
+
+        [TestMethod]
         public void ShouldUpdateItemInOwnedCollection()
         {
             var node1 = new TestNode

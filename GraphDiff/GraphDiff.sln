@@ -21,10 +21,12 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GraphDiff.Tests.Shared", "G
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphDiff.Tests.NetStandard21", "GraphDiff.Tests.NetStandard21\GraphDiff.Tests.NetStandard21.csproj", "{082C0151-CBE3-476B-B40C-0D909E83D198}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z.EntityFrameworkGraphDiff.labEF6", "Z.EntityFrameworkGraphDiff.labEF6\Z.EntityFrameworkGraphDiff.labEF6.csproj", "{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Z.EntityFrameworkGraphDiff.labEF6", "Z.EntityFrameworkGraphDiff.labEF6\Z.EntityFrameworkGraphDiff.labEF6.csproj", "{1AD6B94A-4A02-4DD9-8AEB-76AE73A6E20A}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.projitems*{082c0151-cbe3-476b-b40c-0d909e83d198}*SharedItemsImports = 5
+		GraphDiff.Shared\GraphDiff.Shared.projitems*{13fca06a-1cb3-4584-8421-f15730d0a0f7}*SharedItemsImports = 5
 		GraphDiff.Tests.Shared\GraphDiff.Tests.Shared.projitems*{36762487-8275-440b-8e19-aada325652e4}*SharedItemsImports = 4
 		GraphDiff.Shared\GraphDiff.Shared.projitems*{c97b2c2c-b005-438b-8d0c-ee3557d03041}*SharedItemsImports = 13
 		GraphDiff.Shared\GraphDiff.Shared.projitems*{d9725b00-669c-409d-9ab8-c674710c8e5d}*SharedItemsImports = 4
