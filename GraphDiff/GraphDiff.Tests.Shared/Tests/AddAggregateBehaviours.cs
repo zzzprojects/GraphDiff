@@ -1,4 +1,5 @@
-﻿using System.Data.Entity;
+﻿using System;
+using System.Data.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RefactorThis.GraphDiff.Tests.Models;
 using System.Linq;
@@ -9,6 +10,69 @@ namespace RefactorThis.GraphDiff.Tests.Tests
     [TestClass]
     public class AddAggregateBehaviours : TestBase
     {
+        [TestMethod]
+        public void ShouldAddNewAggregateRootWithDuplicateEntityOnLevel1()
+        {
+            var guid = Guid.Parse("C1775DA8-61EC-47A1-ADF9-A50653820061");
+
+            var node1 = new ModelRoot()
+            {
+                Id = Guid.NewGuid(),
+                MyModelsLevel1 = new List<ModelLevel1>()
+                {
+                    new ModelLevel1() {Id = guid},
+                    new ModelLevel1() {Id = guid}
+                }
+            };
+
+            using (var context = new TestDbContext())
+            {
+                node1 = context.UpdateGraph(node1, map =>
+                    map.OwnedCollection(p => p.MyModelsLevel1,
+                        with => with.OwnedEntity(p => p.ModelLevel2)));
+
+                context.SaveChanges();
+            }
+
+            using (var context = new TestDbContext())
+            {
+                var model = context.Set<ModelRoot>().Include(x => x.MyModelsLevel1).FirstOrDefault();
+                Assert.IsTrue(model.MyModelsLevel1.All(x => x.Id == guid));
+            }
+        }
+
+        [TestMethod]
+        public void ShouldAddNewAggregateRootWithduplicateEntityOnLevel2()
+        {
+            // See TBD_79ad60a7-8091-4d0c-b5de-7373f3b8cedf
+            //var guid = Guid.Parse("C1775DA8-61EC-47A1-ADF9-A50653820061");
+
+            //var node1 = new ModelRoot()
+            //{
+            //    Id = Guid.NewGuid(),
+            //    MyModelsLevel1 = new List<ModelLevel1>()
+            //    {
+            //        new ModelLevel1() {Id = Guid.NewGuid(), ModelLevel2 = new ModelLevel2() {Code = guid}},
+            //        new ModelLevel1() {Id = Guid.NewGuid(), ModelLevel2 = new ModelLevel2() {Code = guid}}
+            //    }
+            //};
+
+            //using (var context = new TestDbContext())
+            //{
+            //    node1 = context.UpdateGraph(node1, map =>
+            //        map.OwnedCollection(p => p.MyModelsLevel1,
+            //            with => with.OwnedEntity(p => p.ModelLevel2)));
+
+            //    context.SaveChanges();
+            //}
+
+            //using (var context = new TestDbContext())
+            //{
+            //    var models = context.Set<ModelLevel1>().Include(x => x.ModelLevel2).ToList();
+            //    Assert.IsTrue(models.All(x => x.ModelLevel2.Code == guid));
+            //}
+        }
+
         [TestMethod]
         public void ShouldAddNewAggregateRoot_Detached()
         {
@@ -44,7 +108,7 @@ namespace RefactorThis.GraphDiff.Tests.Tests
                 node1 = context.UpdateGraph(node1, map => map
                     .OwnedEntity(p => p.OneToOneOwned)
                     .AssociatedEntity(p => p.OneToOneAssociated)
-                    .OwnedCollection(p => p.OneToManyOwned)
+                    .OwnedCollection(p => p.OneToManyOwned, with => with.OwnedEntity(p => p.OneToManyOneToOneOwned))
                     .AssociatedCollection(p => p.OneToManyAssociated));
 
                 context.SaveChanges();

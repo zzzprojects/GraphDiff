@@ -68,7 +68,11 @@ namespace RefactorThis.GraphDiff.Tests
 
             modelBuilder.Entity<InternalKeyModel>()
                     .HasMany(ikm => ikm.Associates)
-		            .WithRequired(ikm => ikm.Parent); 
+		            .WithRequired(ikm => ikm.Parent);
+
+            modelBuilder.Entity<ModelRoot>().HasKey(x => x.Id).HasMany(x => x.MyModelsLevel1);
+            modelBuilder.Entity<ModelLevel1>().HasKey(x => x.Id).HasOptional(x => x.ModelLevel2);
+            modelBuilder.Entity<ModelLevel2>().HasKey(x => x.Code);
         }
 
         public TestDbContext() : base("Server=localhost;Initial Catalog=GraphDiff;Integrated Security=true;Connection Timeout = 300;Persist Security Info=True;") {}

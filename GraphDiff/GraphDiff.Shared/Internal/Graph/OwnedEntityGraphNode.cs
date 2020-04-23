@@ -36,12 +36,24 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             AttachCyclicNavigationProperty(context, persisted, newValue);
 
+            // if (dbValue != null) // make an error throw or not?
             foreach (var childMember in Members)
                 childMember.Update(context, dbValue, newValue);
         }
 
         private object CreateNewPersistedEntity<T>(DbContext context, T existing, object newValue) where T : class, new()
         {
+            // TBD_79ad60a7-8091-4d0c-b5de-7373f3b8cedf: Could be accepted with an option. Otherwise, we cannot allow people by default to provide multiple entity with same ID if it's not the same.
+            //var local = context.Set(Accessor.PropertyType).Local;
+            //foreach (var entity in local)
+            //{
+            //    if (entity.Equals(newValue))
+            //    {
+            //        SetValue(existing, entity);
+            //        return entity;
+            //    }
+            //}
+
             var instance = Activator.CreateInstance(newValue.GetType());
             SetValue(existing, instance);
             context.Set(Accessor.PropertyType).Add(instance);
