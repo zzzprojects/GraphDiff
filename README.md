@@ -1,3 +1,13 @@
+### Library Powered By
+
+This library is powered by [Entity Framework Extensions](https://entityframework-extensions.net/?z=github&y=graphdiff)
+
+<a href="https://entityframework-extensions.net/?z=github&y=graphdiff">
+<kbd>
+<img src="https://zzzprojects.github.io/images/logo/entityframework-extensions-pub.jpg" alt="Entity Framework Extensions" />
+</kbd>
+</a>
+
 GraphDiff
 =========
 
