@@ -7,7 +7,7 @@ DbContext extension methods for Entity Framework Code First, that allow you to s
 
 Please see the initial post @ https://refactorthis.wordpress.com/2012/12/11/introducing-graphdiff-for-entity-framework-code-first-allowing-automated-updates-of-a-graph-of-detached-entities/ for more information.
 
-Nuget package is at http://nuget.org/packages/RefactorThis.GraphDiff/
+Nuget package is at https://www.nuget.org/packages/RefactorThis.GraphDiff/
 
 ## Features
 
