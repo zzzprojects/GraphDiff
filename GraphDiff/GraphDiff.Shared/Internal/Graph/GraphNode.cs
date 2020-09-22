@@ -20,6 +20,8 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         
         protected readonly PropertyInfo Accessor;
 
+        internal PropertyInfo AccessorCyclicNavigationProperty;
+
         protected string IncludeString
         {
             get
@@ -104,7 +106,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
         }
 
-        protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child)
+        protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child, PropertyInfo navProperty = null)
         {
             if (parent == null || child == null) return;
 
@@ -113,10 +115,19 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             var navigationProperties = context.GetNavigationPropertiesForType(childType);
 
-            var parentNavigationProperty = navigationProperties
-                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
-                    .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .FirstOrDefault();
+            PropertyInfo parentNavigationProperty = null;
+
+            if (navProperty != null)
+			{
+                parentNavigationProperty = navProperty;
+            }
+            else
+			{ 
+                parentNavigationProperty = navigationProperties
+                      .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
+                      .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                      .FirstOrDefault();
+            }
 
             if (parentNavigationProperty != null)
                 parentNavigationProperty.SetValue(child, parent, null);

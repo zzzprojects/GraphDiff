@@ -89,6 +89,12 @@ namespace RefactorThis.GraphDiff
             return config;
         }
 
+        // NEED TEXT!
+        public static IUpdateConfiguration<T> AssociatedCollection<T, T2>(this IUpdateConfiguration<T> config, Expression<Func<T, ICollection<T2>>> expression, Expression<Func<T2, T>> navExpression)
+        {
+            return config;
+        }
+
         /// <summary>
         /// States that the child collection is a part of the aggregate and the entities inside will be updated,
         /// added or removed if changed in the parent's navigational property.
