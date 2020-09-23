@@ -6,7 +6,7 @@ namespace Z.EntityFrameworkGraphDiff.labEF6
 	{
 		static void Main(string[] args)
 		{
-			Request_LazyLoad.Execute();
+			Request_ManyNav.Execute();
 		}
 	}
 }

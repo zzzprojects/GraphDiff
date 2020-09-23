@@ -102,7 +102,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                 dbCollection.GetType().GetMethod("Add").Invoke(dbCollection, new[] { updateItem });
             }
 
-            AttachCyclicNavigationProperty(context, existing, updateItem);
+            AttachCyclicNavigationProperty(context, existing, updateItem, AccessorCyclicNavigationProperty);
 
             return updateItem;
         }
