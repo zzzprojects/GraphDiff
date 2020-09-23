@@ -13,7 +13,7 @@ namespace RefactorThis.GraphDiff.Internal
     {
         private GraphNode _currentMember;
         private string _currentMethod = "";
-        private bool isAssociatedCollectionWithNav = false;
+        private bool _isAssociatedCollectionWithNav;
 
         public GraphNode GetNodes(Expression<Func<IUpdateConfiguration<T>, object>> expression)
         {
@@ -27,18 +27,17 @@ namespace RefactorThis.GraphDiff.Internal
         {
             var accessor = GetMemberAccessor(memberExpression);
 
-            if (isAssociatedCollectionWithNav)
-			{
+            if (_isAssociatedCollectionWithNav)
+            {
                 _currentMember.AccessorCyclicNavigationProperty = accessor;
             }
-			else
-			{ 
+            else
+            {
                 var newMember = CreateNewMember(accessor);
 
                 _currentMember.Members.Push(newMember);
                 _currentMember = newMember;
             }
-
 
             return base.VisitMember(memberExpression);
         }
@@ -50,27 +49,30 @@ namespace RefactorThis.GraphDiff.Internal
             if (_currentMethod.Equals("AssociatedCollection") && expression.Arguments.Count == 3)
 			{  
                 Visit(expression.Arguments[1]);
-                isAssociatedCollectionWithNav = true;
+
                 try
-				{ 
+                {
+                    _isAssociatedCollectionWithNav = true;
                     Visit(expression.Arguments[2]);
-                    isAssociatedCollectionWithNav = false;
                 }
-                catch (Exception e)
-				{ 
-                    isAssociatedCollectionWithNav = false;
+                catch
+                {
                     throw;
-                } 
+                }
+                finally
+                {
+                    _isAssociatedCollectionWithNav = false;
+                }
             }
             else
-			{ 
+            {
                 // go left to right in the subtree (ignore first argument for now)
                 for (int i = 1; i < expression.Arguments.Count; i++)
                 {
                     Visit(expression.Arguments[i]);
                 }
             }
-             
+
             // go back up the tree and continue
             _currentMember = _currentMember.Parent;
             return Visit(expression.Arguments[0]);

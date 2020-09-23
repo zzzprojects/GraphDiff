@@ -89,7 +89,16 @@ namespace RefactorThis.GraphDiff
             return config;
         }
 
-        // NEED TEXT!
+        /// <summary>
+        /// States that the child collection is not a part of the aggregate. The parent's navigation property will be updated, but entity changes to the
+        /// child entities will not be saved.
+        /// </summary>
+        /// <typeparam name="T">The parent entity type</typeparam>
+        /// <typeparam name="T2">The child entity type </typeparam>
+        /// <param name="config">The configuration mapping</param>
+        /// <param name="expression">An expression specifying the child entity</param>
+        /// <param name="navExpression">An navigation expression specifying the parent entity</param>
+        /// <returns>Updated configuration mapping</returns>
         public static IUpdateConfiguration<T> AssociatedCollection<T, T2>(this IUpdateConfiguration<T> config, Expression<Func<T, ICollection<T2>>> expression, Expression<Func<T2, T>> navExpression)
         {
             return config;

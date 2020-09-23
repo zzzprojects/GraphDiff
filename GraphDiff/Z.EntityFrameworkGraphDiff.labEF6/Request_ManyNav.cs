@@ -51,8 +51,10 @@ namespace Z.EntityFrameworkGraphDiff.labEF6
 				//		with.OwnedCollection(p => p.EntitySimples)));
 				//	context.UpdateGraph(entity, map => map.AssociatedEntity(c => c.EntitySimpleChild).AssociatedCollection(c => c.EntitySimpleLists, x => x.B));
 
+				//context.UpdateGraph(entity, map => map.AssociatedCollection(c => c.EntitySimpleLists).AssociatedEntity(c => c.EntitySimpleChild));
+
 				context.UpdateGraph(entity, map => map.AssociatedCollection(c => c.EntitySimpleLists, x => x.B).AssociatedEntity(c => c.EntitySimpleChild));
-			
+
 				//context.UpdateGraph(entity, map => map.AssociatedEntity(c => c.EntitySimpleChild).AssociatedCollection(c => c.EntitySimpleLists));
 				//context.UpdateGraph(entity, map => map.OwnedEntity(c => c.EntitySimpleChild).OwnedCollection(c => c.EntitySimpleLists));
 				context.SaveChanges();

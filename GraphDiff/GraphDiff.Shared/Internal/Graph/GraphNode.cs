@@ -17,7 +17,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
         public GraphNode Parent { get; private set; }
         public Stack<GraphNode> Members { get; private set; }
         public bool? AllowDelete { get; set; }
-        
+
         protected readonly PropertyInfo Accessor;
 
         internal PropertyInfo AccessorCyclicNavigationProperty;
@@ -106,7 +106,7 @@ namespace RefactorThis.GraphDiff.Internal.Graph
                     .Select(navigationProperty => ownIncludeString + "." + navigationProperty.Name);
         }
 
-        protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child, PropertyInfo navProperty = null)
+        protected static void AttachCyclicNavigationProperty(IObjectContextAdapter context, object parent, object child, PropertyInfo parentNavigationProperty = null)
         {
             if (parent == null || child == null) return;
 
@@ -115,18 +115,13 @@ namespace RefactorThis.GraphDiff.Internal.Graph
 
             var navigationProperties = context.GetNavigationPropertiesForType(childType);
 
-            PropertyInfo parentNavigationProperty = null;
-
-            if (navProperty != null)
+            if (parentNavigationProperty == null)
 			{
-                parentNavigationProperty = navProperty;
-            }
-            else
-			{ 
+                // IF not parent property is specified, we take the first one if we found something
                 parentNavigationProperty = navigationProperties
-                      .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
-                      .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                      .FirstOrDefault();
+                    .Where(navigation => navigation.TypeUsage.EdmType.Name == parentType.Name)
+                    .Select(navigation => childType.GetProperty(navigation.Name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                    .FirstOrDefault();
             }
 
             if (parentNavigationProperty != null)
