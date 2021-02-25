@@ -35,7 +35,7 @@ Please see the initial post @ https://refactorthis.wordpress.com/2012/12/11/intr
  - Rewrite of graph traversal code and rewrite of tests to cover more scenarios.
  - multiple bug fixes
 
-## Usefull links
+## Useful links
 
 - [Website](https://entityframework-graphdiff.net/overview)
 - [KnowledgeBase](https://entityframework-graphdiff.net/knowledge-base)
