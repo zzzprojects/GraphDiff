@@ -78,7 +78,3 @@ A **HUGE THANKS** for your help!
 - and much more! 
 
 To view all our free and paid projects, visit our [website](https://zzzprojects.com/).
-
-## Collaborators
-
-Brent McKendrick, Andreas Pelzer
