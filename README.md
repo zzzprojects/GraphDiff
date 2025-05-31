@@ -1,13 +1,3 @@
-## Library Powered By
-
-This library is powered by [Entity Framework Extensions](https://entityframework-extensions.net/?z=github&y=graphdiff)
-
-<a href="https://entityframework-extensions.net/?z=github&y=graphdiff">
-<kbd>
-<img src="https://zzzprojects.github.io/images/logo/entityframework-extensions-pub.jpg" alt="Entity Framework Extensions" />
-</kbd>
-</a>
-
 # What's GraphDiff?
 GraphDiff is a DbContext extension methods for Entity Framework Code First, that allow you to save an entire detached Model/Entity, with child Entities and Lists, to the database without writing the code to do it.
 
@@ -29,31 +19,32 @@ Please see the initial post @ https://refactorthis.wordpress.com/2012/12/11/intr
  - Define the aggregate using attributes on the models
  - Allow for the initial db query to be performed as multiple queries where needed (too many includes, etc)
 
-## Release Notes
+Read more on our [Website](https://entityframework-graphdiff.net/overview).
 
-2.0.1
- - Rewrite of graph traversal code and rewrite of tests to cover more scenarios.
- - multiple bug fixes
+## Downloads
 
-## Useful links
+### EF Core
 
-- [Website](https://entityframework-graphdiff.net/overview)
-- [KnowledgeBase](https://entityframework-graphdiff.net/knowledge-base)
-- [Online Examples](https://entityframework-graphdiff.net/online-examples) 
-- [NuGet](https://www.nuget.org/packages/RefactorThis.GraphDiff/)
-- You can also consult GraphDiff questions on 
-[Stack Overflow](https://stackoverflow.com/questions/tagged/graphdiff)
+[![nuget](https://img.shields.io/nuget/v/RefactorThis.GraphDiff?logo=nuget&style=flat-square)](https://www.nuget.org/packages/RefactorThis.GraphDiff)
+[![nuget](https://img.shields.io/nuget/dt/RefactorThis.GraphDiff?logo=nuget&style=flat-square)](https://www.nuget.org/packages/RefactorThis.GraphDiff)
 
-## Contribute
+```
+PM> NuGet\Install-Package RefactorThis.GraphDiff
+```
 
-The best way to contribute is by **spreading the word** about the library:
+```
+> dotnet add package RefactorThis.GraphDiff
+```
 
- - Blog it
- - Comment it
- - Star it
- - Share it
- 
-A **HUGE THANKS** for your help.
+## Sponsors
+
+ZZZ Projects owns and maintains **GraphDiff** as part of our [mission](https://zzzprojects.com/mission) to add value to the .NET community
+
+Through [Entity Framework Extensions](https://entityframework-extensions.net/?utm_source=zzzprojects&utm_medium=graphdiff) and [Dapper Plus](https://dapper-plus.net/?utm_source=zzzprojects&utm_medium=graphdiff), we actively sponsor and help key open-source libraries grow.
+
+[![Entity Framework Extensions](https://raw.githubusercontent.com/zzzprojects/GraphDiff/master/entity-framework-extensions-sponsor.png)](https://entityframework-extensions.net/bulk-insert?utm_source=zzzprojects&utm_medium=graphdiff)
+
+[![Dapper Plus](https://raw.githubusercontent.com/zzzprojects/GraphDiff/master/dapper-plus-sponsor.png)](https://dapper-plus.net/bulk-insert?utm_source=zzzprojects&utm_medium=graphdiff)
 
 ## More Projects
 
